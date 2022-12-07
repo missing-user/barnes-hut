@@ -13,20 +13,6 @@ build-job:
   before_script:
     - apt-get update
     - apt-get install -yqq g++ cmake libgtest-dev
-    - cd $CI_PROJECT_DIR
-  script:
-    - mkdir build && cd build
-    - cmake ..
-    - echo "compiling with $(nproc) cores"
-    - make -j $(nproc)
-    - ./barnes-hut
-
-
-test-job:
-  stage: test
-  before_script:
-    - apt-get update
-    - apt-get install -yqq g++ cmake libgtest-dev
     - apt-get install -yqq python3-dev 
     - cd /usr/src/gtest
     - cmake CMakeLists.txt && make
@@ -35,6 +21,13 @@ test-job:
     - mkdir build && cd build
     - cmake ..
     - echo "compiling with $(nproc) cores"
-    - make tests -j $(nproc)
+    - make -j $(nproc)
+    - ./barnes-hut
     - ./tests
+
+
+test-job:
+  stage: test
+  script:
+    - echo "I would like to run ./tests in here, but don't know how"
 
