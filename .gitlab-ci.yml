@@ -12,7 +12,8 @@ build-job:
   stage: build
   before_script:
     - apt-get update
-    - apt-get install -yqq g++ cmake libgtest-dev
+    - apt-get install -yqq g++-10
+    - apt-get install -yqq cmake libgtest-dev
     - apt-get install -yqq python3-dev 
     - cd /usr/src/gtest
     - cmake CMakeLists.txt && make
