@@ -10,6 +10,10 @@ stages:          # List of stages for jobs, and their order of execution
 
 build-job:
   stage: build
+  before_script:
+    - apt-get update
+    - apt-get install -yqq g++ cmake libgtest-dev
+    - cd $CI_PROJECT_DIR
   script:
     - mkdir build && cd build
     - cmake ..
