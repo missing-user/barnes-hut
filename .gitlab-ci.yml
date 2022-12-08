@@ -16,7 +16,7 @@ build-job:
     - apt-get update
     - apt-get install -yqq g++ cmake libgtest-dev
     - apt-get install -yqq python3-dev 
-    - apt-get install --yqq libglm-dev
+    - apt-get install -yqq libglm-dev
     - cd /usr/src/gtest
     - cmake CMakeLists.txt && make
     - cd $CI_PROJECT_DIR
