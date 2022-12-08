@@ -10,6 +10,8 @@ stages:          # List of stages for jobs, and their order of execution
 
 build-job:
   stage: build
+  artifacts:
+    untracked: true
   before_script:
     - apt-get update
     - apt-get install -yqq g++ cmake libgtest-dev
@@ -21,13 +23,17 @@ build-job:
     - mkdir build && cd build
     - cmake ..
     - echo "compiling with $(nproc) cores"
-    - make -j $(nproc)
-    - ./barnes-hut
-    - ./tests
+    - make barnes-hut -j $(nproc)
+    - make tests -j $(nproc)
 
 
 test-job:
   stage: test
+  dependencies: 
+    - build
   script:
-    - echo "I would like to run ./tests in here, but don't know how"
+    - cd $CI_PROJECT_DIR
+    - cd build
+    - ./tests
+
 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DISTRIBUTIONS
+#define DISTRIBUTIONS
 
 #include <random>
 #include <vector>
@@ -218,7 +219,7 @@ static std::vector<Particle> universe1()
 
 static std::vector<Particle> universe4()
 {
-	auto initial_dist = exponential_disk_distribution(6000);
+	auto initial_dist = exponential_disk_distribution(4500);
 	const myfloat diameter = 100;
 
 	scale(initial_dist, diameter, diameter, diameter/10); // flat disk
@@ -252,3 +253,5 @@ static std::vector<Particle> stable_orbit()
 
 	return particles;
 }
+
+#endif

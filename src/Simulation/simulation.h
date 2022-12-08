@@ -1,14 +1,16 @@
-#pragma once
+#ifndef SIMULATION
+#define SIMULATION
 
-#include <optional>
+
+#include <vector>
 #include <string>
 #include <iostream>
+
+#include "QuadTree/QuadTree.h"
 
 #include <glm/glm.hpp>    // pvec3
 #include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
 
-#include "../QuadTree/Particle.h"
-#include "../QuadTree/Tree.h"
 
 myvec3 getTotalAcceleration(myvec3 position, const std::vector<Particle> &particles)
 {
@@ -99,7 +101,7 @@ std::string makeCsvHeader(size_t numberOfParticles)
     return outputBuffer + "time\n";
 }
 
-void simulate(std::vector<Particle> &particles, double duration, myfloat dt, std::ostream *outputwriter = nullptr, bool brute_force=true, myfloat theta=0)
+void simulate(std::vector<Particle> &particles, double duration, myfloat dt, std::ostream *outputwriter=nullptr, bool brute_force=true, myfloat theta=0)
 {
     // The pointer to the outputwriter is optional and will receive the positions of all particles at each timestep if passes
     if (outputwriter != nullptr)
@@ -133,3 +135,4 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, std
             *outputwriter << particles << duration << "\n";
     }
 }
+#endif

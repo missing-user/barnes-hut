@@ -126,7 +126,7 @@ public:
             else{
                 for (const Tree &b : branches)
                 {
-                    acc += b.computeAcc(particle);
+                    acc += b.computeAcc(particle, theta);
                 }
             }
         }

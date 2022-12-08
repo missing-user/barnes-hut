@@ -1,10 +1,23 @@
 # Usage
 
-create a build folder at the top level, navigate into it.
-From the build folder run: 
-- cmake ..
-- make
-- make tests
+To execute the project, run the following commands:
+
+```sh
+mkdir build && cd build && cmake ..
+
+make barnes-hut
+./barnes-hut
+
+cd ..
+pip install -r requirements.txt 
+python plot.py
+```
+
+- Creates a folder called build, navigates into it and creates the makefile 
+- Compiles and links the project
+- Runs the executable. This produces a .csv file called output.csv as an output of the simulation
+- Installs all the python dependencies for visualizing the results from requirements.txt
+- Runs the python script for visualizing the results
 
 # Project: Barnes Hut galaxy Simulation 
 
@@ -29,8 +42,8 @@ In this sprint we will implement the n-body problem and a basic Barnes-Hut appro
 - [x] Generate an array of initial masses, positions, and velocities of a system of bodies in 3D space.
 - [x] Create a brute force n-body simulation O(n*n) (will be later used as a unit test for verification)
 - [x] Create a function for space-dividing an array of coordinates into an octree data structure.
-- [ ] Implement the Barnes Hut algorithm for simulating the system of bodies over a specified duration of time.
-- [ ] Create a unit test, that compares the brute force reference solution with the Barnes-Hut approximation for a small test dataset
+- [x] Implement the Barnes Hut algorithm for simulating the system of bodies over a specified duration of time.
+- [x] Create a unit test, that compares the brute force reference solution with the Barnes-Hut approximation for a small test dataset
 - [x] Output a timeseries of the resulting positions of all bodies into a file (e.g. .csv with timestamps) that can be visualized with external tools (e.g. Python script)
 
 ## Sprint 2 (OOP)
