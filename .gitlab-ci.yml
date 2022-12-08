@@ -26,11 +26,11 @@ build-job:
     - make barnes-hut -j $(nproc)
     - make tests -j $(nproc)
 
+    - ./tests
+
 
 test-job:
-  stage: test
-  dependencies: 
-    - build
+  stage: test 
   script:
     - cd $CI_PROJECT_DIR
     - cd build
