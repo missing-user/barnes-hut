@@ -12,7 +12,7 @@
 #include "Particle.h"
 class Tree
 {
-    int maxPnts = 1;
+    int maxPnts = 8;
     Particle COM;
 
 public:
