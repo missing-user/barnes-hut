@@ -6,7 +6,10 @@
 #include <fstream>
 #include <fstream>
 
-TEST(Simulation, Analytical4Rotations) {
+TEST(Simulation, Analytical45Rotations) {
+	// Simulate 4.5 rotations of two massless particles around a massive object.
+	// After the simulation, both particles should have switched places.
+
 	// Stable orbit solution
 	// v = sqrt(G*m/r)
 	Particle p1 = {{0,0,100}, {0,10,0}, 0};
@@ -18,43 +21,16 @@ TEST(Simulation, Analytical4Rotations) {
 	particles.push_back(p2);
 	particles.push_back(p3);
 
-	//Simulate 5 rotations around a massive object + one quarter rotation
-	const double simDuration = 4 * p1.p.z * (2 * PI) / p1.v.y;
+	const double simDuration = 4.5 * p1.p.z * (2 * PI) / p1.v.y;
 
 	simulate(particles, simDuration, 0.0005);
 
 	// Particle 1 should return to its initial position 
 	EXPECT_DOUBLE_EQ(particles[0].p.x, 0);
-	EXPECT_NEAR(particles[0].p.y, p1.p.y, 8);
-	EXPECT_NEAR(particles[0].p.z, p1.p.z, .7) << "diff: " << (particles[0].p - p1.p) << std::endl;
-
-	// Particle 2 should not move at all
-	EXPECT_DOUBLE_EQ(particles[1].p.y, 0);
-	EXPECT_DOUBLE_EQ(particles[1].p.z, 0);
-}
-
-TEST(Simulation, AnalyticalQuarterRotation) {
-	//Stable orbit solution
-	// v = sqrt(G*m/r)
-	Particle p1 = {{0,0,10}, {0,5,0}, 0};
-	Particle p2 = {{0,0,0}, {0,0,0}, 250};
-
-	std::vector<Particle> particles;
-	particles.push_back(p1);
-	particles.push_back(p2);
-
-	// Simulate 100 rotations around a massive object + one quarter rotation
-	// time = radius * pi/2 / (orbit velocity)
-	const double simDuration = p1.p.z * (PI / 2) / p1.v.y;
-	const double THRESHOLD = 0.8;
-
-	simulate(particles, simDuration, 0.05);
-
-	// Particle 1 should have completed a 90deg rotation 
-	// (y and z coordinates have switched places)
-	EXPECT_DOUBLE_EQ(particles[0].p.x, 0);
-	EXPECT_NEAR(particles[0].p.z, p1.p.y, THRESHOLD);
-	EXPECT_NEAR(particles[0].p.y, p1.p.z, THRESHOLD);
+	EXPECT_NEAR(particles[0].p.y, p3.p.y, 8);
+	EXPECT_NEAR(particles[0].p.z, p3.p.z, .7);
+	EXPECT_NEAR(particles[2].p.y, p1.p.y, 8);
+	EXPECT_NEAR(particles[2].p.z, p1.p.z, .7);
 
 	// Particle 2 should not move at all
 	EXPECT_DOUBLE_EQ(particles[1].p.y, 0);
@@ -63,10 +39,12 @@ TEST(Simulation, AnalyticalQuarterRotation) {
 
 
 TEST(Simulation, DifferentTimesteps) {
+	// When simulating a certain time duration, the results should be identical, 
+	// regardless of the timestep size that was used. 
 
 	Particle p1 = {{0,0,0}, {1.99255722618,0.95797067952,0.4032403082}, 20};
 	std::vector<Particle> particles(1);
-	auto simDuration = 1;
+	auto simDuration = 1.52;
 
 	// Step through i orders of magnitude for the step size, starting at 1
 	// the irrational base was chosen to test the residual timestepping capabilities
@@ -82,6 +60,8 @@ TEST(Simulation, DifferentTimesteps) {
 }
 
 TEST(FileWriting, IsValidCsv) {
+	// Validate our output file format
+
 	Particle p1 = {{5,6,7},{1,2,3}, 20};
 	std::vector<Particle> particles{ p1 };
 	auto simDuration = 1;
@@ -94,6 +74,8 @@ TEST(FileWriting, IsValidCsv) {
 }
 
 TEST(BarnesHut, CompareTheta0) {
+	// With the multipole rejection parameter set to 0, the barnes hut algorithm 
+	// degenerates to a brute force solution. The results should be identical.
 
 	std::vector<Particle> particles = universe1();
     std::vector<Particle> particlesTree{particles};
@@ -114,6 +96,9 @@ TEST(BarnesHut, CompareTheta0) {
 }
 
 TEST(BarnesHut, CompareApproximation) {
+	// Check if Barnes Hut approximation is working correctly. 
+	// The time evolution of the particles should be similiar, but not identical to the brute force solution.
+	// Does not work at large timescales, because the system is chaotic in nature.
 
 	std::vector<Particle> particles = universe1(); 
 	std::vector<Particle> particlesTree{ particles };
