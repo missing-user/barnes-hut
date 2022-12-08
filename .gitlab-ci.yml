@@ -23,10 +23,7 @@ build-job:
     - mkdir build && cd build
     - cmake ..
     - echo "compiling with $(nproc) cores"
-    - make barnes-hut -j $(nproc)
-    - make tests -j $(nproc)
-
-    - ./tests
+    - make -j $(nproc)
 
 
 test-job:
