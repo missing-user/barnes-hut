@@ -17,7 +17,6 @@ class Tree
 
 public:
     std::vector<Tree> branches = {};
-    //  p = std::make_unique<D>();
     std::vector<std::shared_ptr<Particle>> particles = {};
     int level = 0;
     Cuboid cuboid;
@@ -27,7 +26,7 @@ public:
         cuboid = cuboidIn;
     }
 
-    void createBranches()
+    void createBranches() // populates the branches array of this object with new trees from subdividing this node
     {
         for (Cuboid r : cuboid.subdivide())
         {
@@ -37,17 +36,18 @@ public:
         }
     }
 
-    void insertPnt(const Particle &p) // make this boolean so that if you do insert it to stop inserting to other branches
+    void insertPnt(const Particle &p) // adds a point to the tree structure.
+    // Depending on the location of the point, new branches could be generated to accomodate the point
     {
-        if (!cuboid.contains(p))
+        if (!cuboid.contains(p)) // quits if point is outside of this node's domain
             return;
         particles.push_back(std::make_shared<Particle>(p));
-        if (particles.size() > maxPnts)
+        if (particles.size() > maxPnts) // if maximum number of points in a node is exceeded, add this point to one of the branches
         {
             if (leaf)
             {
                 leaf = false;
-                createBranches();
+                createBranches(); // If there aren't any branches, create them.
                 for (Tree &b : branches)
                 {
                     for (auto &pnt : particles)
@@ -66,10 +66,10 @@ public:
         }
     }
 
-    Particle computeCOM()
+    Particle computeCOM() // find the center of mass for this node
     {
         Particle tempCOM;
-        if (leaf)
+        if (leaf) // if this node doesn't have branches, calculate the center of mass of all contained particles
         {
             if (particles.size() != 0)
             {
@@ -79,11 +79,11 @@ public:
                     tempP.p *= tempP.m;
                     tempCOM = tempCOM + tempP;
                 }
-                if(tempCOM.m != 0)
+                if (tempCOM.m != 0)
                     tempCOM.p /= tempCOM.m;
             }
         }
-        else
+        else // if there are branches, calculate the center of mass of the centers of mass of the branches
         {
             for (Tree t : branches)
             {
@@ -91,7 +91,7 @@ public:
                 tempP.p *= tempP.m;
                 tempCOM = tempCOM + tempP;
             }
-            if(tempCOM.m != 0)
+            if (tempCOM.m != 0)
                 tempCOM.p /= tempCOM.m;
         }
         COM = tempCOM;
@@ -99,31 +99,33 @@ public:
         return tempCOM;
     }
 
-    myvec3 computeAcc(const Particle &particle, myfloat theta) const
+    myvec3 computeAcc(const Particle &particle, myfloat theta) const // compute the accelartion applied on a particle by this node
     {
         myfloat softening_param = 0.025;
-        myvec3 acc{0,0,0};
+        myvec3 acc{0, 0, 0};
 
         if (leaf)
         {
             for (auto sp : particles)
             {
-                if ((*sp).p != particle.p)
+                if ((*sp).p != particle.p) // if the queried particle isn't the input particle
                 {
                     auto diff = (*sp).p - particle.p;
                     auto distance = glm::length(diff);
-                    acc += diff * (*sp).m / (distance * distance * distance + softening_param);
+                    acc += diff * (*sp).m / (distance * distance * distance + softening_param); // softened gravitational equation
                 }
             }
         }
         else
         {
-            if(less_than_theta(particle, theta)){
+            if (less_than_theta(particle, theta))
+            { // Barnes-Hut threshold
                 auto diff = COM.p - particle.p;
                 auto distance = glm::length(diff);
                 acc = diff * COM.m / (distance * distance * distance + softening_param);
             }
-            else{
+            else
+            { // if threshold not met, compute the acceleration due to the branches inside this node
                 for (const Tree &b : branches)
                 {
                     acc += b.computeAcc(particle, theta);
@@ -136,10 +138,12 @@ public:
         // }
     }
 
-    bool less_than_theta(const Particle &particle, double theta) const {
+    bool less_than_theta(const Particle &particle, double theta) const
+    {
+        // returns whether particle meets the threshold criteria for approximating the acceleration due to this node
         myfloat distance = glm::length(particle.p - COM.p);
-        //TODO: this should not be the length of the cuboid
-        return glm::length(cuboid.max_extent - cuboid.min_extent)/distance < theta;
+        // TODO: this should not be the length of the cuboid
+        return glm::length(cuboid.max_extent - cuboid.min_extent) / distance < theta;
     }
 
     std::string print() const

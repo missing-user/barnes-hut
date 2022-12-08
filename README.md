@@ -67,7 +67,8 @@ In this sprint, we will add visualization capabilities to the project, allow the
 ### Sprint 2: Definition of "done"
 
 - Add the ability to specify parameters like the initial conditions, timestep size, simulation duration etc. in either a configuration file or as command line parameters.
-- Create a class/datastructure that contains all the parameters (mass, position, velocity) of each body.
+- Implement appropriate access control modifiers for functions and variables.
+- Apply apropriate usage of references and pointers for optimal memory allocation.
 - Add the ability to visualize the dynamics of the simulation in 3D space.
 - Abstract the interaction function of the bodies (and add an example of how to use it, e.g. gravity potential and coloumb potential) 
 - Abstract the space dividing function 

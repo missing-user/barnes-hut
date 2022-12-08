@@ -1,3 +1,5 @@
+//Used only for quadtree generation for two dimensions
+
 #ifndef RECTANGLE
 #define RECTANGLE
 class Rectangle
@@ -12,11 +14,11 @@ public:
         x2 = x2In;
         y2 = y2In;
     }
-    bool contains(const Particle &P)
+    bool contains(const Particle &P)//returns whether a particle is insiside rectangle boundary
     {
         return P.p.x > x1 && P.p.x < x2 && P.p.y > y1 && P.p.y < y2;
     }
-    std::vector<Rectangle> subdivide()
+    std::vector<Rectangle> subdivide()//returns an array of 4 rectangles, splitting the parent cuboid in half along each dimension (i.e. Quadrant)
     {
         std::vector<Rectangle> subrectangles(4);
         subrectangles[0] = Rectangle(x1, y1, (x1 + x2) / 2, (y1 + y2) / 2);
