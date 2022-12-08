@@ -2,12 +2,11 @@
 *.vcxproj.filters
 *.sln
 
+*.csv
+*.html
+
 *.vscode/
 build/
-
-*.html
-*.csv
-*.js
 
 # Prerequisites
 *.d

@@ -6,17 +6,15 @@ project(barnes-hut)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-add_executable(${CMAKE_PROJECT_NAME} ${SRC_FILES})
+add_executable(${CMAKE_PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
-
 
 set(glm_DIR "${PROJECT_SOURCE_DIR}/src/glm/cmake/glm") # if necessary
 find_package(glm REQUIRED)
 message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glm::glm)
+
+
 
 
 

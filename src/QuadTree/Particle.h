@@ -1,6 +1,5 @@
 #ifndef PARTICLE
 #define PARTICLE
-
 #include <sstream>
 #include <vector>
 
