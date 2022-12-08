@@ -3,7 +3,6 @@
 #include "Simulation/simulation.h"
 #include "Simulation/distributions.h"
 
-#include <numbers>
 #include <fstream>
 #include <fstream>
 
@@ -20,7 +19,7 @@ TEST(Simulation, Analytical100Rotations) {
 	particles.push_back(p3);
 
 	//Simulate 10 rotations around a massive object + one quarter rotation
-	const double simDuration = 10 * p1.p.z * (2 * std::numbers::pi) / p1.v.y;
+	const double simDuration = 10 * p1.p.z * (2 * PI) / p1.v.y;
 	const double THRESHOLD = 0.9;
 
 	simulate(particles, simDuration, 0.05);
@@ -47,7 +46,7 @@ TEST(Simulation, AnalyticalQuarterRotation) {
 
 	// Simulate 100 rotations around a massive object + one quarter rotation
 	// time = radius * pi/2 / (orbit velocity)
-	const double simDuration = p1.p.z * (std::numbers::pi / 2) / p1.v.y;
+	const double simDuration = p1.p.z * (PI / 2) / p1.v.y;
 	const double THRESHOLD = 0.8;
 
 	simulate(particles, simDuration, 0.05);

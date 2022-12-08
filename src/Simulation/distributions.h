@@ -3,9 +3,10 @@
 
 #include <random>
 #include <vector>
-#include <numbers>
 
 #include "simulation.h"
+
+const double PI = 3.141592653589793238462643383279502884197169;
 
 std::mt19937 mt{std::random_device{}()};
 std::uniform_real_distribution uniform_dist{-1.0, 1.0};
@@ -65,7 +66,7 @@ static std::vector<Particle> exponential_disk_distribution(int num_particles)
 
 	std::exponential_distribution radial_dist{1.0};
 	std::normal_distribution vertical_dist{0.0, 1.0};
-	std::uniform_real_distribution angle_dist{0.0, 2 * std::numbers::pi};
+	std::uniform_real_distribution angle_dist{0.0, 2 * PI};
 
 	for (size_t i = 0; i < num_particles; i++)
 	{
