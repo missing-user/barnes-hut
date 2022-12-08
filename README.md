@@ -1,3 +1,17 @@
+# Prerequisites 
+
+You need cmake, gtest and glm installed for this project to work. The following commands will install them. The last two lines are for building gtest on your machine.
+
+```sh
+apt-get install g++ cmake 
+apt-install libgtest-dev
+apt-get install libglm-dev
+
+cd /usr/src/gtest
+cmake CMakeLists.txt && make
+```
+
+
 # Usage
 
 To execute the project, run the following commands:
@@ -13,11 +27,11 @@ pip install -r requirements.txt
 python plot.py
 ```
 
-- Creates a folder called build, navigates into it and creates the makefile 
-- Compiles and links the project
-- Runs the executable. This produces a .csv file called output.csv as an output of the simulation
-- Installs all the python dependencies for visualizing the results from requirements.txt
-- Runs the python script for visualizing the results
+1. Creates a folder called build, navigates into it and creates the makefile 
+2. Compiles and links the project
+3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
+4. Installs all the python dependencies for visualizing the results from requirements.txt
+5. Runs the python script for visualizing the results
 
 # Project: Barnes Hut galaxy Simulation 
 
