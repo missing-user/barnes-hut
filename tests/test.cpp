@@ -77,6 +77,9 @@ TEST(BarnesHut, CompareTheta0) {
 	// With the multipole rejection parameter set to 0, the barnes hut algorithm 
 	// degenerates to a brute force solution. The results should be identical.
 
+	// Fix the random seed, so test cases are reproducible
+	mt=std::mt19937{4756};
+
 	std::vector<Particle> particles = universe1();
     std::vector<Particle> particlesTree{particles};
 
@@ -100,6 +103,9 @@ TEST(BarnesHut, CompareApproximation) {
 	// The time evolution of the particles should be similiar, but not identical to the brute force solution.
 	// Does not work at large timescales, because the system is chaotic in nature.
 
+	// Fix the random seed, so test cases are reproducible
+	mt=std::mt19937{4756};
+
 	std::vector<Particle> particles = universe1(); 
 	std::vector<Particle> particlesTree{ particles };
 
@@ -112,9 +118,9 @@ TEST(BarnesHut, CompareApproximation) {
 
 	for (int i = 0; i < particles.size(); i++) {
 		// The approximate values should not be identical to the real ones
-		//EXPECT_NE(particles[i].p.x, particlesTree[i].p.x);
-		//EXPECT_NE(particles[i].p.y, particlesTree[i].p.y);
-		//EXPECT_NE(particles[i].p.z, particlesTree[i].p.z);
+		EXPECT_NE(particles[i].p.x, particlesTree[i].p.x);
+		EXPECT_NE(particles[i].p.y, particlesTree[i].p.y);
+		EXPECT_NE(particles[i].p.z, particlesTree[i].p.z);
 
 		// But they should be pretty close
 		EXPECT_NEAR(particles[i].p.x, particlesTree[i].p.x, 1);

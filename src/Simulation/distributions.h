@@ -207,8 +207,8 @@ static std::vector<Particle> universe3()
 
 static std::vector<Particle> universe1()
 {
-	// A disk shaped universe with just 24 particles, useful for simple testing
-	auto initial_dist = exponential_disk_distribution(24);
+	// A disk shaped universe with just 32 particles, useful for simple testing
+	auto initial_dist = exponential_disk_distribution(32);
 	const myfloat diameter = 100;
 
 	scale(initial_dist, diameter, diameter, 10); // flat disk

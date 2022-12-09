@@ -4,7 +4,7 @@ You need cmake, gtest and glm installed for this project to work. The following 
 
 ```sh
 apt-get install g++ cmake 
-apt-install libgtest-dev
+apt-get install libgtest-dev
 apt-get install libglm-dev
 
 cd /usr/src/gtest
