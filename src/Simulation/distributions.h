@@ -183,11 +183,11 @@ static std::vector<Particle> &add_radial_velocity(std::vector<Particle> &particl
 
 static std::vector<Particle> universe2()
 {
-	auto initial_dist = sphere_distribution(50);
+	auto initial_dist = sphere_distribution(100);
 	scale(initial_dist, 100, 100, 100);
-	set_mass(initial_dist, 100);
+	set_mass(initial_dist, 10);
 
-	add_angular_momentum(initial_dist, myvec3(0, .25, 0));
+	add_angular_momentum(initial_dist, myvec3(0, 1, 0)/10.0);
 	initial_dist.push_back(Particle{{0, 0, 0}, {0, 0, 0}, 1e4});
 	// add_random_velocity(initial_dist, 10, 10, 10);
 	return initial_dist;
