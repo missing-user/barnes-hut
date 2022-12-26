@@ -11,6 +11,7 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
+Visualizing the results requires python3 and the following packages: plotly, numpy, pandas. Pandas and numpy are used for reading and transforming the data into a format that can be visualized. Plotly is used for creating the interactive 3D plot.
 
 # Usage
 
