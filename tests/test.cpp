@@ -1,31 +1,33 @@
 #include <gtest/gtest.h>
 #include "QuadTree/QuadTree.h"
-#include "Simulation/simulation.h"
-#include "Simulation/distributions.h"
+#include "Simulation/Simulation.h"
+#include "Simulation/Distributions.h"
 
 #include <fstream>
 #include <fstream>
+#include <numbers>
 
-TEST(Simulation, Analytical45Rotations) {
+TEST(Simulation, Analytical45Rotations)
+{
 	// Simulate 4.5 rotations of two massless particles around a massive object.
 	// After the simulation, both particles should have switched places.
 
 	// Stable orbit solution
 	// v = sqrt(G*m/r)
-	Particle p1 = {{0,0,100}, {0,10,0}, 0};
-	Particle p2 = {{0,0,0}, {0,0,0}, 10000};
-	Particle p3 = {{0,0,-100}, {0,-10,0}, 0};
+	Particle p1 = {{0, 0, 100}, {0, 10, 0}, 0};
+	Particle p2 = {{0, 0, 0}, {0, 0, 0}, 10000};
+	Particle p3 = {{0, 0, -100}, {0, -10, 0}, 0};
 
 	std::vector<Particle> particles;
 	particles.push_back(p1);
 	particles.push_back(p2);
 	particles.push_back(p3);
 
-	const double simDuration = 4.5 * p1.p.z * (2 * PI) / p1.v.y;
+	const double simDuration = 4.5 * p1.p.z * (2 * std::numbers::pi) / p1.v.y;
 
 	simulate(particles, simDuration, 0.0005);
 
-	// Particle 1 should return to its initial position 
+	// Particle 1 should return to its initial position
 	EXPECT_DOUBLE_EQ(particles[0].p.x, 0);
 	EXPECT_NEAR(particles[0].p.y, p3.p.y, 8);
 	EXPECT_NEAR(particles[0].p.z, p3.p.z, .7);
@@ -37,12 +39,12 @@ TEST(Simulation, Analytical45Rotations) {
 	EXPECT_DOUBLE_EQ(particles[1].p.z, 0);
 }
 
+TEST(Simulation, DifferentTimesteps)
+{
+	// When simulating a certain time duration, the results should be identical,
+	// regardless of the timestep size that was used.
 
-TEST(Simulation, DifferentTimesteps) {
-	// When simulating a certain time duration, the results should be identical, 
-	// regardless of the timestep size that was used. 
-
-	Particle p1 = {{0,0,0}, {1.99255722618,0.95797067952,0.4032403082}, 20};
+	Particle p1 = {{0, 0, 0}, {1.99255722618, 0.95797067952, 0.4032403082}, 20};
 	std::vector<Particle> particles(1);
 	auto simDuration = 1.52;
 
@@ -59,55 +61,59 @@ TEST(Simulation, DifferentTimesteps) {
 	}
 }
 
-TEST(FileWriting, IsValidCsv) {
+TEST(FileWriting, IsValidCsv)
+{
 	// Validate our output file format
 
-	Particle p1 = {{5,6,7},{1,2,3}, 20};
-	std::vector<Particle> particles{ p1 };
+	Particle p1 = {{5, 6, 7}, {1, 2, 3}, 20};
+	std::vector<Particle> particles{p1};
 	auto simDuration = 1;
 
 	std::stringstream buffer;
 	simulate(particles, simDuration, 0.5, &buffer);
 
 	std::string expectedFileContent = "px_0,py_0,pz_0,time\n5.5,7,8.5,0.5\n6,8,10,1\n";
-	EXPECT_EQ(buffer.str().compare(expectedFileContent), 0) << "The real file content was:\n" << buffer.str();
+	EXPECT_EQ(buffer.str().compare(expectedFileContent), 0) << "The real file content was:\n"
+																													<< buffer.str();
 }
 
-TEST(BarnesHut, CompareTheta0) {
-	// With the multipole rejection parameter set to 0, the barnes hut algorithm 
+TEST(BarnesHut, CompareTheta0)
+{
+	// With the multipole rejection parameter set to 0, the barnes hut algorithm
 	// degenerates to a brute force solution. The results should be identical.
 
 	// Fix the random seed, so test cases are reproducible
-	mt=std::mt19937{4756};
+	set_seed(4756);
 
 	std::vector<Particle> particles = universe1();
-    std::vector<Particle> particlesTree{particles};
+	std::vector<Particle> particlesTree{particles};
 
 	const auto simDuration = 10.0;
 	const auto timestep = 0.1;
-
 
 	simulate(particles, simDuration, timestep);
 
 	simulate(particlesTree, simDuration, timestep, nullptr, false, 0);
 
-	for (int i = 0; i<particles.size(); i++) {
+	for (int i = 0; i < particles.size(); i++)
+	{
 		EXPECT_FLOAT_EQ(particles[i].p.x, particlesTree[i].p.x);
 		EXPECT_FLOAT_EQ(particles[i].p.y, particlesTree[i].p.y);
-		EXPECT_FLOAT_EQ(particles[i].p.z, particlesTree[i].p.z);	
+		EXPECT_FLOAT_EQ(particles[i].p.z, particlesTree[i].p.z);
 	}
 }
 
-TEST(BarnesHut, CompareApproximation) {
-	// Check if Barnes Hut approximation is working correctly. 
+TEST(BarnesHut, CompareApproximation)
+{
+	// Check if Barnes Hut approximation is working correctly.
 	// The time evolution of the particles should be similiar, but not identical to the brute force solution.
 	// Does not work at large timescales, because the system is chaotic in nature.
 
 	// Fix the random seed, so test cases are reproducible
-	mt=std::mt19937{4756};
+	set_seed(4756);
 
-	std::vector<Particle> particles = universe1(); 
-	std::vector<Particle> particlesTree{ particles };
+	std::vector<Particle> particles = universe1();
+	std::vector<Particle> particlesTree{particles};
 
 	const auto simDuration = 1.0;
 	const auto timestep = 0.1;
@@ -116,7 +122,8 @@ TEST(BarnesHut, CompareApproximation) {
 
 	simulate(particlesTree, simDuration, timestep, nullptr, false, 1.5);
 
-	for (int i = 0; i < particles.size(); i++) {
+	for (int i = 0; i < particles.size(); i++)
+	{
 		// The approximate values should not be identical to the real ones
 		EXPECT_NE(particles[i].p.x, particlesTree[i].p.x);
 		EXPECT_NE(particles[i].p.y, particlesTree[i].p.y);

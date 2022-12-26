@@ -20,7 +20,7 @@ To execute the project, run the following commands:
 mkdir build && cd build && cmake ..
 
 make barnes-hut
-./barnes-hut
+./src/barnes-hut
 
 cd ..
 pip install -r requirements.txt 

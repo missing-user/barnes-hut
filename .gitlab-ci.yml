@@ -32,7 +32,7 @@ test-job:
   script:
     - cd $CI_PROJECT_DIR
     - cd build
-    - ./tests  --gtest_output=xml:xunit.xml
+    - ./tests/tests  --gtest_output=xml:xunit.xml
   artifacts:
     when: always
     paths:

@@ -4,13 +4,13 @@
 #include <fstream>
 
 #include "QuadTree/Particle.h"
-#include "Simulation/simulation.h"
-#include "Simulation/distributions.h"
+#include "Simulation/Simulation.h"
+#include "Simulation/Distributions.h"
 
 int main()
 {
     std::vector<Particle> particles = universe2(); // stable_orbit(); // universe1();
-    
+
     // Create a CSV file for the particles and generate the header
     std::ofstream csvfile;
     csvfile.open("output.csv");
