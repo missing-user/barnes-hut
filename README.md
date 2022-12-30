@@ -46,7 +46,7 @@ python plot.py
 2. Compiles and links the project
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
-5. Runs the python script for visualizing the results
+5. Runs the python script for visualizing the behaviour of the system of particles over a set period of time in 3D space with dynamic POV
 
 # Project: Barnes Hut galaxy Simulation 
 
