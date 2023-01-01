@@ -1,4 +1,5 @@
 #include "Simulation.h"
+#include <string>
 
 myvec3 getTotalAcceleration(myvec3 position,
                             const std::vector<Particle> &particles) {

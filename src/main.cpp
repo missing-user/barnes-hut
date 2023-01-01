@@ -3,9 +3,10 @@
 #include <iostream>
 #include <vector>
 
-#include "QuadTree/Particle.h"
-#include "Simulation/Distributions.h"
-#include "Simulation/Simulation.h"
+#include "Distributions.h"
+#include "Particle.h"
+#include "Simulation.h"
+
 
 int main() {
   std::vector<Particle> particles =

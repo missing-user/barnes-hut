@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.h" "*.cpp")
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.cpp")
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
 add_subdirectory(QuadTree)

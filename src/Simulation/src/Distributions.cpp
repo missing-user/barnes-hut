@@ -1,4 +1,6 @@
 #include "Distributions.h"
+#include <numbers>
+#include <random>
 
 std::mt19937 mt{std::random_device{}()};
 std::uniform_real_distribution uniform_dist{-1.0, 1.0};
@@ -105,8 +107,8 @@ std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
 }
 
 std::vector<Particle> &add_random_velocity(std::vector<Particle> &particles,
-                                           myfloat x, myfloat y, myfloat z) {
-  myvec3 scale{x, y, z};
+                                           myvec3 scale) {
+
   for (auto &p : particles) {
     myfloat x, y, z;
     x = normal_dist(mt);
@@ -165,7 +167,6 @@ std::vector<Particle> universe2() {
 
   add_angular_momentum(initial_dist, myvec3(0, 1, 0) / 10.0);
   initial_dist.push_back(Particle{{0, 0, 0}, {0, 0, 0}, 1e4});
-  // add_random_velocity(initial_dist, 10, 10, 10);
   return initial_dist;
 }
 
@@ -176,7 +177,6 @@ std::vector<Particle> universe3() {
 
   // add_angular_momentum(initial_dist, pvec3(0, .25, 0));
   // initial_dist.push_back(particle{ 1e4, {0,0,0}, {0,0,0} });
-  // add_random_velocity(initial_dist, 10, 10, 10);
   return initial_dist;
 }
 
@@ -205,14 +205,15 @@ std::vector<Particle> universe4() {
   return initial_dist;
 }
 
-std::vector<Particle> bigbang() {
-  auto initial_dist = sphere_distribution(1000);
+std::vector<Particle> bigbang(int n) {
+  auto initial_dist = sphere_distribution(n);
 
-  const myfloat diameter = 0.1;
+  const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
-  add_radial_velocity(initial_dist, 1e3);
+  add_radial_velocity(initial_dist, -10);
+  add_random_velocity(initial_dist, {0.1, 0.1, 0.1});
 
-  set_mass(initial_dist, 50);
+  set_mass(initial_dist, 30);
 
   return initial_dist;
 }

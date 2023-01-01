@@ -1,5 +1,9 @@
 #include "Tree.h"
 
+#include <iostream>
+#include <sstream>
+
+int Tree::maxPointsPerNode = 32;
 Tree::Tree(const Cuboid &cuboidIn) : cuboid(cuboidIn) {}
 
 void Tree::createBranches() // populates the branches array of this object with

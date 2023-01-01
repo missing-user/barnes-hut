@@ -1,12 +1,10 @@
-#include "QuadTree/QuadTree.h"
-#include "Simulation/Distributions.h"
-#include "Simulation/Simulation.h"
+#include "Distributions.h"
+#include "QuadTree.h"
+#include "Simulation.h"
 #include <gtest/gtest.h>
-
 
 #include <fstream>
 #include <numbers>
-
 
 TEST(Simulation, Analytical45Rotations) {
   // Simulate 4.5 rotations of two massless particles around a massive object.
