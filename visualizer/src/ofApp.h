@@ -3,12 +3,30 @@
 #include "Particle.h"
 #include "ofMain.h"
 #include "ofxGui.h"
+#include <string>
 #include <vector>
 
 class ofApp : public ofBaseApp {
 
 private:
-  void initializeParticles(int num_particles);
+  void initializeParticles(int num_particles, bool type);
+
+  ofEasyCam cam;
+  ofMesh mesh;
+  ofxPanel gui;
+
+  // Adjustable parameters
+  ofParameter<double> timestep_slider;
+  ofParameter<int> max_per_node_slider;
+  ofParameter<int> num_particles_slider;
+  ofParameter<myfloat> theta_slider;
+  ofParameter<myfloat> mass_slider;
+  ofParameter<bool> brute_force_toggle;
+  // text output
+  ofParameter<std::string> text_output;
+
+  std::vector<Particle> particles;
+  myfloat max_mass;
 
 public:
   void setup();
@@ -26,19 +44,4 @@ public:
   void windowResized(int w, int h);
   void dragEvent(ofDragInfo dragInfo);
   void gotMessage(ofMessage msg);
-
-  ofEasyCam cam;
-  ofMesh mesh;
-  ofxPanel gui;
-
-  // Adjustable parameters
-  ofxFloatSlider timestep_slider;
-  ofxIntSlider max_per_node_slider;
-  ofxIntSlider num_particles_slider;
-  ofxFloatSlider theta_slider;
-  ofxFloatSlider mass_slider;
-  ofxToggle brute_force_toggle;
-
-  std::vector<Particle> particles;
-  myfloat max_mass;
 };

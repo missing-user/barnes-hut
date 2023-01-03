@@ -1,4 +1,5 @@
 #include "Simulation.h"
+#include <chrono>
 #include <string>
 
 myvec3 getTotalAcceleration(myvec3 position,
@@ -51,14 +52,24 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
 
   // Construct the tree by first computing the bouning box of all particles and
   // then inserting them one by one
+
   auto [bmin, bmax] = bounding_box(particles);
+
   Cuboid base(bmin, bmax);
+  auto end = std::chrono::steady_clock::now();
+
   Tree mytree(base);
 
+  auto begin = std::chrono::steady_clock::now();
   for (const Particle &p : particles) {
     mytree.insertPnt(p);
   }
+  end = std::chrono::steady_clock::now();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+  std::cout << "construct tree: " << elapsed.count() << " ms" << std::endl;
 
+  begin = std::chrono::steady_clock::now();
   // Now that we have constructed the tree, use it to efficiently compute the
   // accelerations
   for (size_t i = 0; i < particles.size(); i++) {
@@ -70,6 +81,9 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
     p_next.v = p.v + acc * dt;
     p_next.p = p.p + p.v * dt;
   }
+  end = std::chrono::steady_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+  std::cout << "calc forces: " << elapsed.count() << " ms" << std::endl;
 
   return particles_next;
 }

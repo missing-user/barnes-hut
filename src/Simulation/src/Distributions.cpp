@@ -192,16 +192,16 @@ std::vector<Particle> universe1() {
   return initial_dist;
 }
 
-std::vector<Particle> universe4() {
+std::vector<Particle> universe4(int n) {
   // A disk shaped universe with just 5k particles, will be used for performance
   // eval eventually
-  auto initial_dist = exponential_disk_distribution(5000);
+  auto initial_dist = exponential_disk_distribution(n);
   const myfloat diameter = 100;
 
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
-  set_mass(initial_dist, 10);
+  set_mass(initial_dist, 50);
 
-  add_angular_momentum(initial_dist, myvec3(0, .0, .1) / diameter);
+  add_angular_momentum(initial_dist, myvec3(0, .0, 10) / diameter);
   return initial_dist;
 }
 
@@ -210,7 +210,7 @@ std::vector<Particle> bigbang(int n) {
 
   const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
-  add_radial_velocity(initial_dist, -10);
+  add_radial_velocity(initial_dist, -2);
   add_random_velocity(initial_dist, {0.1, 0.1, 0.1});
 
   set_mass(initial_dist, 30);

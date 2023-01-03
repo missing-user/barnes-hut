@@ -16,7 +16,7 @@ std::vector<Particle> universe3();
 
 std::vector<Particle> universe1();
 
-std::vector<Particle> universe4();
+std::vector<Particle> universe4(int);
 
 std::vector<Particle> bigbang(int);
 
