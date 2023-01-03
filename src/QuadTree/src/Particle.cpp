@@ -3,13 +3,11 @@
 // class to hold the position and velocity of a particle
 
 // A function to calculate the bounding box of a group of particles
-std::pair<myvec3, myvec3> bounding_box(const std::vector<Particle> &particles)
-{
+std::pair<myvec3, myvec3> bounding_box(const std::vector<Particle> &particles) {
   myvec3 bmin = particles.at(0).p;
   myvec3 bmax = particles.at(0).p;
 
-  for (const auto &p : particles)
-  {
+  for (const auto &p : particles) {
     bmin = glm::min(bmin, p.p);
     bmax = glm::max(bmax, p.p);
   }
@@ -21,12 +19,16 @@ std::pair<myvec3, myvec3> bounding_box(const std::vector<Particle> &particles)
   return {bmin, bmax};
 }
 
-Particle operator+(const Particle &P1, const Particle &P2)
-{ // Overload the + operator to add two particles position together
+Particle operator+(const Particle &P1,
+                   const Particle &P2) { // Overload the + operator to add two
+                                         // particles position together
   // This is used to calculate the center of mass of a group of particles
   // The velocity of the center of mass is not calculated
   Particle p;
-  p.p = P1.p + P2.p;
   p.m = P1.m + P2.m;
+  if (p.m == 0)
+    return p; // If the mass is zero, skip division, return default particle
+
+  p.p = (P1.p * P1.m + P2.p * P2.m) / (p.m);
   return p;
 }

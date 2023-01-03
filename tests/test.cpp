@@ -114,11 +114,10 @@ TEST(BarnesHut, CompareApproximation) {
   std::vector<Particle> particles = universe1();
   std::vector<Particle> particlesTree{particles};
 
-  const auto simDuration = 1.0;
+  const auto simDuration = 2.0;
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-
   simulate(particlesTree, simDuration, timestep, nullptr, false, 1.5);
 
   for (int i = 0; i < particles.size(); i++) {
@@ -128,8 +127,8 @@ TEST(BarnesHut, CompareApproximation) {
     EXPECT_NE(particles[i].p.z, particlesTree[i].p.z);
 
     // But they should be pretty close
-    EXPECT_NEAR(particles[i].p.x, particlesTree[i].p.x, 1);
-    EXPECT_NEAR(particles[i].p.y, particlesTree[i].p.y, 1);
-    EXPECT_NEAR(particles[i].p.z, particlesTree[i].p.z, 1);
+    EXPECT_NEAR(particles[i].p.x, particlesTree[i].p.x, .25);
+    EXPECT_NEAR(particles[i].p.y, particlesTree[i].p.y, .2);
+    EXPECT_NEAR(particles[i].p.z, particlesTree[i].p.z, .1);
   }
 }

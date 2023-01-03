@@ -53,18 +53,11 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   // Construct the tree by first computing the bouning box of all particles and
   // then inserting them one by one
 
-  auto [bmin, bmax] = bounding_box(particles);
-
-  Cuboid base(bmin, bmax);
-  auto end = std::chrono::steady_clock::now();
-
-  Tree mytree(base);
-
   auto begin = std::chrono::steady_clock::now();
-  for (const Particle &p : particles) {
-    mytree.insertPnt(p);
-  }
-  end = std::chrono::steady_clock::now();
+
+  Tree mytree(particles);
+
+  auto end = std::chrono::steady_clock::now();
   auto elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
   std::cout << "construct tree: " << elapsed.count() << " ms" << std::endl;
