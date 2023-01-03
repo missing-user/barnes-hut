@@ -1,9 +1,11 @@
 #ifndef CUBOID
 #define CUBOID
-
+// This class is used to store the coords and boundaries of a cuboid in 3D space
+// For this class to work, the cuboid's edges must be parallel to the x, y, and z
 #include "Particle.h"
 
-class Cuboid {
+class Cuboid
+{
 public:
   const myvec3 min_extent; // minimum corner point
   const myvec3 max_extent; // maximum corner point

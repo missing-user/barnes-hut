@@ -1,3 +1,17 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitLab Release](https://img.shields.io/badge/Release-Sprint%201-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/version1)
+# Barnes-Hut Simulation
+This project is a implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
+
+The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells, and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each individual object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
+
+This project was made for the Advanced Programming course at the Technical University of Munich.
+Authors: Phillip Jurašić & Islam Elgamal
+Supervision: Gerasimos Chourdakis
+
+References:
+Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algorithm. Nature, 324(6096), 446-449.
+
 # Prerequisites 
 
 You need cmake, gtest and glm installed for this project to work. The following commands will install them. The last two lines are for building gtest on your machine.
@@ -32,7 +46,7 @@ python plot.py
 2. Compiles and links the project
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
-5. Runs the python script for visualizing the results
+5. Runs the python script for visualizing the behaviour of the system of particles over a set period of time in 3D space with dynamic POV
 
 # Project: Barnes Hut galaxy Simulation 
 
