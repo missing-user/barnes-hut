@@ -9,19 +9,21 @@
 #include "Particle.h"
 
 class Tree {
-  static int maxPointsPerNode;
+  static int maxDepth;
 
 private:
   Particle COM;
-  bool less_than_theta(const Particle &particle, double theta) const;
+  bool less_than_theta(const myvec3 pos, double theta) const;
   void createBranches();
   std::vector<Tree> branches = {};
   bool leaf = true;
+  const int level;
+  const Cuboid cuboid;
+  const myfloat
+      dimension; // length of the cuboid, must be declared after cuboid!!!
 
 public:
   std::vector<std::shared_ptr<Particle>> particles = {};
-  const int level;
-  const Cuboid cuboid;
 
   Tree(const Cuboid &cuboidIn);
   Tree(const Cuboid &cuboidIn, int levelIn);
@@ -35,8 +37,6 @@ public:
 
   std::string print() const;
 
-  static void setMaxPointsPerNode(int maxPointsPerNodeIn) {
-    maxPointsPerNode = maxPointsPerNodeIn;
-  };
+  static void setMaxDepth(int maxDepthIn) { maxDepth = maxDepthIn; };
 };
 #endif

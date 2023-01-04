@@ -51,8 +51,8 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
+  Tree::setMaxDepth(max_per_node_slider);
 
-  Tree::setMaxPointsPerNode(max_per_node_slider);
   set_mass(particles, mass_slider);
   auto begin = std::chrono::steady_clock::now();
 
@@ -70,12 +70,14 @@ void ofApp::update() {
   // loop through all mesh vertecies and update their positions
   for (int i = 0; i < mesh.getNumVertices(); i++) {
     mesh.setVertex(i, particles[i].p);
+    double len = std::max(10.0, std::min(glm::length(particles[i].v), 255.0));
+    mesh.setColor(i, ofColor(255, len, len));
   }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-  ofBackgroundGradient(ofColor::gray, ofColor::black, OF_GRADIENT_CIRCULAR);
+  ofBackgroundGradient(ofColor::black, ofColor::black, OF_GRADIENT_CIRCULAR);
   gui.draw();
 
   cam.begin();

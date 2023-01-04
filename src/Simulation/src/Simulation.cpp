@@ -67,12 +67,11 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   // accelerations
   for (size_t i = 0; i < particles.size(); i++) {
     const auto &p = particles[i];
-    auto &p_next = particles_next[i];
 
     myvec3 acc = mytree.computeAcc(p, theta);
 
-    p_next.v = p.v + acc * dt;
-    p_next.p = p.p + p.v * dt;
+    particles_next[i].v = p.v + acc * dt;
+    particles_next[i].p = p.p + p.v * dt;
   }
   end = std::chrono::steady_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);

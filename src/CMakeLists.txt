@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.2)
 file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.cpp")
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
-add_subdirectory(QuadTree)
+add_subdirectory(QuadTree) #QuadTreeIndices
 add_subdirectory(Simulation)
 
 set(glm_DIR "${PROJECT_SOURCE_DIR}/src/glm/cmake/glm") # if necessary

@@ -3,14 +3,15 @@
 #include <iostream>
 #include <sstream>
 
-int Tree::maxPointsPerNode = 1;
+int Tree::maxDepth = 16;
 
-Tree::Tree(const Cuboid &cuboidIn) : cuboid(cuboidIn), level(0) {}
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
-    : cuboid(cuboidIn), level(levelIn) {}
+    : cuboid(cuboidIn), level(levelIn),
+      dimension(glm::length2(cuboid.max_extent - cuboid.min_extent)) {}
 
 Tree::Tree(const std::vector<Particle> &particles)
-    : cuboid(bounding_box(particles)), level(0) {
+    : cuboid(bounding_box(particles)), level(0),
+      dimension(glm::length2(cuboid.max_extent - cuboid.min_extent)) {
   for (const auto &p : particles) {
     insertPnt(p);
   }
@@ -35,10 +36,7 @@ void Tree::insertPnt(const Particle &p) // adds a point to the tree structure.
   if (!cuboid.contains(p)) // quits if point is outside of this node's domain
     return;
   particles.push_back(std::make_shared<Particle>(p));
-  if (particles.size() >
-      maxPointsPerNode) // if maximum number of points in a node is exceeded,
-                        // add this point to one of the branches
-  {
+  if (particles.size() > 1 && level < maxDepth) {
     if (leaf) {
       leaf = false;
       createBranches(); // If there aren't any branches, create them.
@@ -58,6 +56,7 @@ void Tree::insertPnt(const Particle &p) // adds a point to the tree structure.
 Particle Tree::computeCOM() // find the center of mass for this node and save it
                             // as the new COM
 {
+  COM = {{0, 0, 0}, {0, 0, 0}, 0}; // reset COM to zero
   if (leaf) // if this node doesn't have branches, calculate the center of mass
             // of all contained particles
   {
@@ -82,7 +81,7 @@ myvec3 Tree::computeAcc(const Particle &particle, myfloat theta)
   myvec3 acc{0, 0, 0};
 
   if (leaf) {
-    for (const auto sp : particles) {
+    for (const auto &sp : particles) {
       if (sp->p != particle.p) // if the queried particle isn't the input
                                // particle (found by comparing positions)
       {
@@ -97,7 +96,7 @@ myvec3 Tree::computeAcc(const Particle &particle, myfloat theta)
       }
     }
   } else {
-    if (less_than_theta(particle, theta)) { // Barnes-Hut threshold
+    if (less_than_theta(particle.p, theta)) { // Barnes-Hut threshold
       // if the threshold is met, approximate the acceleration using the center
       // of mass instead of summing the individual particle contributions
       auto diff = COM.p - particle.p;
@@ -118,20 +117,20 @@ myvec3 Tree::computeAcc(const Particle &particle, myfloat theta)
   return acc;
 }
 
-bool Tree::less_than_theta(const Particle &particle, double theta) const {
+bool Tree::less_than_theta(const myvec3 pos, double theta) const {
   // returns whether particle meets the threshold criteria for approximating the
   // acceleration due to this node
-  myfloat distance = glm::length(particle.p - COM.p);
+  myfloat distance = glm::length2(pos - COM.p);
   // TODO: this should not be the length of the cuboid
-  return glm::length(cuboid.max_extent - cuboid.min_extent) / distance < theta;
+  return dimension < theta * distance;
 }
 
 std::string Tree::print() const {
   std::ostringstream str;
   str << cuboid.print() << " level: " << level
       << " nPoints:" << particles.size() << " Center of Mass: " << COM
-      << ", leaf:" << leaf << std::endl;
-  for (const Tree b : branches) {
+      << ", leaf:" << leaf << "\n";
+  for (const Tree &b : branches) {
     str << b.print();
   }
   return str.str();
