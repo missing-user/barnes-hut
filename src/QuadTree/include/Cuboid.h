@@ -7,13 +7,15 @@
 #include <utility>
 
 class Cuboid {
-public:
   const myvec3 min_extent; // minimum corner point
   const myvec3 max_extent; // maximum corner point
-
+public:
   Cuboid(myvec3 min, myvec3 max);
   Cuboid(std::pair<myvec3, myvec3> min_max);
-
+  myvec3 dimension() const;
+  inline myvec3 center() const {
+    return (min_extent + max_extent) / static_cast<myfloat>(2);
+  }
   bool contains(const Particle &P)
       const; // returns whether a particle is insiside cuboid boundary
   std::array<Cuboid, 8>

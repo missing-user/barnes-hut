@@ -165,18 +165,8 @@ std::vector<Particle> universe2() {
   scale(initial_dist, 100, 100, 100);
   set_mass(initial_dist, 10);
 
-  add_angular_momentum(initial_dist, myvec3(0, 1, 0) / 10.0);
+  add_angular_momentum(initial_dist, myvec3(0, .1, 0));
   initial_dist.push_back(Particle{{0, 0, 0}, {0, 0, 0}, 1e4});
-  return initial_dist;
-}
-
-std::vector<Particle> universe3() {
-  auto initial_dist = normal_distribution(100);
-  scale(initial_dist, 80, 80, 80);
-  set_mass(initial_dist, 100);
-
-  // add_angular_momentum(initial_dist, pvec3(0, .25, 0));
-  // initial_dist.push_back(particle{ 1e4, {0,0,0}, {0,0,0} });
   return initial_dist;
 }
 
@@ -210,8 +200,8 @@ std::vector<Particle> bigbang(int n) {
 
   const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
-  add_radial_velocity(initial_dist, -2);
-  add_random_velocity(initial_dist, {0.1, 0.1, 0.1});
+  add_radial_velocity(initial_dist, 100);
+  // add_random_velocity(initial_dist, {0.1, 0.1, 0.1});
 
   set_mass(initial_dist, 30);
 
@@ -226,4 +216,32 @@ std::vector<Particle> stable_orbit() {
   std::vector<Particle> particles{p1, p2, p3};
 
   return particles;
+}
+
+std::vector<Particle> collision(int n) {
+  auto first_half = universe4(n / 2);
+  auto second_half = universe4(n / 2);
+
+  translate(second_half, 0, 0, 200);
+  first_half.insert(first_half.end(), second_half.begin(), second_half.end());
+  return first_half;
+}
+
+std::vector<Particle> make_universe(Distribution dist, int num_particles) {
+  switch (dist) {
+  case Distribution::UNIVERSE1:
+    return universe1();
+  case Distribution::UNIVERSE2:
+    return universe2();
+  case Distribution::COLLISION:
+    return collision(num_particles);
+  case Distribution::UNIVERSE4:
+    return universe4(num_particles);
+  case Distribution::BIGBANG:
+    return bigbang(num_particles);
+  case Distribution::STABLE_ORBIT:
+    return stable_orbit();
+  default:
+    return {};
+  }
 }

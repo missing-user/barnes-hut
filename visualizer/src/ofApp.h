@@ -9,7 +9,7 @@
 class ofApp : public ofBaseApp {
 
 private:
-  void initializeParticles(int num_particles, bool type);
+  void initializeParticles();
 
   ofEasyCam cam;
   ofMesh mesh;

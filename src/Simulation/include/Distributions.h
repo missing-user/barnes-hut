@@ -5,21 +5,22 @@
 
 #include "Simulation.h"
 
+enum class Distribution {
+  UNIVERSE1,
+  UNIVERSE2,
+  UNIVERSE3,
+  UNIVERSE4,
+  COLLISION,
+  BIGBANG,
+  STABLE_ORBIT
+};
+
 void set_seed(unsigned int seed);
 
 std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m);
 
 /*******************************************************************/
-std::vector<Particle> universe2();
 
-std::vector<Particle> universe3();
-
-std::vector<Particle> universe1();
-
-std::vector<Particle> universe4(int);
-
-std::vector<Particle> bigbang(int);
-
-std::vector<Particle> stable_orbit();
+std::vector<Particle> make_universe(Distribution dist, int num_particles);
 
 #endif

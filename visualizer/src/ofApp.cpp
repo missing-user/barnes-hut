@@ -3,12 +3,8 @@
 #include "Simulation.h"
 #include <chrono>
 
-void ofApp::initializeParticles(int num_particles = 1000, bool type = false) {
+void ofApp::initializeParticles() {
   max_mass = 0;
-  if (type)
-    particles = universe4(num_particles);
-  else
-    particles = bigbang(num_particles);
 
   for (const auto &p : particles) {
     if (p.m > max_mass) {
@@ -19,8 +15,6 @@ void ofApp::initializeParticles(int num_particles = 1000, bool type = false) {
   for (const auto &p : particles) {
     mesh.addVertex(p.p);
     auto cur = ofColor::white;
-    cur = ofColor(ofRandom(128, 255), ofRandom(128, 255), ofRandom(128, 255));
-
     cur.b = (p.m / max_mass) * 255;
     mesh.addColor(cur);
   }
@@ -28,16 +22,16 @@ void ofApp::initializeParticles(int num_particles = 1000, bool type = false) {
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-
-  ofSetVerticalSync(true);
+  // ofSetVerticalSync(true);
 
   // we're going to load a ton of points into an ofMesh
   mesh.setMode(OF_PRIMITIVE_POINTS);
 
+  particles = make_universe(Distribution::BIGBANG, num_particles_slider);
   initializeParticles();
 
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
-  glPointSize(3);            // make the points bigger
+  glPointSize(2);            // make the points bigger
 
   gui.setup();
   gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
@@ -90,11 +84,18 @@ void ofApp::draw() {
 void ofApp::keyPressed(int key) {
   if (key == 'r') {
     mesh.clear();
-    initializeParticles(num_particles_slider);
+    particles = make_universe(Distribution::BIGBANG, num_particles_slider);
+    initializeParticles();
   }
   if (key == 't') {
     mesh.clear();
-    initializeParticles(num_particles_slider, true);
+    particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
+    initializeParticles();
+  }
+  if (key == 'e') {
+    mesh.clear();
+    particles = make_universe(Distribution::COLLISION, num_particles_slider);
+    initializeParticles();
   }
 }
 

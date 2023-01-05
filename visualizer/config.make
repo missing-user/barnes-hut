@@ -78,7 +78,7 @@ PROJECT_EXTERNAL_SOURCE_PATHS += /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src
 # incorporated directly into the final executable application binary.
 ################################################################################
 PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/QuadTree/libQuadTree.a ../build/src/Simulation/libSimulation.a
-
+PROJECT_LDFLAGS += -fopenmp
 ################################################################################
 # PROJECT DEFINES
 #   Create a space-delimited list of DEFINES. The list will be converted into 
@@ -105,7 +105,7 @@ PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/QuadTree/libQuadTree.a ../build/s
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_CFLAGS = 
+PROJECT_CFLAGS += -fopenmp
 
 ################################################################################
 # PROJECT OPTIMIZATION CFLAGS
@@ -128,7 +128,7 @@ PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/QuadTree/libQuadTree.a ../build/s
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_OPTIMIZATION_CFLAGS_RELEASE = 
+# PROJECT_OPTIMIZATION_CFLAGS_RELEASE =
 # PROJECT_OPTIMIZATION_CFLAGS_DEBUG = 
 
 ################################################################################

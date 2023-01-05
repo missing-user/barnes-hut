@@ -7,11 +7,11 @@ int Tree::maxDepth = 16;
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
     : cuboid(cuboidIn), level(levelIn),
-      dimension(glm::length2(cuboid.max_extent - cuboid.min_extent)) {}
+      dimension(glm::length2(cuboid.dimension())) {}
 
 Tree::Tree(const std::vector<Particle> &particles)
     : cuboid(bounding_box(particles)), level(0),
-      dimension(glm::length2(cuboid.max_extent - cuboid.min_extent)) {
+      dimension(glm::length2(cuboid.dimension())) {
   for (const auto &p : particles) {
     insertPnt(p);
   }
@@ -29,26 +29,29 @@ void Tree::createBranches() // populates the branches array of this object with
   }
 }
 
+int Tree::selectOctant(const myvec3 pos) const {
+  int octant = 0;
+  octant += (pos.x > cuboid.center().x) << 0;
+  octant += (pos.y > cuboid.center().y) << 1;
+  octant += (pos.z > cuboid.center().z) << 2;
+  return octant;
+}
+
 void Tree::insertPnt(const Particle &p) // adds a point to the tree structure.
 // Depending on the location of the point, new branches could be generated to
 // accomodate the point
 {
-  if (!cuboid.contains(p)) // quits if point is outside of this node's domain
-    return;
   particles.push_back(std::make_shared<Particle>(p));
   if (particles.size() > 1 && level < maxDepth) {
     if (leaf) {
       leaf = false;
       createBranches(); // If there aren't any branches, create them.
-      for (Tree &b : branches) {
-        for (auto &pnt : particles) {
-          b.insertPnt(*pnt);
-        }
+
+      for (auto &pnt : particles) {
+        branches[selectOctant(pnt->p)].insertPnt(*pnt);
       }
     } else { // If there are branches, add the point to the appropriate branch
-      for (Tree &b : branches) {
-        b.insertPnt(p);
-      }
+      branches[selectOctant(p.p)].insertPnt(p);
     }
   }
 }

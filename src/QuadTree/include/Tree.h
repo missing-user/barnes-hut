@@ -15,6 +15,8 @@ private:
   Particle COM;
   bool less_than_theta(const myvec3 pos, double theta) const;
   void createBranches();
+
+  int selectOctant(const myvec3 pos) const;
   std::vector<Tree> branches = {};
   bool leaf = true;
   const int level;

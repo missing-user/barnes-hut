@@ -85,7 +85,7 @@ TEST(BarnesHut, CompareTheta0) {
   // Fix the random seed, so test cases are reproducible
   set_seed(4756);
 
-  std::vector<Particle> particles = universe1();
+  std::vector<Particle> particles = make_universe(Distribution::UNIVERSE1, 100);
   std::vector<Particle> particlesTree{particles};
 
   const auto simDuration = 10.0;
@@ -111,7 +111,7 @@ TEST(BarnesHut, CompareApproximation) {
   // Fix the random seed, so test cases are reproducible
   set_seed(4756);
 
-  std::vector<Particle> particles = universe1();
+  std::vector<Particle> particles = make_universe(Distribution::UNIVERSE1, 100);
   std::vector<Particle> particlesTree{particles};
 
   const auto simDuration = 2.0;
