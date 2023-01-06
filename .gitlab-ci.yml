@@ -1,0 +1,43 @@
+default:
+  tags:
+    - kubernetes
+  image:
+    ubuntu:20.04
+
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+
+build-job:
+  stage: build
+  artifacts:
+    untracked: true
+  before_script:
+    - apt-get update
+    - apt-get install -yqq g++ cmake libgtest-dev
+    - apt-get install -yqq python3-dev 
+    - apt-get install -yqq libglm-dev
+    - cd /usr/src/gtest
+    - cmake CMakeLists.txt && make
+    - cd $CI_PROJECT_DIR
+  script:
+    - mkdir build && cd build
+    - cmake ..
+    - echo "compiling with $(nproc) cores"
+    - make -j $(nproc)
+
+
+test-job:
+  stage: test 
+  script:
+    - cd $CI_PROJECT_DIR
+    - cd build
+    - ./tests/tests  --gtest_output=xml:xunit.xml
+  artifacts:
+    when: always
+    paths:
+      - build/xunit.xml
+    reports:
+      junit: build/xunit.xml
+
+
