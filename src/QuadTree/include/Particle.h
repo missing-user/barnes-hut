@@ -32,9 +32,5 @@ inline std::ostream &operator<<(std::ostream &out,
   return out;
 }
 
-std::pair<myvec3, myvec3> bounding_box(const std::vector<Particle> &);
-// std::pair<myvec3, myvec3> bounding_box(std::vector<Particle,
-// std::allocator<Particle>> const &);
-
 Particle operator+(const Particle &P1, const Particle &P2);
 #endif

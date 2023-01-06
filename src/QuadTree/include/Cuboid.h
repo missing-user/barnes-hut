@@ -7,21 +7,20 @@
 #include <utility>
 
 class Cuboid {
-  const myvec3 min_extent; // minimum corner point
-  const myvec3 max_extent; // maximum corner point
+
 public:
-  Cuboid(myvec3 min, myvec3 max);
-  Cuboid(std::pair<myvec3, myvec3> min_max);
-  myvec3 dimension() const;
-  inline myvec3 center() const {
-    return (min_extent + max_extent) / static_cast<myfloat>(2);
-  }
-  bool contains(const Particle &P)
-      const; // returns whether a particle is insiside cuboid boundary
+  const myvec3 center;     // center point
+  const myvec3 dimension;  // length of each dimension
+  const myfloat diagonal2; // length squared of the diagonal of the cuboid
+
+  Cuboid(myvec3 center, myvec3 dimension);
+
   std::array<Cuboid, 8>
   subdivide() const; // returns an array of 8 cuboids, splitting the parent
                      // cuboid in half along each dimension (i.e. Octant)
   std::string print() const;
 };
+
+Cuboid bounding_box(const std::vector<Particle> &);
 
 #endif

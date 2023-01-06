@@ -66,6 +66,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   // Now that we have constructed the tree, use it to efficiently compute the
   // accelerations
   for (size_t i = 0; i < particles.size(); i++) {
+    // TODO: iterate in a different order to avoid cache misses
     const auto &p = particles[i];
 
     myvec3 acc = mytree.computeAcc(p, theta);

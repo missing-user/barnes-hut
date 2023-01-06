@@ -27,20 +27,20 @@ void ofApp::setup() {
   // we're going to load a ton of points into an ofMesh
   mesh.setMode(OF_PRIMITIVE_POINTS);
 
-  particles = make_universe(Distribution::BIGBANG, num_particles_slider);
-  initializeParticles();
-
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
 
   gui.setup();
   gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
   gui.add(max_per_node_slider.set("max_per_node", 32, 1, 128));
-  gui.add(num_particles_slider.set("num_particles", 1000, 100, 10000));
+  gui.add(num_particles_slider.set("num_particles", 1000, 100, 1e5));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(brute_force_toggle.set("brute force", false));
   gui.add(text_output.set("frame time", "text"));
+
+  particles = make_universe(Distribution::BIGBANG, num_particles_slider);
+  initializeParticles();
 }
 
 //--------------------------------------------------------------

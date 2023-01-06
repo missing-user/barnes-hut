@@ -9,7 +9,8 @@
 
 int main() {
   set_seed(42);
-  std::vector<Particle> particles = universe4(5000);
+  std::vector<Particle> particles =
+      make_universe(Distribution::UNIVERSE4, 5000);
 
   // Create a CSV file for the particles and generate the header
   std::ofstream csvfile;

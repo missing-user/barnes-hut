@@ -10,6 +10,7 @@
 
 class Tree {
   static int maxDepth;
+  static int maxParticles;
 
 private:
   Particle COM;
@@ -17,15 +18,13 @@ private:
   void createBranches();
 
   int selectOctant(const myvec3 pos) const;
-  std::vector<Tree> branches = {};
+  std::vector<Tree> branches;
   bool leaf = true;
   const int level;
   const Cuboid cuboid;
-  const myfloat
-      dimension; // length of the cuboid, must be declared after cuboid!!!
 
 public:
-  std::vector<std::shared_ptr<Particle>> particles = {};
+  std::vector<std::shared_ptr<Particle>> particles;
 
   Tree(const Cuboid &cuboidIn);
   Tree(const Cuboid &cuboidIn, int levelIn);

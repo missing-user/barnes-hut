@@ -4,14 +4,14 @@
 #include <sstream>
 
 int Tree::maxDepth = 16;
+int Tree::maxParticles = 1;
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
-    : cuboid(cuboidIn), level(levelIn),
-      dimension(glm::length2(cuboid.dimension())) {}
+    : cuboid(cuboidIn), level(levelIn) {}
 
 Tree::Tree(const std::vector<Particle> &particles)
-    : cuboid(bounding_box(particles)), level(0),
-      dimension(glm::length2(cuboid.dimension())) {
+    : cuboid(bounding_box(particles)), level(0) {
+
   for (const auto &p : particles) {
     insertPnt(p);
   }
@@ -31,9 +31,9 @@ void Tree::createBranches() // populates the branches array of this object with
 
 int Tree::selectOctant(const myvec3 pos) const {
   int octant = 0;
-  octant += (pos.x > cuboid.center().x) << 0;
-  octant += (pos.y > cuboid.center().y) << 1;
-  octant += (pos.z > cuboid.center().z) << 2;
+  octant += (pos.x > cuboid.center.x) << 0;
+  octant += (pos.y > cuboid.center.y) << 1;
+  octant += (pos.z > cuboid.center.z) << 2;
   return octant;
 }
 
@@ -42,7 +42,7 @@ void Tree::insertPnt(const Particle &p) // adds a point to the tree structure.
 // accomodate the point
 {
   particles.push_back(std::make_shared<Particle>(p));
-  if (particles.size() > 1 && level < maxDepth) {
+  if (particles.size() > maxParticles && level < maxDepth) {
     if (leaf) {
       leaf = false;
       createBranches(); // If there aren't any branches, create them.
@@ -68,6 +68,7 @@ Particle Tree::computeCOM() // find the center of mass for this node and save it
                       // represents the center of mass of the two particles
     }
   } else {
+
     for (Tree &t : branches) {
       COM = COM + t.computeCOM(); // This recursively calculates the center of
                                   // mass of each branch and updates them
@@ -125,7 +126,7 @@ bool Tree::less_than_theta(const myvec3 pos, double theta) const {
   // acceleration due to this node
   myfloat distance = glm::length2(pos - COM.p);
   // TODO: this should not be the length of the cuboid
-  return dimension < theta * distance;
+  return cuboid.diagonal2 < theta * distance;
 }
 
 std::string Tree::print() const {
