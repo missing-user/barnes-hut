@@ -2,6 +2,11 @@
 *.vcxproj.filters
 *.sln
 
+<<<<<<< HEAD
+=======
+src/glm/
+
+>>>>>>> version1
 *.vscode/
 build/
 
