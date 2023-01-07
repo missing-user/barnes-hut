@@ -30,6 +30,8 @@ void ofApp::setup() {
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
 
+  calcDepthButton.addListener(this, &ofApp::ringButtonPressed);
+
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 128));
   gui.add(max_depth_slider.set("max_depth", 32, 1, 128));
@@ -42,7 +44,7 @@ void ofApp::setup() {
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
-  gui.add(calcDepthButton.setup("calc depth"));
+  gui.add(calcDepthButton.setup("Compute actual tree depth"));
   gui.add(depth_output.set("tree depth", "?"));
   gui.add(pcount_output.set("max particles leafs", "?"));
 
