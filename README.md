@@ -1,5 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitLab Release](https://img.shields.io/badge/Release-Sprint%201-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/version1)
+[![GitLab Release](https://img.shields.io/badge/Release-Sprint%201-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/version2)
+![Test Result Badge](https://gitlab.lrz.de/advprog2022/13/barnes-hut/badges/version2/pipeline.svg)
 
 # Barnes-Hut Simulation
 
@@ -180,5 +181,5 @@ w sorting:
 
 - [ ] Currently the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
 
-- [ ] OpenMP parallel for loop for multithreading. 
+- [ ] OpenMP parallel for loop for multithreading.
 - [ ] OpenMP SIMD for vectorization.
