@@ -21,6 +21,21 @@ public:
   std::string print() const;
 };
 
-Cuboid bounding_box(const std::vector<Particle> &);
+// A function to calculate the bounding box of a group of particles
+template <typename T> Cuboid bounding_box(const std::vector<T> &particles) {
+  myvec3 bmin = particles.at(0).p;
+  myvec3 bmax = particles.at(0).p;
+
+  for (const auto &p : particles) {
+    bmin = glm::min(bmin, p.p);
+    bmax = glm::max(bmax, p.p);
+  }
+  // Bounding box containment is defined as a half open interval: [min, max)
+  // To actually make the particles be contained within bmax, we need to add a
+  // small offset
+  bmax += myvec3{1e-6, 1e-6, 1e-6};
+
+  return Cuboid((bmin + bmax) / 2.0, bmax - bmin);
+}
 
 #endif

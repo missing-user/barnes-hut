@@ -6,8 +6,9 @@ add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
 add_subdirectory(QuadTree) #QuadTreeIndices
 add_subdirectory(Simulation)
 
-set(glm_DIR "${PROJECT_SOURCE_DIR}/src/glm/cmake/glm") # if necessary
-find_package(glm REQUIRED)
+# set(glm_DIR "${PROJECT_SOURCE_DIR}/src/glm/cmake/glm/") # if necessary
+
+find_package(glm CONFIG REQUIRED)
 message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC glm::glm)
 target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC Simulation QuadTree)

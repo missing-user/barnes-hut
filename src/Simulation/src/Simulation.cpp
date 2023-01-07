@@ -2,21 +2,22 @@
 #include <chrono>
 #include <string>
 
+inline myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
+  const myfloat softening_param = 0.025;
+  return glm::normalize(diff) * mass / (glm::length2(diff) + softening_param);
+}
+
 myvec3 getTotalAcceleration(myvec3 position,
                             const std::vector<Particle> &particles) {
   // Compute the total acceleration acting on a particle at position p.
   // the particle itself is excluded from the computation by its particle id
 
-  myfloat softening_param = 0.025;
   myvec3 acc{0, 0, 0};
 
-  for (size_t j = 0; j < particles.size(); j++) {
-    const auto &p2 = particles[j];
-
+  for (const auto &p2 : particles) {
     if (p2.p != position) {
-      auto diff = p2.p - position;
-      auto distance = glm::length(diff);
-      acc += diff * p2.m / (distance * distance * distance + softening_param);
+      const auto diff = p2.p - position;
+      acc += accelFunc(diff, p2.m);
     }
   }
 
@@ -32,12 +33,11 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
 
   for (size_t i = 0; i < particles.size(); i++) {
     const auto &p = particles[i];
-    auto &p_next = particles_next[i];
 
     auto acc = getTotalAcceleration(p.p, particles);
 
-    p_next.v = p.v + acc * dt;
-    p_next.p = p.p + p.v * dt;
+    particles_next[i].v = p.v + acc * dt;
+    particles_next[i].p = p.p + p.v * dt;
   }
 
   return particles_next;
@@ -60,7 +60,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   auto end = std::chrono::steady_clock::now();
   auto elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "construct tree: " << elapsed.count() << " ms" << std::endl;
+  std::cout << "construct tree: " << elapsed.count() << " ms\n";
 
   begin = std::chrono::steady_clock::now();
   // Now that we have constructed the tree, use it to efficiently compute the
@@ -69,14 +69,14 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
     // TODO: iterate in a different order to avoid cache misses
     const auto &p = particles[i];
 
-    myvec3 acc = mytree.computeAcc(p, theta);
+    myvec3 acc = mytree.computeAcc(p.p, theta);
 
     particles_next[i].v = p.v + acc * dt;
     particles_next[i].p = p.p + p.v * dt;
   }
   end = std::chrono::steady_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "calc forces: " << elapsed.count() << " ms" << std::endl;
+  std::cout << "calc forces: " << elapsed.count() << " ms\n";
 
   return particles_next;
 }

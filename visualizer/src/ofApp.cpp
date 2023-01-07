@@ -33,6 +33,7 @@ void ofApp::setup() {
   gui.setup();
   gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
   gui.add(max_per_node_slider.set("max_per_node", 32, 1, 128));
+  gui.add(max_depth_slider.set("max_depth", 32, 1, 128));
   gui.add(num_particles_slider.set("num_particles", 1000, 100, 1e5));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
@@ -45,7 +46,8 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-  Tree::setMaxDepth(max_per_node_slider);
+  Tree::maxDepth = max_depth_slider;
+  Tree::maxParticles = max_per_node_slider;
 
   set_mass(particles, mass_slider);
   auto begin = std::chrono::steady_clock::now();

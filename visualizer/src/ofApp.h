@@ -17,6 +17,7 @@ private:
 
   // Adjustable parameters
   ofParameter<double> timestep_slider;
+  ofParameter<int> max_depth_slider;
   ofParameter<int> max_per_node_slider;
   ofParameter<int> num_particles_slider;
   ofParameter<myfloat> theta_slider;

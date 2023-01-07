@@ -22,20 +22,12 @@ std::vector<Particle> sphere_distribution(int num_particles) {
   // https://math.stackexchange.com/questions/87230/picking-random-points-in-the-volume-of-sphere-with-uniform-probability/87238#87238
   std::vector<Particle> particles(num_particles);
   for (size_t i = 0; i < num_particles; i++) {
-    myfloat w, x, y, z;
+    myfloat w;
     w = cbrt(uniform_dist(mt));
-    x = normal_dist(mt);
-    y = normal_dist(mt);
-    z = normal_dist(mt);
-    auto mag = sqrt(x * x + y * y + z * z);
+    myvec3 p{normal_dist(mt), normal_dist(mt), normal_dist(mt)};
+    p = glm::normalize(p) * w;
 
-    x = w * x / mag;
-    y = w * y / mag;
-    z = w * z / mag;
-
-    particles[i].p.x = x;
-    particles[i].p.y = y;
-    particles[i].p.z = z;
+    particles[i].p = p;
   }
   return particles;
 }
@@ -110,12 +102,7 @@ std::vector<Particle> &add_random_velocity(std::vector<Particle> &particles,
                                            myvec3 scale) {
 
   for (auto &p : particles) {
-    myfloat x, y, z;
-    x = normal_dist(mt);
-    y = normal_dist(mt);
-    z = normal_dist(mt);
-    myvec3 velo{x, y, z};
-
+    myvec3 velo{normal_dist(mt), normal_dist(mt), normal_dist(mt)};
     p.v += scale * velo;
   }
   return particles;
