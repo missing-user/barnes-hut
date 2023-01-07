@@ -14,7 +14,9 @@ build-job:
     untracked: true
   before_script:
     - apt-get update
-    - apt-get install -yqq g++ cmake libgtest-dev
+    - apt-get install -yqq g++-10
+    - update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10
+    - apt-get install -yqq cmake libgtest-dev
     - apt-get install -yqq python3-dev 
     - apt-get install -yqq libglm-dev
     - cd /usr/src/gtest
@@ -35,9 +37,10 @@ test-job:
     - ./tests/tests  --gtest_output=xml:xunit.xml
   artifacts:
     when: always
+    expire_in: 3 days
     paths:
-      - build/xunit.xml
+      - build/tests/xunit.xml
     reports:
-      junit: build/xunit.xml
+      junit: build/tests/xunit.xml
 
 
