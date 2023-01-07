@@ -30,7 +30,7 @@ void ofApp::setup() {
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
 
-  calcDepthButton.addListener(this, &ofApp::ringButtonPressed);
+  calcDepthButton.addListener(this, &ofApp::calcDepthButtonPressed);
 
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 128));
