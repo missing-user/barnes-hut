@@ -42,7 +42,7 @@ void Tree::insert(const Particle &p) // adds a point to the tree structure.
 }
 
 void Tree::insert(std::unique_ptr<Particle> p) {
-  if (level < maxDepth && particles.size() >= maxParticles) {
+  if (level < maxDepth && (particles.size() >= maxParticles || !leaf)) {
     if (leaf) {
       leaf = false;
       createBranches(); // If there aren't any branches, create them.
@@ -146,4 +146,18 @@ std::vector<std::size_t> Tree::DFS() const {
     }
   }
   return indices;
+}
+
+std::pair<int, int> Tree::MaxDepthAndParticles() const {
+  if (leaf) {
+    return {level, particles.size()};
+  } else {
+    std::pair<int, int> max = {0, 0};
+    for (const auto &b : branches) {
+      const auto &v = b.MaxDepthAndParticles();
+      max.first = std::max(max.first, v.first);
+      max.second = std::max(max.second, v.second);
+    }
+    return max;
+  }
 }

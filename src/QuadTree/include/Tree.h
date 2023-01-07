@@ -34,6 +34,8 @@ public:
   void insert(std::unique_ptr<Particle> p);
   void print() const;
 
+  std::pair<int, int> MaxDepthAndParticles() const;
+
   myvec3 computeAcc(const myvec3 &pos, myfloat theta) const;
   std::vector<std::size_t> DFS() const;
 };
