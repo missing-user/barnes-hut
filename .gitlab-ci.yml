@@ -14,9 +14,10 @@ build-job:
     untracked: true
   before_script:
     - apt-get update
-    - apt-get install -yqq g++-11
     - apt-get install -yqq build-essential
-    - update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
+    - apt-get install -yqq g++-11
+    - update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 60 --slave /usr/bin/g++ g++ /usr/bin/g++-11
+    - update-alternatives --auto gcc
     - apt-get install -yqq cmake libgtest-dev libglm-dev
     - apt-get install -yqq python3-dev 
     - cd /usr/src/gtest
