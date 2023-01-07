@@ -32,6 +32,19 @@ int main() {
   // Run the simulation
   // simulate(particles, .1, 0.1, &csvfile, false, 1.5);
 
+  auto begin = std::chrono::steady_clock::now();
+  std::cout << "Starting reorder\n";
+  for (size_t i = 0; i < particles.size(); i++) {
+    particles[i].id = i;
+  }
+  Tree mytree(particles);
+  std::cout << "Reorder tree constructed\n";
+  reorder(particles, mytree.DFS());
+  auto end = std::chrono::steady_clock::now();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+  std::cout << "Reorder finished " << elapsed.count() << " ms\n";
+
   simulate(particles, 10, 0.1, nullptr, false, 1.5);
 
   // Print the resulting values of all particles
