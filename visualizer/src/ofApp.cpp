@@ -31,14 +31,20 @@ void ofApp::setup() {
   glPointSize(2);            // make the points bigger
 
   gui.setup();
-  gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
-  gui.add(max_per_node_slider.set("max_per_node", 32, 1, 128));
+  gui.add(max_per_node_slider.set("max_per_node", 1, 1, 128));
   gui.add(max_depth_slider.set("max_depth", 32, 1, 128));
-  gui.add(num_particles_slider.set("num_particles", 1000, 100, 1e5));
-  gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
-  gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
+
+  gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
   gui.add(brute_force_toggle.set("brute force", false));
+  gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
+
+  gui.add(num_particles_slider.set("num_particles", 1000, 100, 1e5));
+  gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
+
+  gui.add(calcDepthButton.setup("calc depth"));
+  gui.add(depth_output.set("tree depth", "?"));
+  gui.add(pcount_output.set("max particles leafs", "?"));
 
   particles = make_universe(Distribution::BIGBANG, num_particles_slider);
   initializeParticles();
@@ -99,6 +105,13 @@ void ofApp::keyPressed(int key) {
     particles = make_universe(Distribution::COLLISION, num_particles_slider);
     initializeParticles();
   }
+}
+
+void ofApp::calcDepthButtonPressed() {
+  Tree mytree{particles};
+  auto minmax = mytree.MaxDepthAndParticles();
+  depth_output = std::to_string(minmax.first);
+  pcount_output = std::to_string(minmax.second);
 }
 
 //--------------------------------------------------------------

@@ -25,6 +25,10 @@ private:
   ofParameter<bool> brute_force_toggle;
   // text output
   ofParameter<std::string> text_output;
+  ofParameter<std::string> depth_output;
+  ofParameter<std::string> pcount_output;
+
+  ofxButton calcDepthButton;
 
   std::vector<Particle> particles;
   myfloat max_mass;
@@ -33,6 +37,8 @@ public:
   void setup();
   void update();
   void draw();
+
+  void calcDepthButtonPressed();
 
   void keyPressed(int key);
   void keyReleased(int key);
