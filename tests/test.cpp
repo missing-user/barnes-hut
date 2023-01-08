@@ -61,6 +61,23 @@ TEST(Simulation, DifferentTimesteps) {
   }
 }
 
+TEST(QuadTree, DepthCalculation) {
+  // Create a distribution of particles and check if the depth of the tree is as
+  // expected
+  set_seed(4756);
+  std::vector<Particle> particles =
+      make_universe(Distribution::CRYSTALLINE, 100);
+
+  Tree tree{particles};
+  EXPECT_EQ(tree.MaxDepthAndParticles().first, 5);
+
+  Tree::maxDepth = 64;
+  Tree::maxParticles = 1;
+  particles = make_universe(Distribution::CRYSTALLINE, 1000);
+  Tree deeptree = Tree(particles);
+  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 8);
+}
+
 TEST(FileWriting, IsValidCsv) {
   // Validate our output file format
 
