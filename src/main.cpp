@@ -1,55 +1,69 @@
-#include <chrono>
+#include <boost/program_options.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 
 #include "Distributions.h"
+#include "Order.h"
 #include "Particle.h"
 #include "Simulation.h"
 
-void reorder(std::vector<Particle> &data,
-             std::vector<std::size_t> const &order) {
-  // Reorder function from
-  // https://stackoverflow.com/questions/838384/reorder-vector-using-a-vector-of-indices
-  std::vector<Particle> tmp; // create an empty vector
-  tmp.reserve(data.size());  // ensure memory and avoid moves in the vector
-  for (std::size_t i = 0; i < order.size(); ++i) {
-    tmp.push_back(data[order[i]]);
-  }
-  data.swap(tmp); // swap vector contents
-}
+namespace po = boost::program_options;
 
-int main() {
+int main(int argc, char *argv[]) {
+  bool output_csv = false;
+  bool brute_force = false;
+  int num_particles = 1000;
+  myfloat theta = 1.5;
+  double duration = 10;
+  myfloat timestep = .1;
+
+  po::options_description desc("Allowed options");
+  desc.add_options()("help", "produce help message")(
+      "num_particles,n", po::value<int>(&num_particles),
+      "number of particles in the simulation. Default is 1000")(
+      "theta,t", po::value<myfloat>(&theta),
+      "Multipole rejection threshold for barnes-hut. Default is 1.5")(
+      "duration,d", po::value<myfloat>(&duration), "Simulation duration")(
+      "timestep,dt", po::value<myfloat>(&timestep), "Simulation timestep")(
+      "csv", po::bool_switch(&output_csv),
+      "output the results into a csv file")("brute_force",
+                                            po::bool_switch(&brute_force),
+                                            "Use the brute force algorithm");
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+
+  if (vm.count("help")) {
+    std::cout << desc << "\n";
+    return 1;
+  }
+
   set_seed(42);
   std::vector<Particle> particles =
-      make_universe(Distribution::UNIVERSE4, 30000);
+      make_universe(Distribution::UNIVERSE4, num_particles);
 
-  // Create a CSV file for the particles and generate the header
-  std::ofstream csvfile;
-  csvfile.open("output.csv");
+  if (output_csv) {
+    // Create a CSV file for the particles and generate the header
+    std::ofstream csvfile;
+    csvfile.open("output.csv");
 
-  // Run the simulation
-  // simulate(particles, .1, 0.1, &csvfile, false, 1.5);
-
-  auto begin = std::chrono::steady_clock::now();
-  std::cout << "Starting reorder\n";
-  for (size_t i = 0; i < particles.size(); i++) {
-    particles[i].id = i;
+    computeAndOrder(particles);
+    simulate(particles, duration, timestep, &csvfile, brute_force, theta);
+    csvfile.close();
+  } else {
+    computeAndOrder(particles);
+    simulate(particles, duration, timestep, nullptr, brute_force, theta);
   }
-  Tree mytree(particles);
-  std::cout << "Reorder tree constructed\n";
-  reorder(particles, mytree.DFS());
-  auto end = std::chrono::steady_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "Reorder finished " << elapsed.count() << " ms\n";
 
-  simulate(particles, 10, 0.1, nullptr, false, 1.5);
-
-  // Print the resulting values of all particles
-  /*for (const auto &p : particles) {
-    std::cout << p << "\n";
-  }*/
-  csvfile.close();
+  // Check for nan and inf, throw if encountered
+  for (const auto &p : particles) {
+    if (std::isnan(p.p.x) || std::isnan(p.p.y) || std::isnan(p.p.z)) {
+      throw std::runtime_error("Nan encountered");
+    }
+    if (std::isinf(p.p.x) || std::isinf(p.p.y) || std::isinf(p.p.z)) {
+      throw std::runtime_error("Inf encountered");
+    }
+  }
 }

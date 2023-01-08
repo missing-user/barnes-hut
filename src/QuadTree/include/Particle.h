@@ -4,7 +4,10 @@
 #include <sstream>
 #include <vector>
 
-#include <glm/glm.hpp>    // pvec3
+//#define GLM_FORCE_SSE2
+//#define GLM_FORCE_ALIGNED
+//#define GLM_FORCE_INLINE // Didn't make a measurable difference
+#include <glm/glm.hpp>
 #include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
 
 typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to
@@ -62,6 +65,7 @@ inline std::ostream &operator<<(std::ostream &out,
   for (auto &p : particles) {
     out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ",";
   }
+
   return out;
 }
 

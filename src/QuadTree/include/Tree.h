@@ -6,7 +6,9 @@
 #include <vector>
 
 #include "Cuboid.h"
+#include "Forces.h"
 #include "Particle.h"
+
 
 class Tree {
 private:
@@ -18,9 +20,9 @@ private:
   const int level;
   const Cuboid cuboid;
 
-  bool less_than_theta(const myvec3 pos, double theta) const;
+  bool less_than_theta(const myvec3 &pos, double theta) const;
   void createBranches();
-  int selectOctant(const myvec3 pos) const;
+  int selectOctant(const myvec3 &pos) const;
   CenterOfMass computeCOM();
 
 public:
@@ -36,7 +38,8 @@ public:
 
   std::pair<int, int> MaxDepthAndParticles() const;
 
-  myvec3 computeAcc(const myvec3 &pos, myfloat theta) const;
+  myvec3 computeAccFromPos(const myvec3 &pos, myfloat theta) const;
+  myvec3 computeAcc(const Particle &p1, myfloat theta) const;
   std::vector<std::size_t> DFS() const;
 };
 #endif

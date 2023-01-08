@@ -1,6 +1,6 @@
 #include "Tree.h"
 
-int Tree::maxDepth = 16;
+int Tree::maxDepth = 64;
 int Tree::maxParticles = 1;
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
@@ -16,9 +16,8 @@ Tree::Tree(const std::vector<Particle> &particles)
   computeCOM();
 }
 
-void Tree::createBranches() // populates the branches array of this object with
-                            // new trees from subdividing this node
-{
+void Tree::createBranches() { // populates the branches array of this object
+                              // with new trees from subdividing this node
   branches.reserve(
       8); // reserve space for 8 branches to save on resize operations
   for (Cuboid &r : cuboid.subdivide()) {
@@ -27,7 +26,7 @@ void Tree::createBranches() // populates the branches array of this object with
   }
 }
 
-int Tree::selectOctant(const myvec3 pos) const {
+int Tree::selectOctant(const myvec3 &pos) const {
   int octant = 0;
   octant += (pos.x > cuboid.center.x) << 0;
   octant += (pos.y > cuboid.center.y) << 1;
@@ -35,9 +34,8 @@ int Tree::selectOctant(const myvec3 pos) const {
   return octant;
 }
 
-void Tree::insert(const Particle &p) // adds a point to the tree structure.
-// Depending how full the node is, new branches may be generated
-{
+void Tree::insert(const Particle &p) { // adds a point to the tree structure.
+  // Depending how full the node is, new branches may be generated
   insert(std::make_unique<Particle>(p));
 }
 
@@ -59,9 +57,8 @@ void Tree::insert(std::unique_ptr<Particle> p) {
   }
 }
 
-CenterOfMass Tree::computeCOM() // calculate the center of mass for this node
-                                // and save it as the new COM
-{
+CenterOfMass Tree::computeCOM() { // calculate the center of mass for this node
+                                  // and save it as the new COM
   // Assumtions:
   // This function is only called once per tree, and COM is initialized to zero
 
@@ -82,37 +79,36 @@ CenterOfMass Tree::computeCOM() // calculate the center of mass for this node
   return COM;
 }
 
-inline myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
-  const myfloat softening_param = 0.025;
-  return glm::normalize(diff) * mass / (glm::length2(diff) + softening_param);
+myvec3 Tree::computeAcc(const Particle &p1,
+                        myfloat theta)
+    const { // compute the accelartion applied on a particle by this node
+  const auto pos = p1.p;
+  return computeAccFromPos(pos, theta);
 }
 
-myvec3 Tree::computeAcc(const myvec3 &pos,
-                        myfloat theta)
-    const // compute the accelartion applied on a particle by this node
-{
+myvec3 Tree::computeAccFromPos(
+    const myvec3 &pos,
+    myfloat theta) const { // compute the total acceleration at this position
+                           // due to all particles in this tree
   myvec3 acc{0, 0, 0};
 
   if (leaf) {
     for (const auto &sp : particles) {
-      if (sp->p != pos) // if the queried particle isn't the input
-      {
-        auto diff = sp->p - pos; // Calculate the difference between the input
-                                 // particle and the particle in this node
-        acc += accelFunc(diff, sp->m);
-      }
+      if (sp->p == pos)
+        continue;
+
+      acc += accelFunc(sp->p - pos, sp->m);
     }
   } else {
     if (less_than_theta(pos, theta)) { // Barnes-Hut threshold
       // if the threshold is met, approximate the acceleration using the center
       // of mass instead of summing the individual particle contributions
-      const auto diff = COM.p - pos;
-      acc = accelFunc(diff, COM.m);
+      acc = accelFunc(COM.p - pos, COM.m);
 
     } else { // if threshold not met, compute the acceleration due to the
       // branches inside this node
       for (const Tree &b : branches) {
-        acc += b.computeAcc(pos, theta);
+        acc += b.computeAccFromPos(pos, theta);
       }
     }
   }
@@ -120,7 +116,7 @@ myvec3 Tree::computeAcc(const myvec3 &pos,
   return acc;
 }
 
-bool Tree::less_than_theta(const myvec3 pos, double theta) const {
+bool Tree::less_than_theta(const myvec3 &pos, double theta) const {
   return cuboid.diagonal2 < theta * glm::length2(pos - COM.p);
 }
 

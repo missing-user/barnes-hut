@@ -1,4 +1,5 @@
 #include "Distributions.h"
+#include <glm/gtc/random.hpp>
 #include <numbers>
 #include <random>
 
@@ -18,16 +19,18 @@ std::vector<Particle> normal_distribution(int num_particles) {
   return particles;
 }
 
-std::vector<Particle> sphere_distribution(int num_particles) {
-  // https://math.stackexchange.com/questions/87230/picking-random-points-in-the-volume-of-sphere-with-uniform-probability/87238#87238
+std::vector<Particle> ball_dist(int num_particles) {
   std::vector<Particle> particles(num_particles);
   for (size_t i = 0; i < num_particles; i++) {
-    myfloat w;
-    w = cbrt(uniform_dist(mt));
-    myvec3 p{normal_dist(mt), normal_dist(mt), normal_dist(mt)};
-    p = glm::normalize(p) * w;
+    particles[i].p = glm::ballRand(1.0);
+  }
+  return particles;
+}
 
-    particles[i].p = p;
+std::vector<Particle> sphere_dist(int num_particles) {
+  std::vector<Particle> particles(num_particles);
+  for (size_t i = 0; i < num_particles; i++) {
+    particles[i].p = glm::sphericalRand(1.0);
   }
   return particles;
 }
@@ -98,16 +101,6 @@ std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
   return particles;
 }
 
-std::vector<Particle> &add_random_velocity(std::vector<Particle> &particles,
-                                           myvec3 scale) {
-
-  for (auto &p : particles) {
-    myvec3 velo{normal_dist(mt), normal_dist(mt), normal_dist(mt)};
-    p.v += scale * velo;
-  }
-  return particles;
-}
-
 std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m) {
   for (auto &p : particles) {
     p.m = m;
@@ -148,7 +141,7 @@ std::vector<Particle> &add_radial_velocity(std::vector<Particle> &particles,
 /*******************************************************************/
 
 std::vector<Particle> universe2() {
-  auto initial_dist = sphere_distribution(100);
+  auto initial_dist = ball_dist(100);
   scale(initial_dist, 100, 100, 100);
   set_mass(initial_dist, 10);
 
@@ -183,12 +176,11 @@ std::vector<Particle> universe4(int n) {
 }
 
 std::vector<Particle> bigbang(int n) {
-  auto initial_dist = sphere_distribution(n);
+  auto initial_dist = ball_dist(n);
 
   const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
   add_radial_velocity(initial_dist, 100);
-  // add_random_velocity(initial_dist, {0.1, 0.1, 0.1});
 
   set_mass(initial_dist, 30);
 
@@ -209,7 +201,9 @@ std::vector<Particle> collision(int n) {
   auto first_half = universe4(n / 2);
   auto second_half = universe4(n / 2);
 
-  translate(second_half, 0, 0, 200);
+  translate(second_half, 0, 1000, 200);
+  add_velocity(second_half, 0, -10, -2);
+  add_velocity(first_half, 0, 10, 2);
   first_half.insert(first_half.end(), second_half.begin(), second_half.end());
   return first_half;
 }
@@ -228,6 +222,18 @@ std::vector<Particle> make_universe(Distribution dist, int num_particles) {
     return bigbang(num_particles);
   case Distribution::STABLE_ORBIT:
     return stable_orbit();
+  case Distribution::SPHERE: {
+    auto particles = sphere_dist(num_particles);
+    scale(particles, 100, 100, 100);
+    set_mass(particles, 10);
+    return particles;
+  }
+  case Distribution::CRYSTALLINE: {
+    auto particles = ball_dist(num_particles);
+    scale(particles, 100, 100, 100);
+    set_mass(particles, 10);
+    return particles;
+  }
   default:
     return {};
   }
