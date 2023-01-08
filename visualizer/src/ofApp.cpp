@@ -1,23 +1,13 @@
 #include "ofApp.h"
-#include "Distributions.h"
-#include "Simulation.h"
 #include <chrono>
 
 void ofApp::initializeParticles() {
-  max_mass = 0;
-
-  for (const auto &p : particles) {
-    if (p.m > max_mass) {
-      max_mass = p.m;
-    }
-  }
-
   for (const auto &p : particles) {
     mesh.addVertex(p.p);
     auto cur = ofColor::white;
-    cur.b = (p.m / max_mass) * 255;
     mesh.addColor(cur);
   }
+  calcDepthButtonPressed();
 }
 
 //--------------------------------------------------------------
@@ -34,7 +24,7 @@ void ofApp::setup() {
 
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 128));
-  gui.add(max_depth_slider.set("max_depth", 32, 1, 128));
+  gui.add(max_depth_slider.set("max_depth", 64, 1, 128));
 
   gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
   gui.add(brute_force_toggle.set("brute force", false));
@@ -44,11 +34,11 @@ void ofApp::setup() {
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
-  gui.add(calcDepthButton.setup("Compute actual tree depth"));
+  gui.add(calcDepthButton.setup("Recompute tree depth"));
   gui.add(depth_output.set("tree depth", "?"));
   gui.add(pcount_output.set("max particles leafs", "?"));
 
-  particles = make_universe(Distribution::BIGBANG, num_particles_slider);
+  particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
   initializeParticles();
 }
 
@@ -72,7 +62,7 @@ void ofApp::update() {
   text_output = std::to_string(elapsed.count()) + " ms";
 
   // loop through all mesh vertecies and update their positions
-  for (int i = 0; i < mesh.getNumVertices(); i++) {
+  for (std::size_t i = 0; i < mesh.getNumVertices(); i++) {
     mesh.setVertex(i, particles[i].p);
     double len = std::max(10.0, std::min(glm::length(particles[i].v), 255.0));
     mesh.setColor(i, ofColor(255, len, len));
@@ -83,11 +73,17 @@ void ofApp::update() {
 void ofApp::draw() {
   ofBackgroundGradient(ofColor::black, ofColor::black, OF_GRADIENT_CIRCULAR);
   gui.draw();
-
   cam.begin();
-  // ofTranslate(-img.getWidth() / 2, -img.getHeight() / 2);
   mesh.draw();
   cam.end();
+}
+
+std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
+                                     myfloat s = 0.9) {
+  for (auto &p : particles) {
+    p.v = p.v * s;
+  }
+  return particles;
 }
 
 //--------------------------------------------------------------
@@ -104,8 +100,20 @@ void ofApp::keyPressed(int key) {
   }
   if (key == 'e') {
     mesh.clear();
-    particles = make_universe(Distribution::COLLISION, num_particles_slider);
+    particles = make_universe(Distribution::CRYSTALLINE, num_particles_slider);
     initializeParticles();
+  }
+
+  if (key == 'o') {
+    computeAndOrder(particles);
+  }
+
+  if (key == 'l') {
+    mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+  }
+
+  if (key == 'k') {
+    remove_energy(particles);
   }
 }
 

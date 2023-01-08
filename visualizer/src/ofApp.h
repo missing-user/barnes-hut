@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Distributions.h"
+#include "Order.h"
 #include "Particle.h"
+#include "Simulation.h"
 #include "ofMain.h"
 #include "ofxGui.h"
 #include <string>
@@ -23,6 +26,7 @@ private:
   ofParameter<myfloat> theta_slider;
   ofParameter<myfloat> mass_slider;
   ofParameter<bool> brute_force_toggle;
+
   // text output
   ofParameter<std::string> text_output;
   ofParameter<std::string> depth_output;
@@ -31,7 +35,6 @@ private:
   ofxButton calcDepthButton;
 
   std::vector<Particle> particles;
-  myfloat max_mass;
 
 public:
   void setup();
