@@ -179,7 +179,10 @@ w sorting:
 ==8958== LL miss rate:            0.0% (        0.0%     +         0.0%  )
 )
 
-- [ ] Currently the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
+- [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
+- [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? No. (17.3s by value, 10.0s by reference)
+- [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
 
+- [ ] Currently the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
 - [ ] OpenMP parallel for loop for multithreading.
 - [ ] OpenMP SIMD for vectorization.
