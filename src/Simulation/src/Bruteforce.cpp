@@ -30,7 +30,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
     auto acc = bruteForceAcc(p, particles);
 
     particles_next[i].v = p.v + acc * dt;
-    particles_next[i].p = p.p + p.v * dt;
+    particles_next[i].p = p.p + particles_next[i].v * dt;
   }
 
   return particles_next;
