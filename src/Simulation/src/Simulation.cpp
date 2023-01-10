@@ -3,7 +3,8 @@
 #include <string>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
-                                     myfloat dt, double theta) {
+                                     myfloat dt, double theta)
+{
   // barnes hut optimized step
   // Computes the state vector of all particles for the next timestep,
   // integrating position and velocity
@@ -24,14 +25,25 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   begin = std::chrono::steady_clock::now();
   // Now that we have constructed the tree, use it to efficiently compute the
   // accelerations
-  for (size_t i = 0; i < particles.size(); i++) {
+
+#pragma omp parallel for
+  for (size_t i = 0; i < particles.size(); i++)
+  {
     // TODO: iterate in a different order to avoid cache misses
     const auto &p = particles[i];
 
     myvec3 acc = mytree.computeAcc(p, theta);
-
-    particles_next[i].v = p.v + acc * dt;
+    particles_next[i].v = p.v + acc * dt * .5;
     particles_next[i].p = p.p + particles_next[i].v * dt;
+  }
+#pragma omp parallel for
+  for (size_t i = 0; i < particles.size(); i++)
+  {
+    myvec3 acc = mytree.computeAcc(particles_next[i], theta);
+    particles_next[i].v += acc * dt * .5;
+
+    // particles_next[i].v = p.v + acc * dt;
+    // particles_next[i].p = p.p + particles_next[i].v * dt;
   }
   end = std::chrono::steady_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
@@ -40,12 +52,14 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   return particles_next;
 }
 
-std::string makeCsvHeader(size_t numberOfParticles) {
+std::string makeCsvHeader(size_t numberOfParticles)
+{
   std::string outputBuffer;
 
   // Create column names px_0,py_0,pz_0,px_1,py_1,pz_1,...
   // That contain the respective xyz positions of particle 0,1,2,...
-  for (size_t i = 0; i < numberOfParticles; i++) {
+  for (size_t i = 0; i < numberOfParticles; i++)
+  {
     std::string istr = std::to_string(i);
     outputBuffer += "px_" + istr + ",py_" + istr + ",pz_" + istr + ",";
   }
@@ -53,7 +67,8 @@ std::string makeCsvHeader(size_t numberOfParticles) {
 }
 
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
-              std::ostream *outputwriter, bool brute_force, myfloat theta) {
+              std::ostream *outputwriter, bool brute_force, myfloat theta)
+{
   // The pointer to the outputwriter is optional and will receive the positions
   // of all particles at each timestep if passes
   if (outputwriter != nullptr)
@@ -64,7 +79,8 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
 
   // The timestep must start at 1 or we will simulate one timestep more than
   // necessary
-  for (size_t timestep = 1; timestep <= duration / dt; timestep++) {
+  for (size_t timestep = 1; timestep <= duration / dt; timestep++)
+  {
     if (brute_force)
       particles = stepSimulation(particles, dt);
     else
@@ -75,7 +91,8 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
   }
 
   myfloat residualTimestep = duration - dt * static_cast<size_t>(duration / dt);
-  if (residualTimestep != 0.0) {
+  if (residualTimestep != 0.0)
+  {
     std::cout << "completing the residual timestep " << residualTimestep
               << "\n";
 
