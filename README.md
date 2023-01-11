@@ -17,12 +17,11 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 # Prerequisites
 
-You need cmake, gtest and glm installed for this project to work. The following commands will install them. The last two lines are for building gtest on your machine.
+You need cmake, glm and C++ boost installed for this project to work. `gtest` is used for our unit tests and openframeworks for the visualizations. The following commands will install them. The last two lines are for building gtest on your machine.
 
 ```sh
-apt-get install g++ cmake 
-apt-get install libgtest-dev
-apt-get install libglm-dev
+apt-get install g++-11 cmake 
+apt-get install -y libglm-dev libboost-all-dev libgtest-dev 
 
 cd /usr/src/gtest
 cmake CMakeLists.txt && make

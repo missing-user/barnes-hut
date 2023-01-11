@@ -25,10 +25,10 @@ void ofApp::setup() {
   calcDepthButton.addListener(this, &ofApp::calcDepthButtonPressed);
 
   gui.setup();
-  gui.add(max_per_node_slider.set("max_per_node", 1, 1, 128));
-  gui.add(max_depth_slider.set("max_depth", 64, 1, 128));
+  gui.add(max_per_node_slider.set("max_per_node", 1, 1, 64));
+  gui.add(max_depth_slider.set("max_depth", 64, 1, 96));
 
-  gui.add(timestep_slider.set("timestep", 0.001, 0.001, 0.1));
+  gui.add(timestep_slider.set("timestep", 0.001, 0.0001, 0.01));
   gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
