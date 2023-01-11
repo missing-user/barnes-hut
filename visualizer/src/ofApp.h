@@ -34,8 +34,6 @@ private:
 
   ofxButton calcDepthButton;
 
-  std::vector<Particle> particles;
-
 public:
   void setup();
   void update();

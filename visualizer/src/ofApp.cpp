@@ -1,6 +1,8 @@
 #include "ofApp.h"
 #include <chrono>
 
+std::vector<Particle> particles;
+
 void ofApp::initializeParticles() {
   for (const auto &p : particles) {
     mesh.addVertex(p.p);

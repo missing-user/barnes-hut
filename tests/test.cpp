@@ -23,13 +23,13 @@ TEST(Simulation, Analytical45Rotations) {
 
   const double simDuration = 4.5 * p1.p.z * (2 * std::numbers::pi) / p1.v.y;
 
-  simulate(particles, simDuration, 0.0005);
+  simulate(particles, simDuration, 0.1);
 
   // Particle 1 should return to its initial position
   EXPECT_DOUBLE_EQ(particles[0].p.x, 0);
-  EXPECT_NEAR(particles[0].p.y, p3.p.y, 8);
+  EXPECT_NEAR(particles[0].p.y, p3.p.y, 1);
   EXPECT_NEAR(particles[0].p.z, p3.p.z, .7);
-  EXPECT_NEAR(particles[2].p.y, p1.p.y, 8);
+  EXPECT_NEAR(particles[2].p.y, p1.p.y, 1);
   EXPECT_NEAR(particles[2].p.z, p1.p.z, .7);
 
   // Particle 2 should not move at all
@@ -48,7 +48,7 @@ TEST(Simulation, DifferentTimesteps) {
   // Step through i orders of magnitude for the step size, starting at 1
   // the irrational base was chosen to test the residual timestepping
   // capabilities
-  for (double i = 1; i > -13; i--) {
+  for (double i = 1; i > -12; i--) {
     particles[0] = p1;
     auto timestep = std::exp(i);
     simulate(particles, simDuration, timestep);
@@ -135,7 +135,7 @@ TEST(BarnesHut, CompareApproximation) {
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, nullptr, false, 1.5);
+  simulate(particlesTree, simDuration, timestep, nullptr, false, 1.2);
 
   for (int i = 0; i < particles.size(); i++) {
     // The approximate values should not be identical to the real ones

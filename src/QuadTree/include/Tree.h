@@ -9,7 +9,6 @@
 #include "Forces.h"
 #include "Particle.h"
 
-
 class Tree {
 private:
   CenterOfMass COM;

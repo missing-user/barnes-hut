@@ -5,37 +5,46 @@
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
                                      myfloat dt, double theta) {
   // barnes hut optimized step
-  // Computes the state vector of all particles for the next timestep,
-  // integrating position and velocity
+  // Buffer for the new state vector of particles
   std::vector<Particle> particles_next{particles};
+  std::vector<myvec3> accelerations{particles.size()};
 
-  // Construct the tree by first computing the bouning box of all particles and
-  // then inserting them one by one
+  const Tree mytree(particles);
 
-  auto begin = std::chrono::steady_clock::now();
+  // We have constructed the tree, use it to efficiently compute the
+  // accelerations. Far away particles get grouped and their contribution is
+  // approximated using their center of mass (Barnes Hut algorithm)
 
-  Tree mytree(particles);
+  // Use velocity verlet algorithm to update the particle positions and
+  // velocities https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
+#pragma omp parallel
+  {
+#pragma omp for
+    for (size_t i = 0; i < particles.size(); i++) {
+      // First update the positions
+      const auto &p1 = particles[i];
+      auto &p2 = particles_next[i];
 
-  auto end = std::chrono::steady_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "construct tree: " << elapsed.count() << " ms\n";
+      const auto acc = mytree.computeAcc(p1, theta);
+      p2.p = p1.p + p1.v * dt + acc * dt * dt / 2.;
+      accelerations[i] = acc;
+    }
 
-  begin = std::chrono::steady_clock::now();
-  // Now that we have constructed the tree, use it to efficiently compute the
-  // accelerations
-  for (size_t i = 0; i < particles.size(); i++) {
-    // TODO: iterate in a different order to avoid cache misses
-    const auto &p = particles[i];
+    // New Octree using the updated particle positions
+    // Since the following loop will not change the positions of particles_next,
+    // we can safely reuse the vector for iteration and acceleration calculation
+    // TODO: Reuse this octree for the next timestep
+    const Tree mytree2(particles_next);
 
-    myvec3 acc = mytree.computeAcc(p, theta);
+#pragma omp for
+    for (size_t i = 0; i < particles.size(); i++) {
+      // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
+      auto &p2 = particles_next[i];
 
-    particles_next[i].v = p.v + acc * dt;
-    particles_next[i].p = p.p + particles_next[i].v * dt;
+      const auto acc2 = mytree2.computeAcc(p2, theta);
+      p2.v += (acc2 + accelerations[i]) * dt / 2.;
+    }
   }
-  end = std::chrono::steady_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "calc forces: " << elapsed.count() << " ms\n";
 
   return particles_next;
 }

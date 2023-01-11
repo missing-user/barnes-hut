@@ -184,5 +184,10 @@ w sorting:
 - [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
 
 - [ ] Currently the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
-- [ ] OpenMP parallel for loop for multithreading.
+- [x] OpenMP parallel for loop for multithreading.
+- [x] Brute force optimizations:
+  - Single threaded, vectorized: 9.57s
+  - Single threaded, vectorized, subtraction instead of position comparision: 9.91s
+  - Single threaded, vectorized, parallel inner loop: 36.86s (16cores)
+  - Single threaded, vectorized, parallel outer loop: 1.13s  (16cores)
 - [ ] OpenMP SIMD for vectorization.
