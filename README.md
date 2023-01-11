@@ -98,7 +98,7 @@ In this sprint, we will analyze and optimize the perfomance and computation time
 ### Sprint 3: Definition of "done"
 
 - Measure how much time is consumed during each section in the code
-- Utilize at least three different optimization techniques and study its impact on total runtime
+- [x] Utilize at least three different optimization techniques and study its impact on total runtime
 - At least one function should utilize vectorized instructions
 - (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
 
