@@ -46,7 +46,7 @@ myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
    * reasons).
    */
 
-  return gravityForce(diff, mass) + lennardJonesForce(diff, mass);
+  return gravityForce(diff, mass); // + lennardJonesForce(diff, mass);
 }
 
 /* Potential energy

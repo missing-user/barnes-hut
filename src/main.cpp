@@ -14,6 +14,7 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[]) {
   bool output_csv = false;
   bool brute_force = false;
+  bool reorder_first = true;
   int num_particles = 1000;
   myfloat theta = 1.5;
   double duration = 10;
@@ -23,14 +24,19 @@ int main(int argc, char *argv[]) {
   desc.add_options()("help", "produce help message")(
       "num_particles,n", po::value<int>(&num_particles),
       "number of particles in the simulation. Default is 1000")(
-      "theta,t", po::value<myfloat>(&theta),
+      "theta,T", po::value<myfloat>(&theta),
       "Multipole rejection threshold for barnes-hut. Default is 1.5")(
-      "duration,d", po::value<myfloat>(&duration), "Simulation duration")(
-      "timestep,dt", po::value<myfloat>(&timestep), "Simulation timestep")(
+      "duration,d", po::value<myfloat>(&duration),
+      "Simulation duration. Default is 10s")(
+      "timestep,t", po::value<myfloat>(&timestep),
+      "Simulation timestep. Default is 0.1s")(
       "csv", po::bool_switch(&output_csv),
-      "output the results into a csv file")("brute_force",
-                                            po::bool_switch(&brute_force),
-                                            "Use the brute force algorithm");
+      "output the results into a csv file")(
+      "brute_force", po::bool_switch(&brute_force),
+      "Enable this flag to use the brute force algorithm")(
+      "reorder", po::bool_switch(&reorder_first),
+      "Reorders the particle array before starting the calculation to improve "
+      "cache locality. This is only useful for the barnes-hut algorithm.");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
@@ -44,16 +50,16 @@ int main(int argc, char *argv[]) {
   std::vector<Particle> particles =
       make_universe(Distribution::UNIVERSE4, num_particles);
 
+  if (reorder_first && !brute_force)
+    computeAndOrder(particles);
+
   if (output_csv) {
     // Create a CSV file for the particles and generate the header
     std::ofstream csvfile;
     csvfile.open("output.csv");
-
-    computeAndOrder(particles);
     simulate(particles, duration, timestep, &csvfile, brute_force, theta);
     csvfile.close();
   } else {
-    computeAndOrder(particles);
     simulate(particles, duration, timestep, nullptr, brute_force, theta);
   }
 

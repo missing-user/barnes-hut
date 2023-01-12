@@ -1,5 +1,5 @@
 #include "Order.h"
-#include <chrono>
+#include <boost/timer/timer.hpp>
 
 void reorder(std::vector<Particle> &data,
              std::vector<std::size_t> const &order) {
@@ -14,20 +14,11 @@ void reorder(std::vector<Particle> &data,
 }
 
 void computeAndOrder(std::vector<Particle> &particles) {
-  std::cout << "Starting reorder\n";
-  auto begin = std::chrono::steady_clock::now();
-
   // Assign ids to particles for reordering
   for (size_t i = 0; i < particles.size(); i++) {
     particles[i].id = i;
   }
 
   Tree mytree(particles);
-  std::cout << "Reorder tree constructed\n";
   reorder(particles, mytree.DFS());
-
-  auto end = std::chrono::steady_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-  std::cout << "Reorder finished " << elapsed.count() << " ms\n";
 }
