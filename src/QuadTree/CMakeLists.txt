@@ -1,5 +1,11 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.3)
 
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS  "*.h" "*.cpp")
+include_directories(include)
+add_subdirectory(src)
 
-add_library(QuadTree SHARED STATIC ${SOURCE_FILES})
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS  "src/*.cpp")
+
+add_library(QuadTree STATIC ${SOURCE_FILES})
+
+target_include_directories(QuadTree PUBLIC include)
+target_link_directories(QuadTree PRIVATE src)

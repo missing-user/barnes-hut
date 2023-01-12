@@ -2,7 +2,8 @@ default:
   tags:
     - kubernetes
   image:
-    ubuntu:20.04
+    gcc:11
+    #ubuntu:20.04
 
 stages:          # List of stages for jobs, and their order of execution
   - build
@@ -14,9 +15,8 @@ build-job:
     untracked: true
   before_script:
     - apt-get update
-    - apt-get install -yqq g++ cmake libgtest-dev
+    - apt-get install -yqq cmake libgtest-dev libglm-dev libboost-timer-dev libboost-program-options-dev
     - apt-get install -yqq python3-dev 
-    - apt-get install -yqq libglm-dev
     - cd /usr/src/gtest
     - cmake CMakeLists.txt && make
     - cd $CI_PROJECT_DIR
@@ -35,6 +35,7 @@ test-job:
     - ./tests/tests  --gtest_output=xml:xunit.xml
   artifacts:
     when: always
+    expire_in: 3 days
     paths:
       - build/xunit.xml
     reports:
