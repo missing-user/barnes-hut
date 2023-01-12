@@ -4,9 +4,9 @@
 
 # Barnes-Hut Simulation
 
-This project is a implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
+This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
-The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells, and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each individual object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
+The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
 
 This project was made for the Advanced Programming course at the Technical University of Munich.
 Authors: Phillip Jurašić & Islam Elgamal
@@ -17,7 +17,7 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 # Prerequisites
 
-You need cmake, glm and C++ boost installed for this project to work. `gtest` is used for our unit tests and openframeworks for the visualizations. The following commands will install them. The last two lines are for building gtest on your machine.
+You need `cmake`, `glm` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
 
 ```sh
 apt-get install g++-11 cmake 
@@ -27,11 +27,11 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
-Visualizing the results requires python3 and the following packages: plotly, numpy, pandas. Pandas and numpy are used for reading and transforming the data into a format that can be visualized. Plotly is used for creating the interactive 3D plot.
+A simple python visualizer is included, which is usable for small simulations <100 particles. Running it requires python3 and the following packages: `plotly`, `numpy`, `pandas`. `Pandas` and `numpy` are used for reading and transforming the data into a format that can be visualized. `Plotly` is used for creating the interactive 3D plot.
 
 # Usage
 
-This project was made with only Linux in mind. Their is no guarantee this would work on any other OS.
+This project was made with only Linux in mind. There is no guarantee this would work on any other OS.
 Please also insure that the latest version of Compiler is installed and set as default.
 To execute the project, run the following commands:
 
@@ -51,11 +51,11 @@ pip install -r requirements.txt
 python plot.py
 ```
 
-1. Creates a folder called build, navigates into it and creates the makefile
+1. Creates a folder called `build`, navigates into it, and creates the makefile
 2. Compiles and links the project
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
-5. Runs the python script for visualizing the behaviour of the system of particles over a set period of time in 3D space with dynamic POV
+5. Runs the python script for visualizing the behavior of the system of particles over a set period of time in 3D space with dynamic POV
 
 # Project: Barnes Hut galaxy Simulation
 
@@ -63,9 +63,9 @@ Idea contributed by Philipp Jurašić and Islam Elgamal
 
 ## Motivation
 
-Space is cool, and as admirers of science we want to know how it works. In this project we want to play god and create our own galaxy.
+Space is cool, and as admirers of science, we want to know how it works. In this project, we want to play god and create our own galaxy.
 
-We want to approximate effect of gravity in the formation of gas clouds and clustering of stars over long periods of time. This will be done by simulating the attractive forces between thousands of particles (representing stars and other celestial bodies).
+We want to approximate the effect of gravity in the formation of gas clouds and the clustering of stars over long periods of time. This will be done by simulating the attractive forces between thousands of particles (representing stars and other celestial bodies).
 
 The [Barnes-Hut algorithm](https://en.m.wikipedia.org/wiki/Barnes%E2%80%93Hut_simulation#/media/File%3A2D_Quad-Tree_partitioning_of_100_bodies.png) is commonly used in computational physics, specifically to approximately compute n-body interactions.
 
@@ -82,7 +82,7 @@ In this sprint we will implement the n-body problem and a basic Barnes-Hut appro
 - [x] Create a function for space-dividing an array of coordinates into an octree data structure.
 - [x] Implement the Barnes Hut algorithm for simulating the system of bodies over a specified duration of time.
 - [x] Create a unit test, that compares the brute force reference solution with the Barnes-Hut approximation for a small test dataset
-- [x] Output a timeseries of the resulting positions of all bodies into a file (e.g. .csv with timestamps) that can be visualized with external tools (e.g. Python script)
+- [x] Output a time series of the resulting positions of all bodies into a file (e.g. .csv with timestamps) that can be visualized with external tools (e.g. Python script)
 
 ## Sprint 2 (OOP)
 
@@ -90,12 +90,12 @@ In this sprint, we will add visualization capabilities to the project, allow the
 
 ### Sprint 2: Definition of "done"
 
-- [x] Add the ability to specify parameters like the initial conditions, timestep size, simulation duration etc. in either a configuration file or as command line parameters.
+- [x] Add the ability to specify parameters like the initial conditions, timestep size, simulation duration, etc. in either a configuration file or as command line parameters.
 - [x] Implement appropriate access control modifiers for functions and variables.
-- [x] Apply apropriate usage of references and pointers for optimal memory allocation.
+- [x] Apply appropriate usage of references and pointers for optimal memory allocation.
 - [x] Add the ability to visualize the dynamics of the simulation in 3D space.
-- [x] Abstract the interaction function of the bodies (and add an example of how to use it, e.g. gravity potential and coloumb potential)
-- [x] Abstract the space dividing function
+- [x] Abstract the interaction function of the bodies (and add an example of how to use it, e.g. gravity potential and Lennard Jones potential)
+- [x] Abstract the space-dividing function
 - [x] Clean up and refactor the code
 - [x] Create a Second Order Integrator for the Barnes-Hut Simulation
 - [x] Create an Interactive GUI for the Simulation
@@ -103,100 +103,29 @@ In this sprint, we will add visualization capabilities to the project, allow the
 
 ## Sprint 3 (performance and/or STL)
 
-In this sprint, we will analyze and optimize the perfomance and computation time of the program. The focus will be to study how much impact each section of the code has on the total runtime and the effect of each optimization step taken to reduce computation time.
+In this sprint, we will analyze and optimize the performance and computation time of the program. The focus will be to study how much impact each section of the code has on the total runtime and the effect of each optimization step taken to reduce computation time.
 
 ### Sprint 3: Definition of "done"
 
 - [ ] Measure how much time is consumed during each section in the code
-- [x] Utilize at least three different optimization techniques and study its impact on total runtime
+- [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [ ] At least one function should utilize vectorized instructions
 - (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
 - [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers from Nlog(N) to N
-- [x] Sorting the particle array before the simulation to improve cache coherence (In single threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache miss report reports more cache misses tho, which is weird):
-w/o sorting:
-==8270== I   refs:      15,923,885,607
-==8270== I1  misses:             2,789
-==8270== LLi misses:             2,741
-==8270== I1  miss rate:           0.00%
-==8270== LLi miss rate:           0.00%
-==8270==
-==8270== D   refs:       7,372,560,122  (4,543,357,564 rd   + 2,829,202,558 wr)
-==8270== D1  misses:       457,093,410  (  454,439,822 rd   +     2,653,588 wr)
-==8270== LLd misses:         2,343,432  (    1,661,398 rd   +       682,034 wr)
-==8270== D1  miss rate:            6.2% (         10.0%     +           0.1%  )
-==8270== LLd miss rate:            0.0% (          0.0%     +           0.0%  )
-==8270==
-==8270== LL refs:          457,096,199  (  454,442,611 rd   +     2,653,588 wr)
-==8270== LL misses:          2,346,173  (    1,664,139 rd   +       682,034 wr)
-==8270== LL miss rate:             0.0% (          0.0%     +           0.0%  )
+- [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Confirmed using Valgrind Cache reports)
 
-w sorting:
-==8536==
-==8536== I   refs:      16,025,914,742
-==8536== I1  misses:             2,874
-==8536== LLi misses:             2,839
-==8536== I1  miss rate:           0.00%
-==8536== LLi miss rate:           0.00%
-==8536==
-==8536== D   refs:       7,422,843,756  (4,573,795,704 rd   + 2,849,048,052 wr)
-==8536== D1  misses:       452,273,941  (  449,099,081 rd   +     3,174,860 wr)
-==8536== LLd misses:         3,035,603  (    1,981,384 rd   +     1,054,219 wr)
-==8536== D1  miss rate:            6.1% (          9.8%     +           0.1%  )
-==8536== LLd miss rate:            0.0% (          0.0%     +           0.0%  )
-==8536==
-==8536== LL refs:          452,276,815  (  449,101,955 rd   +     3,174,860 wr)
-==8536== LL misses:          3,038,442  (    1,984,223 rd   +     1,054,219 wr)
-==8536== LL miss rate:             0.0% (          0.0%     +           0.0%  )
-
-with debug symbols:
-w/o sorting:
-==9184==
-==9184== I   refs:      2,661,285,937
-==9184== I1  misses:            2,800
-==9184== LLi misses:            2,696
-==9184== I1  miss rate:          0.00%
-==9184== LLi miss rate:          0.00%
-==9184==
-==9184== D   refs:      1,441,670,368  (916,998,110 rd   + 524,672,258 wr)
-==9184== D1  misses:       49,184,166  ( 48,825,583 rd   +     358,583 wr)
-==9184== LLd misses:           81,154  (      8,037 rd   +      73,117 wr)
-==9184== D1  miss rate:           3.4% (        5.3%     +         0.1%  )
-==9184== LLd miss rate:           0.0% (        0.0%     +         0.0%  )
-==9184==
-==9184== LL refs:          49,186,966  ( 48,828,383 rd   +     358,583 wr)
-==9184== LL misses:            83,850  (     10,733 rd   +      73,117 wr)
-==9184== LL miss rate:            0.0% (        0.0%     +         0.0%  )
-
-w sorting:
-==8958==
-==8958== I   refs:      2,680,896,810
-==8958== I1  misses:            2,904
-==8958== LLi misses:            2,734
-==8958== I1  miss rate:          0.00%
-==8958== LLi miss rate:          0.00%
-==8958==
-==8958== D   refs:      1,452,245,492  (923,634,238 rd   + 528,611,254 wr)
-==8958== D1  misses:       48,611,530  ( 48,199,351 rd   +     412,179 wr)
-==8958== LLd misses:          142,267  (      8,039 rd   +     134,228 wr)
-==8958== D1  miss rate:           3.3% (        5.2%     +         0.1%  )
-==8958== LLd miss rate:           0.0% (        0.0%     +         0.0%  )
-==8958==
-==8958== LL refs:          48,614,434  ( 48,202,255 rd   +     412,179 wr)
-==8958== LL misses:           145,001  (     10,773 rd   +     134,228 wr)
-==8958== LL miss rate:            0.0% (        0.0%     +         0.0%  )
-)
-
-- [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
+- [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if the distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
 - [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? No. (17.3s by value, 10.0s by reference)
 - [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
 
-- [ ] Currently the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
-- [x] OpenMP parallel for loop for multithreading.
-- [x] Brute force optimizations:
-  - Single threaded, vectorized: 9.57s
-  - Single threaded, vectorized, subtraction instead of position comparision: 9.91s
-  - Single threaded, vectorized, parallel inner loop: 36.86s (16cores)
-  - Single threaded, vectorized, parallel outer loop: 1.13s  (16cores)
-- [ ] OpenMP SIMD for vectorization.
+- [ ] Currently, the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
+- [x] OpenMP parallel for loop for multithreading the simulation.
+- [ ] OpenMP parallel for loop for multithreading the tree construction.
+- [x] Brute force optimizations: 
+  - Single-threaded, vectorized: 9.57s
+  - Single-threaded, vectorized, subtraction instead of position comparison: 9.91s
+  - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
+  - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
+- [-] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
