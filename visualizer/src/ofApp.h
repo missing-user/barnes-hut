@@ -9,7 +9,8 @@
 #include <string>
 #include <vector>
 
-class ofApp : public ofBaseApp {
+class ofApp : public ofBaseApp
+{
 
 private:
   void initializeParticles();
@@ -52,4 +53,5 @@ public:
   void windowResized(int w, int h);
   void dragEvent(ofDragInfo dragInfo);
   void gotMessage(ofMessage msg);
+  void HUDGuide();
 };
