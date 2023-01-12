@@ -15,11 +15,7 @@ build-job:
     untracked: true
   before_script:
     - apt-get update
-    #- apt-get install -yqq build-essential
-    #- apt-get install -yqq g++-11
-    #- update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 60 --slave /usr/bin/g++ g++ /usr/bin/g++-11
-    #- update-alternatives --auto gcc
-    - apt-get install -yqq cmake libgtest-dev libglm-dev libboost-all-dev
+    - apt-get install -yqq cmake libgtest-dev libglm-dev libboost-timer-dev libboost-timer-dev
     - apt-get install -yqq python3-dev 
     - cd /usr/src/gtest
     - cmake CMakeLists.txt && make
