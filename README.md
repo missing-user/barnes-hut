@@ -31,6 +31,8 @@ Visualizing the results requires python3 and the following packages: plotly, num
 
 # Usage
 
+This project was made with only Linux in mind. Their is no guarantee this would work on any other OS.
+Please also insure that the latest version of Compiler is installed and set as default.
 To execute the project, run the following commands:
 
 ```sh
@@ -38,6 +40,11 @@ mkdir build && cd build && cmake ..
 
 make barnes-hut
 ./src/barnes-hut
+#to run the 3D live particle visualization:
+cd ..
+cd visualizer
+sudo make
+make run
 
 cd ..
 pip install -r requirements.txt 
@@ -83,13 +90,16 @@ In this sprint, we will add visualization capabilities to the project, allow the
 
 ### Sprint 2: Definition of "done"
 
-- Add the ability to specify parameters like the initial conditions, timestep size, simulation duration etc. in either a configuration file or as command line parameters.
-- Implement appropriate access control modifiers for functions and variables.
-- Apply apropriate usage of references and pointers for optimal memory allocation.
-- Add the ability to visualize the dynamics of the simulation in 3D space.
-- Abstract the interaction function of the bodies (and add an example of how to use it, e.g. gravity potential and coloumb potential)
-- Abstract the space dividing function
-- Clean up and refactor the code
+- [x] Add the ability to specify parameters like the initial conditions, timestep size, simulation duration etc. in either a configuration file or as command line parameters.
+- [x] Implement appropriate access control modifiers for functions and variables.
+- [x] Apply apropriate usage of references and pointers for optimal memory allocation.
+- [x] Add the ability to visualize the dynamics of the simulation in 3D space.
+- [x] Abstract the interaction function of the bodies (and add an example of how to use it, e.g. gravity potential and coloumb potential)
+- [x] Abstract the space dividing function
+- [x] Clean up and refactor the code
+- [x] Create a Second Order Integrator for the Barnes-Hut Simulation
+- [x] Create an Interactive GUI for the Simulation
+- [x] Support Different Initial Conditions
 
 ## Sprint 3 (performance and/or STL)
 
@@ -97,9 +107,9 @@ In this sprint, we will analyze and optimize the perfomance and computation time
 
 ### Sprint 3: Definition of "done"
 
-- Measure how much time is consumed during each section in the code
+- [ ] Measure how much time is consumed during each section in the code
 - [x] Utilize at least three different optimization techniques and study its impact on total runtime
-- At least one function should utilize vectorized instructions
+- [ ] At least one function should utilize vectorized instructions
 - (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
