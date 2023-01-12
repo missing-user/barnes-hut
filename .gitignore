@@ -2,6 +2,10 @@
 *.vcxproj.filters
 *.sln
 
+#OF cmake config file reference to the library
+visualizer/config.make
+/home/jimmy/barnes-hut/visualizer/config.make
+
 src/glm/
 
 *.vscode/
@@ -445,3 +449,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+visualizer/config.make

@@ -4,15 +4,9 @@
 #include <iostream>
 #include <vector>
 
+#include "Bruteforce.h"
 #include "QuadTree.h"
 
-#include <glm/glm.hpp>    // pvec3
-#include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
-
-myvec3 getTotalAcceleration(myvec3 position,
-                            const std::vector<Particle> &particles);
-std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
-                                     myfloat dt);
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
                                      myfloat dt, double theta);
 std::string makeCsvHeader(size_t numberOfParticles);

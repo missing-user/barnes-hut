@@ -1,9 +1,8 @@
 #ifndef DISTRIBUTIONS
 #define DISTRIBUTIONS
 
-#include <vector>
-
 #include "Simulation.h"
+#include <vector>
 
 enum class Distribution {
   UNIVERSE1,
@@ -12,7 +11,9 @@ enum class Distribution {
   UNIVERSE4,
   COLLISION,
   BIGBANG,
-  STABLE_ORBIT
+  STABLE_ORBIT,
+  SPHERE,
+  CRYSTALLINE,
 };
 
 void set_seed(unsigned int seed);
