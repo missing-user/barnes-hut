@@ -3,9 +3,9 @@
 
 std::vector<Particle> particles;
 
-void ofApp::initializeParticles()
+void ofApp::initializeParticles() 
 {
-  for (const auto &p : particles)
+  for (const auto &p : particles) 
   {
     mesh.addVertex(p.p);
     auto cur = ofColor::white;
@@ -15,7 +15,7 @@ void ofApp::initializeParticles()
 }
 
 //--------------------------------------------------------------
-void ofApp::setup()
+void ofApp::setup() 
 {
   // ofSetVerticalSync(true);
 
@@ -35,7 +35,7 @@ void ofApp::setup()
   gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 1000, 100, 1e5));
+  gui.add(num_particles_slider.set("num_particles", 1000, 100, 3e4));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
@@ -48,7 +48,7 @@ void ofApp::setup()
 }
 
 //--------------------------------------------------------------
-void ofApp::update()
+void ofApp::update() 
 {
   Tree::maxDepth = max_depth_slider;
   Tree::maxParticles = max_per_node_slider;
@@ -68,7 +68,7 @@ void ofApp::update()
   text_output = std::to_string(elapsed.count()) + " ms";
 
   // loop through all mesh vertecies and update their positions
-  for (std::size_t i = 0; i < mesh.getNumVertices(); i++)
+  for (std::size_t i = 0; i < mesh.getNumVertices(); i++) 
   {
     mesh.setVertex(i, particles[i].p);
     double len = std::max(10.0, std::min(glm::length(particles[i].v), 255.0));
@@ -77,26 +77,27 @@ void ofApp::update()
 }
 
 //--------------------------------------------------------------
-void ofApp::draw()
+void ofApp::draw() 
 {
   ofBackgroundGradient(ofColor::black, ofColor::black, OF_GRADIENT_CIRCULAR);
   gui.draw();
   cam.begin();
   mesh.draw();
   cam.end();
-  ofDrawBitmapString("  For the \"Big-Bang simulation\" particle distribution example, press R \n \
-  For a \"Universe Simulation\" particle distribution example, press R \n \
+  ofDrawBitmapString(
+      "   For the \"Big-Bang simulation\" particle distribution example, press R \n\
+  For a \"Universe Simulation\" particle distribution example, press T \n \
   To change the particle interaction force to equal the Lennard-Jones molecular Force, press E \n \
   To reorder the array of particles to follow a Morton (Z-order) curve, press O \n \
   To toggle the visualization of the particle order in the stored array, prss L \n \
   To continuously remove a fraction of the kinetic energy of all particles, hold K",
-                     200, 30);
+      200, 30);
 }
 
 std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
-                                     myfloat s = 0.9)
-{
-  for (auto &p : particles)
+                                     myfloat s = 0.9) 
+                                     {
+  for (auto &p : particles) 
   {
     p.v = p.v * s;
   }
@@ -104,44 +105,44 @@ std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key)
+void ofApp::keyPressed(int key) 
 {
-  if (key == 'r')
+  if (key == 'r') 
   {
     mesh.clear();
     particles = make_universe(Distribution::BIGBANG, num_particles_slider);
     initializeParticles();
   }
-  if (key == 't')
+  if (key == 't') 
   {
     mesh.clear();
     particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
     initializeParticles();
   }
-  if (key == 'e')
+  if (key == 'e') 
   {
     mesh.clear();
     particles = make_universe(Distribution::CRYSTALLINE, num_particles_slider);
     initializeParticles();
   }
 
-  if (key == 'o')
+  if (key == 'o') 
   {
     computeAndOrder(particles);
   }
 
-  if (key == 'l')
+  if (key == 'l') 
   {
     mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
   }
 
-  if (key == 'k')
+  if (key == 'k') 
   {
     remove_energy(particles);
   }
 }
 
-void ofApp::calcDepthButtonPressed()
+void ofApp::calcDepthButtonPressed() 
 {
   Tree mytree{particles};
   auto minmax = mytree.MaxDepthAndParticles();

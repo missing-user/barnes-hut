@@ -95,8 +95,9 @@ std::vector<Particle> &add_velocity(std::vector<Particle> &particles, myfloat x,
 
 std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
                                             myvec3 axis) {
+  const auto mag = glm::length(axis);
   for (auto &p : particles) {
-    p.v += glm::cross(p.p, axis);
+    p.v += glm::normalize(glm::cross(p.p, axis)) * mag;
   }
   return particles;
 }
@@ -158,7 +159,6 @@ std::vector<Particle> universe1() {
   scale(initial_dist, diameter, diameter, 10); // flat disk
   set_mass(initial_dist, 200);
 
-  // add_angular_momentum(initial_dist, myvec3(0, .0, .1) / diameter);
   return initial_dist;
 }
 
@@ -171,7 +171,7 @@ std::vector<Particle> universe4(int n) {
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
   set_mass(initial_dist, 50);
 
-  add_angular_momentum(initial_dist, myvec3(0, .0, 10) / diameter);
+  add_angular_momentum(initial_dist, myvec3(0, .0, 50));
   return initial_dist;
 }
 
