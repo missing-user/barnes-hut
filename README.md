@@ -6,6 +6,8 @@
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
+![Spiral Galaxy from our simulation](spiral_galaxy.png)
+
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
 
 This project was made for the Advanced Programming course at the Technical University of Munich.
@@ -101,6 +103,8 @@ In this sprint, we will add visualization capabilities to the project, allow the
 - [x] Create an Interactive GUI for the Simulation
 - [x] Support Different Initial Conditions
 
+![Big Bang](bigbang_clustering.png)
+
 ## Sprint 3 (performance and/or STL)
 
 In this sprint, we will analyze and optimize the performance and computation time of the program. The focus will be to study how much impact each section of the code has on the total runtime and the effect of each optimization step taken to reduce computation time.
@@ -123,7 +127,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [ ] Currently, the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
 - [x] OpenMP parallel for loop for multithreading the simulation.
 - [ ] OpenMP parallel for loop for multithreading the tree construction.
-- [x] Brute force optimizations: 
+- [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s
   - Single-threaded, vectorized, subtraction instead of position comparison: 9.91s
   - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
