@@ -105,6 +105,10 @@ In this sprint, we will add visualization capabilities to the project, allow the
 
 ![Big Bang](bigbang_clustering.png)
 
+Molecular dynamics simulation using the newly added Lennard Jones potential. By gradually removing energy from the system, the particles start forming hexagonal crystaline structures.
+
+![Crystal](hexagonal_structure.png)
+
 ## Sprint 3 (performance and/or STL)
 
 In this sprint, we will analyze and optimize the performance and computation time of the program. The focus will be to study how much impact each section of the code has on the total runtime and the effect of each optimization step taken to reduce computation time.
