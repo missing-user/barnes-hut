@@ -1,12 +1,11 @@
 #include "ofApp.h"
+#include <algorithm>
 #include <chrono>
 
 std::vector<Particle> particles;
 
-void ofApp::initializeParticles() 
-{
-  for (const auto &p : particles) 
-  {
+void ofApp::initializeParticles() {
+  for (const auto &p : particles) {
     mesh.addVertex(p.p);
     auto cur = ofColor::white;
     mesh.addColor(cur);
@@ -15,13 +14,13 @@ void ofApp::initializeParticles()
 }
 
 //--------------------------------------------------------------
-void ofApp::setup() 
-{
+void ofApp::setup() {
   // ofSetVerticalSync(true);
 
   // we're going to load a ton of points into an ofMesh
   mesh.setMode(OF_PRIMITIVE_POINTS);
-
+  ofEnableBlendMode(OF_BLENDMODE_ADD);
+  ofSetBackgroundColor(ofColor::black);
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
 
@@ -48,8 +47,7 @@ void ofApp::setup()
 }
 
 //--------------------------------------------------------------
-void ofApp::update() 
-{
+void ofApp::update() {
   Tree::maxDepth = max_depth_slider;
   Tree::maxParticles = max_per_node_slider;
 
@@ -67,19 +65,23 @@ void ofApp::update()
 
   text_output = std::to_string(elapsed.count()) + " ms";
 
+  // Find particle with max v
+  auto maxv2 = std::max_element(particles.begin(), particles.end(),
+                                [](const Particle &a, const Particle &b) {
+                                  return glm::length2(a.v) < glm::length2(b.v);
+                                });
+  const double maxv_inv = 255.0 / glm::length(maxv2->v);
+
   // loop through all mesh vertecies and update their positions
-  for (std::size_t i = 0; i < mesh.getNumVertices(); i++) 
-  {
+  for (std::size_t i = 0; i < mesh.getNumVertices(); i++) {
     mesh.setVertex(i, particles[i].p);
-    double len = std::max(10.0, std::min(glm::length(particles[i].v), 255.0));
-    mesh.setColor(i, ofColor(255, len, len));
+    double len = std::max(50.0, glm::length(particles[i].v) * maxv_inv);
+    mesh.setColor(i, ofColor(255 - len / 5, len * 4 / 5, len, 128));
   }
 }
 
 //--------------------------------------------------------------
-void ofApp::draw() 
-{
-  ofBackgroundGradient(ofColor::black, ofColor::black, OF_GRADIENT_CIRCULAR);
+void ofApp::draw() {
   gui.draw();
   cam.begin();
   mesh.draw();
@@ -95,55 +97,47 @@ void ofApp::draw()
 }
 
 std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
-                                     myfloat s = 0.9) 
-                                     {
-  for (auto &p : particles) 
-  {
+                                     myfloat s = 0.9) {
+  for (auto &p : particles) {
     p.v = p.v * s;
   }
   return particles;
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key) 
-{
-  if (key == 'r') 
-  {
+void ofApp::keyPressed(int key) {
+  if (key == 'r') {
     mesh.clear();
     particles = make_universe(Distribution::BIGBANG, num_particles_slider);
     initializeParticles();
   }
-  if (key == 't') 
-  {
+  if (key == 't') {
     mesh.clear();
     particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
     initializeParticles();
   }
-  if (key == 'e') 
-  {
+  if (key == 'e') {
     mesh.clear();
     particles = make_universe(Distribution::CRYSTALLINE, num_particles_slider);
     initializeParticles();
   }
 
-  if (key == 'o') 
-  {
+  if (key == 'o') {
     computeAndOrder(particles);
   }
 
-  if (key == 'l') 
-  {
-    mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+  if (key == 'l') {
+    mesh.setMode(mesh.getMode() != OF_PRIMITIVE_LINE_STRIP
+                     ? OF_PRIMITIVE_LINE_STRIP
+                     : OF_PRIMITIVE_POINTS);
   }
 
-  if (key == 'k') 
-  {
+  if (key == 'k') {
     remove_energy(particles);
   }
 }
 
-void ofApp::calcDepthButtonPressed() 
-{
+void ofApp::calcDepthButtonPressed() {
   Tree mytree{particles};
   auto minmax = mytree.MaxDepthAndParticles();
   depth_output = std::to_string(minmax.first);
