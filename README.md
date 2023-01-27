@@ -118,7 +118,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [ ] Measure how much time is consumed during each section in the code
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [ ] At least one function should utilize vectorized instructions
-- (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
+- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
 - [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers from Nlog(N) to N
