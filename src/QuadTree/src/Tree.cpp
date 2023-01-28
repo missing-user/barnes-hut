@@ -11,10 +11,16 @@ Tree::Tree(const std::vector<Particle> &particles)
       leaf(true)
 {
 
+  // for (const auto &p : particles)
+  // {
+  //   insert(p);
+  // }
+  // computeCOM();
   for (const auto &p : particles)
   {
-    insert(p);
+    insertNonRecursive(p);
   }
+  subdivide();
   computeCOM();
 }
 
@@ -66,6 +72,32 @@ void Tree::insert(std::unique_ptr<Particle> p)
   else
   {
     particles.push_back(std::move(p));
+  }
+}
+void Tree::insertNonRecursive(const Particle &p)
+{ // adds a point to the tree structure.
+  // Depending how full the node is, new branches may be generated
+  insertNonRecursive(std::make_unique<Particle>(p));
+}
+void Tree::insertNonRecursive(std::unique_ptr<Particle> p)
+{
+  particles.push_back(std::move(p));
+}
+
+void Tree::subdivide()
+{
+  if (level < maxDepth && (particles.size() >= maxParticles && leaf))
+  {
+    leaf = false;
+    createBranches(); // If there aren't any branches, create them.
+    for (auto &pnt : particles)
+    {
+      branches[selectOctant(pnt->p)].insertNonRecursive(std::move(pnt));
+    }
+    for (auto &b : branches)
+    {
+      b.subdivide();
+    }
   }
 }
 

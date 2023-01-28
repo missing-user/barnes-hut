@@ -9,7 +9,8 @@
 #include "Forces.h"
 #include "Particle.h"
 
-class Tree {
+class Tree
+{
 private:
   CenterOfMass COM;
   std::vector<Tree> branches;
@@ -33,6 +34,9 @@ public:
 
   void insert(const Particle &p);
   void insert(std::unique_ptr<Particle> p);
+  void insertNonRecursive(const Particle &p);
+  void insertNonRecursive(std::unique_ptr<Particle> p);
+  void subdivide();
   void print() const;
 
   std::pair<int, int> MaxDepthAndParticles() const;
