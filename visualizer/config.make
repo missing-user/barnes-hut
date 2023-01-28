@@ -8,8 +8,8 @@
 #   The location of your root openFrameworks installation
 #       (default) OF_ROOT = ../../.. 
 ################################################################################
-OF_ROOT = /mnt/d/UserD/Programming/C++/CSE/openframeworks/
-
+# OF_ROOT = /mnt/d/UserD/Programming/C++/CSE/openframeworks/
+OF_ROOT = /home/jimmy/OF/
 ################################################################################
 # PROJECT ROOT
 #   The location of the project - a starting place for searching for files
@@ -37,8 +37,10 @@ OF_ROOT = /mnt/d/UserD/Programming/C++/CSE/openframeworks/
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_EXTERNAL_SOURCE_PATHS = /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/QuadTree/include
-PROJECT_EXTERNAL_SOURCE_PATHS += /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/Simulation/include
+# PROJECT_EXTERNAL_SOURCE_PATHS = /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/QuadTree/include
+# PROJECT_EXTERNAL_SOURCE_PATHS += /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/Simulation/include
+PROJECT_EXTERNAL_SOURCE_PATHS = /home/jimmy/barnes-hut/src/Simulation/include
+PROJECT_EXTERNAL_SOURCE_PATHS += /home/jimmy/barnes-hut/src/QuadTree/include
 
 ################################################################################
 # PROJECT EXCLUSIONS

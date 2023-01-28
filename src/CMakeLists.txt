@@ -7,6 +7,7 @@ add_subdirectory(QuadTree) #QuadTreeIndices
 add_subdirectory(Simulation)
 
 find_package(Boost CONFIG REQUIRED COMPONENTS program_options timer )
+# find_package(Boost home\jimmy\Packages\boost_1_81_0)
 
 find_package(glm CONFIG REQUIRED)
 message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")

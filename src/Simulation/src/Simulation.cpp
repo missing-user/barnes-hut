@@ -1,11 +1,11 @@
 #include "Simulation.h"
-#include <boost/timer/progress_display.hpp>
+#include "/home/jimmy/Packages/boost_1_81_0/boost/timer/progress_display.hpp"
 #include <chrono>
 #include <string>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
-                                     myfloat dt, double theta) 
-                                     {
+                                     myfloat dt, double theta)
+{
   // barnes hut optimized step
   // Buffer for the new state vector of particles
   std::vector<Particle> particles_next{particles};
@@ -22,7 +22,8 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
 #pragma omp parallel
   {
 #pragma omp for
-    for (size_t i = 0; i < particles.size(); i++) {
+    for (size_t i = 0; i < particles.size(); i++)
+    {
       // First update the positions
       const auto &p1 = particles[i];
       auto &p2 = particles_next[i];
@@ -39,7 +40,8 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
     const Tree mytree2(particles_next);
 
 #pragma omp for
-    for (size_t i = 0; i < particles.size(); i++) {
+    for (size_t i = 0; i < particles.size(); i++)
+    {
       // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
       auto &p2 = particles_next[i];
 
@@ -51,13 +53,13 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   return particles_next;
 }
 
-std::string makeCsvHeader(size_t numberOfParticles) 
+std::string makeCsvHeader(size_t numberOfParticles)
 {
   std::string outputBuffer;
 
   // Create column names px_0,py_0,pz_0,px_1,py_1,pz_1,...
   // That contain the respective xyz positions of particle 0,1,2,...
-  for (size_t i = 0; i < numberOfParticles; i++) 
+  for (size_t i = 0; i < numberOfParticles; i++)
   {
     std::string istr = std::to_string(i);
     outputBuffer += "px_" + istr + ",py_" + istr + ",pz_" + istr + ",";
@@ -66,8 +68,8 @@ std::string makeCsvHeader(size_t numberOfParticles)
 }
 
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
-              std::ostream *outputwriter, bool brute_force, myfloat theta) 
-              {
+              std::ostream *outputwriter, bool brute_force, myfloat theta)
+{
   // The pointer to the outputwriter is optional and will receive the positions
   // of all particles at each timestep if passes
   if (outputwriter != nullptr)
@@ -80,7 +82,8 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
 
   // The timestep must start at 1 or we will simulate one timestep more than
   // necessary
-  for (size_t timestep = 1; timestep <= duration / dt; timestep++) {
+  for (size_t timestep = 1; timestep <= duration / dt; timestep++)
+  {
     if (brute_force) // Brute force step
       particles = stepSimulation(particles, dt);
     else // Barnes Hut step
@@ -92,7 +95,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
   }
 
   myfloat residualTimestep = duration - dt * static_cast<size_t>(duration / dt);
-  if (residualTimestep != 0.0) 
+  if (residualTimestep != 0.0)
   {
     if (brute_force)
       particles = stepSimulation(particles, residualTimestep);
