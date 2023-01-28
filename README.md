@@ -115,9 +115,9 @@ In this sprint, we will analyze and optimize the performance and computation tim
 
 ### Sprint 3: Definition of "done"
 
-- [ ] Measure how much time is consumed during each section in the code
+- [x] Measure how much time is consumed during each section in the code (single and multithreaded profiles at the bottom of the README)
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
-- [ ] At least one function should utilize vectorized instructions
+- [x] At least one function should utilize vectorized instructions
 - Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
@@ -127,13 +127,41 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if the distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
 - [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? No. (17.3s by value, 10.0s by reference)
 - [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
-
-- [ ] Currently, the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
 - [x] OpenMP parallel for loop for multithreading the simulation.
-- [ ] OpenMP parallel for loop for multithreading the tree construction.
 - [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s
   - Single-threaded, vectorized, subtraction instead of position comparison: 9.91s
   - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
   - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
-- [-] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
+- [x] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
+- [ ] OpenMP parallel for loop for multithreading the tree construction.
+
+  ```
+  Single-threaded gperf analysis:
+  Flat profile:
+
+  Each sample counts as 0.01 seconds.
+    %   cumulative   self              self     total           
+  time   seconds   seconds    calls   s/call   s/call  name    
+  98.38      4.26     4.26   120000     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
+    0.46      4.28     0.02   120000     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+    0.46      4.30     0.02                             _init
+    0.23      4.31     0.01       96     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
+    ```
+
+  ```
+  Multi-threaded gperf analysis with 16 cores:
+  Flat profile:
+
+  Each sample counts as 0.01 seconds.
+    %   cumulative   self              self     total           
+  time   seconds   seconds    calls   s/call   s/call  name    
+  71.08      1.18     1.18     6786     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
+  16.27      1.45     0.27   266225     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+    7.23      1.57     0.12       17     0.01     0.01  Tree::computeCOM()
+    3.61      1.63     0.06      387     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
+    1.81      1.66     0.03   135658     0.00     0.00  Tree::createBranches()
+
+  ```
+
+  While tree construction is fast, taking up ~1% of the runtime in the single threaded example using 10k particles and theta=1.5, the construction overhead becomes more and more noticable when using more cores. The tree construction is entirely single threaded, the force calculation is almost trivially parallel.
