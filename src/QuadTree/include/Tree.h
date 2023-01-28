@@ -37,6 +37,7 @@ public:
   void insertNonRecursive(const Particle &p);
   void insertNonRecursive(std::unique_ptr<Particle> p);
   void subdivide();
+  void subdivideNonRecursive();
   void print() const;
 
   std::pair<int, int> MaxDepthAndParticles() const;
