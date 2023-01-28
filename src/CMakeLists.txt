@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.3)
 
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.h" "*.cpp")
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.cpp")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,11 +8,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 add_compile_options(-std=c++2a)
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
-add_subdirectory(QuadTree)
+add_subdirectory(QuadTree) #QuadTreeIndices
 add_subdirectory(Simulation)
 
-set(glm_DIR "${PROJECT_SOURCE_DIR}/src/glm/cmake/glm") # if necessary
-find_package(glm REQUIRED)
+find_package(Boost CONFIG REQUIRED COMPONENTS program_options timer )
+# find_package(Boost home\jimmy\Packages\boost_1_81_0)
+
+find_package(glm CONFIG REQUIRED)
 message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC glm::glm)
+target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
 target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC Simulation QuadTree)
