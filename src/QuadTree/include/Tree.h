@@ -22,8 +22,10 @@ private:
 
   bool less_than_theta(const myvec3 &pos, double theta) const;
   void createBranches();
+  void createBranchesAtP(myvec3 P);
   int selectOctant(const myvec3 &pos) const;
   CenterOfMass computeCOM();
+  CenterOfMass computeCOM_NonRecursive();
 
 public:
   static int maxDepth;
@@ -36,7 +38,7 @@ public:
   void insert(std::unique_ptr<Particle> p);
   void insertNonRecursive(const Particle &p);
   void insertNonRecursive(std::unique_ptr<Particle> p);
-  void subdivide();
+  void subdivideBreadth();
   void subdivideNonRecursive();
   void print() const;
 

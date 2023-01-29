@@ -14,7 +14,7 @@ Tree::Tree(const std::vector<Particle> &particles_in)
   {
     insertNonRecursive(p);
   }
-  subdivide();
+  subdivideBreadth();
   computeCOM();
 }
 
@@ -30,6 +30,18 @@ void Tree::createBranches()
   }
 }
 
+void Tree::createBranchesAtP(myvec3 P)
+{ // populates the branches array of this object
+  // with new trees from subdividing this node
+  branches.reserve(
+      8); // reserve space for 8 branches to save on resize operations
+  for (Cuboid &r : cuboid.subdivideAtP(P))
+  {
+    Tree branch = Tree(r, level + 1);
+    branches.push_back(std::move(branch));
+  }
+}
+
 int Tree::selectOctant(const myvec3 &pos) const
 {
   int octant = 0;
@@ -37,36 +49,6 @@ int Tree::selectOctant(const myvec3 &pos) const
   octant += (pos.y > cuboid.center.y) << 1;
   octant += (pos.z > cuboid.center.z) << 2;
   return octant;
-}
-
-void Tree::insert(const Particle &p)
-{ // adds a point to the tree structure.
-  // Depending how full the node is, new branches may be generated
-  insert(std::make_unique<Particle>(p));
-}
-
-void Tree::insert(std::unique_ptr<Particle> p)
-{
-  if (level < maxDepth && (particles.size() >= maxParticles || !leaf))
-  {
-    if (leaf)
-    {
-      leaf = false;
-      createBranches(); // If there aren't any branches, create them.
-
-      for (auto &pnt : particles)
-      {
-        branches[selectOctant(pnt->p)].insert(std::move(pnt));
-      }
-      particles.clear();
-    }
-    // Also add the new point to the appropriate branch
-    branches[selectOctant(p->p)].insert(std::move(p));
-  }
-  else
-  {
-    particles.push_back(std::move(p));
-  }
 }
 
 void Tree::insertNonRecursive(const Particle &p)
@@ -77,23 +59,37 @@ void Tree::insertNonRecursive(std::unique_ptr<Particle> p)
 {
   particles.push_back(std::move(p));
 }
-void Tree::subdivide()
+
+void Tree::subdivideBreadth()
 {
   if (level < maxDepth && (particles.size() > maxParticles && leaf))
   {
     leaf = false;
-    createBranches(); // If there aren't any branches, create them.
-    for (auto &pnt : particles)
+    computeCOM_NonRecursive();
+    createBranchesAtP(COM.p);   // If there aren't any branches, create them.
+    for (auto &pnt : particles) // This is parallelizable
     {
       branches[selectOctant(pnt->p)].insertNonRecursive(std::move(pnt));
     }
     particles.clear();
   }
-  // #pragma omp for
   for (auto &b : branches)
   {
-    b.subdivide();
+    b.subdivideBreadth();
   }
+}
+
+CenterOfMass Tree::computeCOM_NonRecursive()
+{ // calculate the center of mass for this node
+  // and save it as the new COM
+  COM.m = 0;
+  COM.p *= 0;
+  for (const auto &p : particles)
+  {
+    COM += *p; // Adding two particles creates a new particle which
+               // represents the center of mass of the two particles
+  }
+  return COM;
 }
 
 CenterOfMass Tree::computeCOM()
@@ -106,7 +102,7 @@ CenterOfMass Tree::computeCOM()
   {
     // if this node doesn't have branches, calculate the center of mass the
     // contained particles
-    for (const auto &p : particles)
+    for (const auto &p : particles) /// Shouldn't COM be reset first?
     {
       COM += *p; // Adding two particles creates a new particle which
                  // represents the center of mass of the two particles
