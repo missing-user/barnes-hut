@@ -33,8 +33,8 @@ A simple python visualizer is included, which is usable for small simulations <1
 
 # Usage
 
-This project was made with only Linux in mind. There is no guarantee this would work on any other OS.
-Please also insure that the latest version of Compiler is installed and set as default.
+This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
+
 To execute the project, run the following commands:
 
 ```sh
@@ -58,6 +58,10 @@ python plot.py
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
 5. Runs the python script for visualizing the behavior of the system of particles over a set period of time in 3D space with dynamic POV
+
+### Additional dependencies
+
+To run the 3D visualization, you need to install `openframeworks` and possibly the addon `ofxGui`. The installation directory should be called `openFrameworks` and installed next to the project folder.
 
 # Project: Barnes Hut galaxy Simulation
 
@@ -118,15 +122,14 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Measure how much time is consumed during each section in the code (single and multithreaded profiles at the bottom of the README)
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [x] At least one function should utilize vectorized instructions
-- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems > 5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
+- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
-- [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
-- [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers from Nlog(N) to N
-- [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Confirmed using Valgrind Cache reports)
-
-- [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if the distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
-- [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? No. (17.3s by value, 10.0s by reference)
-- [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
+- [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly, reduced memory footprint)
+- [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers in our implementation from the previous O(N*log(N)) to N 
+- [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache reports confirmed, that L1 hit rate was improved)
+- [x] Compare ways of computing forces: branchless by subtracting the "self interaction" force at the end, or checking if the interacting particle is itself every iteration. The result varies depending on how expensive the force computation is. The branchless implementation is about 5% slower for Lennard Jones potentials (two more force evaluations per particle), 5% faster for gravity (less branching)
+- [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? (73% slower: 17.3s by value, 10.0s by reference)
+- [x] Compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). (No measurable difference. 10s by value, 10s by reference)
 - [x] OpenMP parallel for loop for multithreading the simulation.
 - [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s
@@ -134,7 +137,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
   - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
   - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
 - [x] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
-- [x] OpenMP parallel for loop for multithreading the tree construction.
+- [x] OpenMP parallel for loop for multithreading the tree construction. (Construction is memory bound and was slower using OpenMP tasks for recursive parallelization, except for very large numbers of particles)
 
   ```
   Single-threaded gperf analysis:
@@ -161,10 +164,9 @@ In this sprint, we will analyze and optimize the performance and computation tim
     7.23      1.57     0.12       17     0.01     0.01  Tree::computeCOM()
     3.61      1.63     0.06      387     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
     1.81      1.66     0.03   135658     0.00     0.00  Tree::createBranches()
-
   ```
 
-  While tree construction is fast, taking up ~1% of the runtime in the single threaded example using 10k particles and theta=1.5, the construction overhead becomes more and more noticable when using more cores. The tree construction is entirely single threaded, the force calculation is almost trivially parallel.
+Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
 
 ## Gallery
 
