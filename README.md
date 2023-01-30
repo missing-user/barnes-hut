@@ -71,7 +71,7 @@ We want to approximate the effect of gravity in the formation of gas clouds and 
 
 The [Barnes-Hut algorithm](https://en.m.wikipedia.org/wiki/Barnes%E2%80%93Hut_simulation#/media/File%3A2D_Quad-Tree_partitioning_of_100_bodies.png) is commonly used in computational physics, specifically to approximately compute n-body interactions.
 
-![](https://upload.wikimedia.org/wikipedia/commons/9/93/2D_Quad-Tree_partitioning_of_100_bodies.png)
+![](images/irregularTree.png)
 
 ## Sprint 1 (basics)
 
@@ -165,3 +165,8 @@ In this sprint, we will analyze and optimize the performance and computation tim
   ```
 
   While tree construction is fast, taking up ~1% of the runtime in the single threaded example using 10k particles and theta=1.5, the construction overhead becomes more and more noticable when using more cores. The tree construction is entirely single threaded, the force calculation is almost trivially parallel.
+
+## Gallery
+
+![Pretty image](images/flatIrregularTree.png)
+
