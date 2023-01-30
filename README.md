@@ -103,11 +103,11 @@ In this sprint, we will add visualization capabilities to the project, allow the
 - [x] Create an Interactive GUI for the Simulation
 - [x] Support Different Initial Conditions
 
-![Big Bang](bigbang_clustering.png)
+![Big Bang](images/bigbang_clustering.png)
 
 Molecular dynamics simulation using the newly added Lennard Jones potential. By gradually removing energy from the system, the particles start forming hexagonal crystaline structures.
 
-![Crystal](hexagonal_structure.png)
+![Crystal](images/hexagonal_structure.png)
 
 ## Sprint 3 (performance and/or STL)
 
@@ -118,7 +118,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Measure how much time is consumed during each section in the code (single and multithreaded profiles at the bottom of the README)
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [x] At least one function should utilize vectorized instructions
-- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
+- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems > 5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
 - [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers from Nlog(N) to N
@@ -134,7 +134,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
   - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
   - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
 - [x] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
-- [ ] OpenMP parallel for loop for multithreading the tree construction.
+- [x] OpenMP parallel for loop for multithreading the tree construction.
 
   ```
   Single-threaded gperf analysis:
