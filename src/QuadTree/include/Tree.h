@@ -9,7 +9,7 @@
 #include "Forces.h"
 #include "Particle.h"
 
-class Tree
+class Tree 
 {
 private:
   CenterOfMass COM;
@@ -42,6 +42,7 @@ public:
   void subdivideNonRecursive();
   void print() const;
 
+  std::vector<DrawableCuboid> GetBoundingBoxes() const;
   std::pair<int, int> MaxDepthAndParticles() const;
 
   myvec3 computeAccFromPos(const myvec3 &pos, myfloat theta) const;

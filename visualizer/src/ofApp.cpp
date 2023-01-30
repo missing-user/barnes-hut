@@ -10,7 +10,6 @@ void ofApp::initializeParticles() {
     auto cur = ofColor::white;
     mesh.addColor(cur);
   }
-  calcDepthButtonPressed();
 }
 
 //--------------------------------------------------------------
@@ -24,8 +23,6 @@ void ofApp::setup() {
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
 
-  calcDepthButton.addListener(this, &ofApp::calcDepthButtonPressed);
-
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 64));
   gui.add(max_depth_slider.set("max_depth", 64, 1, 96));
@@ -38,7 +35,8 @@ void ofApp::setup() {
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
-  gui.add(calcDepthButton.setup("Recompute tree depth"));
+  gui.add(show_stats_toggle.set("Show Tree Stats", false));
+  gui.add(min_depth_slider.set("min visible level", 4, 0, 32));
   gui.add(depth_output.set("tree depth", "?"));
   gui.add(pcount_output.set("max particles leafs", "?"));
 
@@ -84,6 +82,31 @@ void ofApp::update() {
 void ofApp::draw() {
   gui.draw();
   cam.begin();
+
+  Tree mytree{particles};
+  auto boxes = mytree.GetBoundingBoxes();
+  ofNoFill();
+
+  if(show_stats_toggle)
+  {
+    Tree mytree{particles};
+    auto mdp = mytree.MaxDepthAndParticles();
+    depth_output = std::to_string(mdp.first);
+    pcount_output = std::to_string(mdp.second);
+
+    for (const auto &b : boxes) {
+      if (b.level >= min_depth_slider)
+      {
+        const auto visualLevel = std::max(0, b.level - min_depth_slider);
+        const auto maxLevel = std::max(1, mdp.first - min_depth_slider);
+        ofSetColor((255/maxLevel) * visualLevel,
+                    255 - (255/maxLevel) * visualLevel, 
+                    0, 128);
+        ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
+      }
+    }
+    ofSetColor(255);
+  }
   mesh.draw();
   cam.end();
   ofDrawBitmapString(
@@ -135,13 +158,6 @@ void ofApp::keyPressed(int key) {
   if (key == 'k') {
     remove_energy(particles);
   }
-}
-
-void ofApp::calcDepthButtonPressed() {
-  Tree mytree{particles};
-  auto minmax = mytree.MaxDepthAndParticles();
-  depth_output = std::to_string(minmax.first);
-  pcount_output = std::to_string(minmax.second);
 }
 
 //--------------------------------------------------------------

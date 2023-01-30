@@ -14,7 +14,7 @@ public:
   const myvec3 dimension;  // length of each dimension
   const myfloat diagonal2; // length squared of the diagonal of the cuboid
 
-  Cuboid(myvec3 center, myvec3 dimension);
+  Cuboid(const myvec3& center, const myvec3& dimension);
   Cuboid minMaxCuboid(myvec3 min, myvec3 max) const;
   std::array<Cuboid, 8> subdivide() const;            // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid in half along each dimension (i.e. Octant)
@@ -43,5 +43,14 @@ Cuboid bounding_box(const std::vector<T> &particles)
 
   return Cuboid((bmin + bmax) / 2.0, bmax - bmin);
 }
+
+
+class DrawableCuboid{
+public:
+  myvec3 center;
+  myvec3 dimension;
+  int level;
+  DrawableCuboid(const Cuboid &cuboid, int level);
+};
 
 #endif

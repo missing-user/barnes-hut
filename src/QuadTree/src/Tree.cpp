@@ -97,7 +97,9 @@ CenterOfMass Tree::computeCOM()
   // and save it as the new COM
   // Assumtions:
   // This function is only called once per tree, and COM is initialized to zero
-
+  COM.m = 0;
+  COM.p *= 0;
+  
   if (leaf)
   {
     // if this node doesn't have branches, calculate the center of mass the
@@ -220,4 +222,24 @@ std::pair<int, int> Tree::MaxDepthAndParticles() const
     }
     return max;
   }
+}
+
+std::vector<DrawableCuboid> Tree::GetBoundingBoxes() const
+{
+  std::vector<DrawableCuboid> boxes;
+  if (leaf) 
+  {
+    boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
+  }
+  else 
+  {
+    for (const auto &b : branches) 
+    {
+      const auto &v = b.GetBoundingBoxes();
+      boxes.insert(boxes.end(), 
+        std::make_move_iterator(v.begin()), 
+        std::make_move_iterator(v.end()));
+    }
+  }
+  return boxes;
 }

@@ -30,17 +30,17 @@ private:
 
   // text output
   ofParameter<std::string> text_output;
+
+  // stats
   ofParameter<std::string> depth_output;
   ofParameter<std::string> pcount_output;
-
-  ofxButton calcDepthButton;
+  ofParameter<int> min_depth_slider;
+  ofParameter<bool> show_stats_toggle;
 
 public:
   void setup();
   void update();
   void draw();
-
-  void calcDepthButtonPressed();
 
   void keyPressed(int key);
   void keyReleased(int key);

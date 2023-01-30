@@ -2,7 +2,7 @@
 
 // This class is used to store the coords and boundaries of a cuboid in 3D space
 // For this class to work, the cuboids edges must be parallel to the x, y, and z
-Cuboid::Cuboid(myvec3 center, myvec3 dimension)
+Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
     : center(center), dimension(dimension), diagonal2(glm::length2(dimension))
 {
 }
@@ -35,8 +35,8 @@ std::array<Cuboid, 8>
 Cuboid::subdivideAtP(myvec3 P) const // returns an array of 8 cuboids, splitting the parent
                                      // cuboid in half along each dimension (i.e. Octant)
 {
-  myvec3 minP = center - dimension;
-  myvec3 maxP = center + dimension;
+  myvec3 minP = center - dimension/2.0;
+  myvec3 maxP = center + dimension/2.0;
   // Calculating the coordinates of the new cuboid divisions
   std::array<Cuboid, 8> subcuboids{
       minMaxCuboid(myvec3(minP.x, minP.y, minP.z), myvec3(P.x, P.y, P.z)),
@@ -59,3 +59,7 @@ std::string Cuboid::print() const
   std::string s = str.str();
   return s;
 }
+
+
+DrawableCuboid::DrawableCuboid(const Cuboid &cuboid, int level) : 
+  center(cuboid.center), dimension(cuboid.dimension), level(level) {}
