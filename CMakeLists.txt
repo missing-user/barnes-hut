@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -fop
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 set(${SIM_HEADERS_DIR} ${PROJECT_SOURCE_DIR}/src/Simulation)
-set(${QUAD_HEADERS_DIR} ${PROJECT_SOURCE_DIR}/src/QuadTree)
+set(${QUAD_HEADERS_DIR} ${PROJECT_SOURCE_DIR}/src/OctTree)
 
 include_directories(${SIM_HEADERS_DIR})
 include_directories(${QUAD_HEADERS_DIR})

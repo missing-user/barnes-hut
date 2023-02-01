@@ -15,9 +15,6 @@ public:
   const myfloat diagonal2; // length squared of the diagonal of the cuboid
 
   Cuboid(const myvec3& center, const myvec3& dimension);
-  Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) const;
-  std::array<Cuboid, 8> subdivide() const;            // returns an array of 8 cuboids, splitting the parent
-                                                      // cuboid in half along each dimension (i.e. Octant)
   std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid at the given vector P
 
@@ -46,10 +43,11 @@ Cuboid bounding_box(const std::vector<T> &particles)
 
 
 class DrawableCuboid{
+  // Like a cuboid, but with a depth level field, so that we can draw it colored by depth
 public:
   myvec3 center;
   myvec3 dimension;
-  int level;
+  int level; // depth level of the cuboid
   DrawableCuboid(const Cuboid &cuboid, int level);
 };
 

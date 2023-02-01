@@ -37,7 +37,7 @@ OF_ROOT = ../../OF
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_EXTERNAL_SOURCE_PATHS = ../src/QuadTree/include
+PROJECT_EXTERNAL_SOURCE_PATHS = ../src/OctTree/include
 PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 
 ################################################################################
@@ -77,7 +77,7 @@ PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 # add a runtime path to search for those shared libraries, since they aren't 
 # incorporated directly into the final executable application binary.
 ################################################################################
-PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/QuadTree/libQuadTree.a ../build/src/Simulation/libSimulation.a
+PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src/Simulation/libSimulation.a
 PROJECT_LDFLAGS += -fopenmp
 ################################################################################
 # PROJECT DEFINES

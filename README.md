@@ -129,7 +129,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache reports confirmed, that L1 hit rate was improved)
 - [x] Compare ways of computing forces: branchless by subtracting the "self interaction" force at the end, or checking if the interacting particle is itself every iteration. The result varies depending on how expensive the force computation is. The branchless implementation is about 5% slower for Lennard Jones potentials (two more force evaluations per particle), 5% faster for gravity (less branching)
 - [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? (73% slower: 17.3s by value, 10.0s by reference)
-- [x] Compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). (No measurable difference. 10s by value, 10s by reference)
+- [x] Compare if by value and by reference make a difference in Tree.cpp selectOctant() and lessThanTheta(). (No measurable difference. 10s by value, 10s by reference)
 - [x] OpenMP parallel for loop for multithreading the simulation.
 - [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s

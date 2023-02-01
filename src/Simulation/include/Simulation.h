@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Bruteforce.h"
-#include "QuadTree.h"
+#include "Tree.h"
 
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
                                      myfloat dt, double theta);

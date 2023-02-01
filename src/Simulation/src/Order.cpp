@@ -1,5 +1,4 @@
 #include "Order.h"
-#include <boost/timer/timer.hpp>
 
 void reorder(std::vector<Particle> &data,
              std::vector<std::size_t> const &order)

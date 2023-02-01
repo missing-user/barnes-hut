@@ -7,28 +7,9 @@ Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
 {
 }
 
-Cuboid Cuboid::minMaxCuboid(const myvec3& min, const myvec3& max) const
+Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) // returns a cuboid with the given min and max coords
 {
   return Cuboid(0.5 * (min + max), max - min);
-}
-
-std::array<Cuboid, 8> Cuboid::subdivide() const // returns an array of 8 cuboids, splitting the parent
-                                                // cuboid in half along each dimension (i.e. Octant)
-{
-  const myvec3 newDimension = dimension / 2.0;
-  // Calculating the coordinates of the new cuboid divisions
-  std::array<Cuboid, 8> subcuboids{
-      Cuboid(center + myvec3(-.5, -.5, -.5) * newDimension, newDimension),
-      Cuboid(center + myvec3(.5, -.5, -.5) * newDimension, newDimension),
-      Cuboid(center + myvec3(-.5, .5, -.5) * newDimension, newDimension),
-      Cuboid(center + myvec3(.5, .5, -.5) * newDimension, newDimension),
-      Cuboid(center + myvec3(-.5, -.5, .5) * newDimension, newDimension),
-      Cuboid(center + myvec3(.5, -.5, .5) * newDimension, newDimension),
-      Cuboid(center + myvec3(-.5, .5, .5) * newDimension, newDimension),
-      Cuboid(center + myvec3(.5, .5, .5) * newDimension, newDimension),
-  };
-
-  return subcuboids;
 }
 
 std::array<Cuboid, 8>

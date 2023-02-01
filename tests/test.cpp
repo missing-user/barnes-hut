@@ -1,5 +1,5 @@
 #include "Distributions.h"
-#include "QuadTree.h"
+#include "Tree.h"
 #include "Simulation.h"
 #include <gtest/gtest.h>
 
