@@ -168,6 +168,10 @@ In this sprint, we will analyze and optimize the performance and computation tim
 
 Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
 
+## Algorithmic Improvements
+
+We added another type of tree that can be enabled with `#define USE_CENTER_OF_MASS_FOR_SPLITTING` and creates shallower, but irregular trees than the default OctTree splitting. Instead of dividing each cell into 8 equal parts, the center of mass of the particles in the cell is calculated and the cell is split into 8 cells at that point.
+
 ## Gallery
 
 ![Pretty image](images/flatIrregularTree.png)
