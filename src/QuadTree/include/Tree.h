@@ -9,10 +9,11 @@
 #include "Forces.h"
 #include "Particle.h"
 
-class Tree 
+class Tree
 {
 private:
   CenterOfMass COM;
+  myvec3 divisor;
   std::vector<Tree> branches;
   std::vector<std::unique_ptr<Particle>> particles;
   bool leaf;
@@ -22,7 +23,7 @@ private:
 
   bool less_than_theta(const myvec3 &pos, double theta) const;
   void createBranches();
-  void createBranchesAtP(myvec3 P);
+  void createBranchesAtP(const myvec3 &P);
   int selectOctant(const myvec3 &pos) const;
   CenterOfMass computeCOM();
   CenterOfMass computeCOM_NonRecursive();

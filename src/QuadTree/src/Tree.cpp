@@ -15,7 +15,6 @@ Tree::Tree(const std::vector<Particle> &particles_in)
     insertNonRecursive(p);
   }
   subdivideBreadth();
-  computeCOM();
 }
 
 void Tree::createBranches()
@@ -30,7 +29,7 @@ void Tree::createBranches()
   }
 }
 
-void Tree::createBranchesAtP(myvec3 P)
+void Tree::createBranchesAtP(const myvec3 &P)
 { // populates the branches array of this object
   // with new trees from subdividing this node
   branches.reserve(
@@ -45,9 +44,9 @@ void Tree::createBranchesAtP(myvec3 P)
 int Tree::selectOctant(const myvec3 &pos) const
 {
   int octant = 0;
-  octant += (pos.x > cuboid.center.x) << 0;
-  octant += (pos.y > cuboid.center.y) << 1;
-  octant += (pos.z > cuboid.center.z) << 2;
+  octant += (pos.x > divisor.x) << 0;
+  octant += (pos.y > divisor.y) << 1;
+  octant += (pos.z > divisor.z) << 2;
   return octant;
 }
 
@@ -66,16 +65,17 @@ void Tree::subdivideBreadth()
   {
     leaf = false;
     computeCOM_NonRecursive();
-    createBranchesAtP(COM.p);   // If there aren't any branches, create them.
+    divisor = COM.p;
+    createBranchesAtP(divisor); // If there aren't any branches, create them.
     for (auto &pnt : particles) // This is parallelizable
     {
       branches[selectOctant(pnt->p)].insertNonRecursive(std::move(pnt));
     }
     particles.clear();
-  }
-  for (auto &b : branches)
-  {
-    b.subdivideBreadth();
+    for (auto &b : branches)
+    {
+      b.subdivideBreadth();
+    }
   }
 }
 
@@ -99,7 +99,7 @@ CenterOfMass Tree::computeCOM()
   // This function is only called once per tree, and COM is initialized to zero
   COM.m = 0;
   COM.p *= 0;
-  
+
   if (leaf)
   {
     // if this node doesn't have branches, calculate the center of mass the
@@ -227,18 +227,18 @@ std::pair<int, int> Tree::MaxDepthAndParticles() const
 std::vector<DrawableCuboid> Tree::GetBoundingBoxes() const
 {
   std::vector<DrawableCuboid> boxes;
-  if (leaf) 
+  if (leaf)
   {
     boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
   }
-  else 
+  else
   {
-    for (const auto &b : branches) 
+    for (const auto &b : branches)
     {
       const auto &v = b.GetBoundingBoxes();
-      boxes.insert(boxes.end(), 
-        std::make_move_iterator(v.begin()), 
-        std::make_move_iterator(v.end()));
+      boxes.insert(boxes.end(),
+                   std::make_move_iterator(v.begin()),
+                   std::make_move_iterator(v.end()));
     }
   }
   return boxes;
