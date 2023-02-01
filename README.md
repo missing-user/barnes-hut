@@ -29,7 +29,7 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
-A simple python visualizer is included, which is usable for small simulations <100 particles. Running it requires python3 and the following packages: `plotly`, `numpy`, `pandas`. `Pandas` and `numpy` are used for reading and transforming the data into a format that can be visualized. `Plotly` is used for creating the interactive 3D plot.
+Our simulation outputs .csv files that can be visualized in Paraview using the default CSV importer and TableToPoints filter. To do so, simply specify the --csv flag when running (e.g. `./barnes-hut --csv`)
 
 # Usage
 
@@ -47,10 +47,6 @@ cd ..
 cd visualizer
 sudo make
 make run
-
-cd ..
-pip install -r requirements.txt 
-python plot.py
 ```
 
 1. Creates a folder called `build`, navigates into it, and creates the makefile

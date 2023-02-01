@@ -2,6 +2,8 @@
 #include "boost/timer/progress_display.hpp"
 #include <chrono>
 #include <string>
+#include <iomanip>
+#include <fstream>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
                                      myfloat dt, double theta) {
@@ -47,25 +49,11 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
 
   return particles_next;
 }
-
-std::string makeCsvHeader(size_t numberOfParticles) {
-  std::string outputBuffer;
-
-  // Create column names px_0,py_0,pz_0,px_1,py_1,pz_1,...
-  // That contain the respective xyz positions of particle 0,1,2,...
-  for (size_t i = 0; i < numberOfParticles; i++) {
-    std::string istr = std::to_string(i);
-    outputBuffer += "px_" + istr + ",py_" + istr + ",pz_" + istr + ",";
-  }
-  return outputBuffer + "time\n";
-}
-
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
-              std::ostream *outputwriter, bool brute_force, myfloat theta) {
+              bool outputwriter, bool brute_force, myfloat theta) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
-  if (outputwriter != nullptr)
-    *outputwriter << makeCsvHeader(particles.size());
+  
 
   std::cout << "Starting " << duration << "s simulation with " << duration / dt
             << " steps at dt =" << dt << "\n";
@@ -81,8 +69,13 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
     else // Barnes Hut step
       particles = stepSimulation(particles, dt, theta);
 
-    if (outputwriter != nullptr)
-      *outputwriter << particles << timestep * dt << "\n";
+    if (outputwriter){
+      // Open a csv file and write the positions of all particles
+      std::ofstream csvfile;
+      csvfile.open("output"+std::to_string(timestep)+".csv");
+      csvfile << "x,y,z,m\n";
+      csvfile << particles;
+    }
     ++show_progress;
   }
 
@@ -92,8 +85,6 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
       particles = stepSimulation(particles, residualTimestep);
     else
       particles = stepSimulation(particles, residualTimestep, theta);
-
-    if (outputwriter != nullptr)
-      *outputwriter << particles << duration << "\n";
+ 
   }
 }

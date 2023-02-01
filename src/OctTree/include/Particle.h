@@ -63,7 +63,7 @@ inline std::ostream &operator<<(std::ostream &out, const Particle &p) {
 inline std::ostream &operator<<(std::ostream &out,
                                 const std::vector<Particle> &particles) {
   for (auto &p : particles) {
-    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ",";
+    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ","<< p.m<< "\n";
   }
 
   return out;

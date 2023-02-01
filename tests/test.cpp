@@ -85,14 +85,26 @@ TEST(FileWriting, IsValidCsv) {
   std::vector<Particle> particles{p1};
   auto simDuration = 1;
 
-  std::stringstream buffer;
-  simulate(particles, simDuration, 0.5, &buffer);
+  simulate(particles, simDuration, 0.5, true);
 
   std::string expectedFileContent =
-      "px_0,py_0,pz_0,time\n5.5,7,8.5,0.5\n6,8,10,1\n";
-  EXPECT_EQ(buffer.str().compare(expectedFileContent), 0)
+      "x,y,z,m\n5.5,7,8.5,20\n";
+
+  std::ifstream f("output1.csv");
+  EXPECT_TRUE(f.good());
+
+  // Read the file into a string
+  std::string buffer;
+  buffer.assign(std::istreambuf_iterator<char>(f),
+                std::istreambuf_iterator<char>());
+
+  EXPECT_EQ(buffer.compare(expectedFileContent), 0)
       << "The real file content was:\n"
-      << buffer.str();
+      << buffer;
+      
+  f.close();
+  f = std::ifstream("output2.csv");
+  EXPECT_TRUE(f.good());
 }
 
 TEST(BarnesHut, CompareTheta0) {
@@ -110,7 +122,7 @@ TEST(BarnesHut, CompareTheta0) {
 
   simulate(particles, simDuration, timestep);
 
-  simulate(particlesTree, simDuration, timestep, nullptr, false, 0);
+  simulate(particlesTree, simDuration, timestep, false, false, 0);
 
   for (int i = 0; i < particles.size(); i++) {
     EXPECT_FLOAT_EQ(particles[i].p.x, particlesTree[i].p.x);
@@ -135,7 +147,7 @@ TEST(BarnesHut, CompareApproximation) {
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, nullptr, false, 1.2);
+  simulate(particlesTree, simDuration, timestep, false, false, 1.2);
 
   for (int i = 0; i < particles.size(); i++) {
     // The approximate values should not be identical to the real ones

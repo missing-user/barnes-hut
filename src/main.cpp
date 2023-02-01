@@ -53,15 +53,8 @@ int main(int argc, char *argv[]) {
   if (!no_reorder && !brute_force)
     computeAndOrder(particles);
 
-  if (output_csv) {
-    // Create a CSV file for the particles and generate the header
-    std::ofstream csvfile;
-    csvfile.open("output.csv");
-    simulate(particles, duration, timestep, &csvfile, brute_force, theta);
-    csvfile.close();
-  } else {
-    simulate(particles, duration, timestep, nullptr, brute_force, theta);
-  }
+
+  simulate(particles, duration, timestep, output_csv, brute_force, theta);
 
   // Check for nan and inf, throw if encountered
   for (const auto &p : particles) {
