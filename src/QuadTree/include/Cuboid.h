@@ -15,10 +15,10 @@ public:
   const myfloat diagonal2; // length squared of the diagonal of the cuboid
 
   Cuboid(const myvec3& center, const myvec3& dimension);
-  Cuboid minMaxCuboid(myvec3 min, myvec3 max) const;
+  Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) const;
   std::array<Cuboid, 8> subdivide() const;            // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid in half along each dimension (i.e. Octant)
-  std::array<Cuboid, 8> subdivideAtP(myvec3 P) const; // returns an array of 8 cuboids, splitting the parent
+  std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid at the given vector P
 
   std::string print() const;

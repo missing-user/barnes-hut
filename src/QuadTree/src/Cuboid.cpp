@@ -7,7 +7,7 @@ Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
 {
 }
 
-Cuboid Cuboid::minMaxCuboid(myvec3 min, myvec3 max) const
+Cuboid Cuboid::minMaxCuboid(const myvec3& min, const myvec3& max) const
 {
   return Cuboid(0.5 * (min + max), max - min);
 }
@@ -32,7 +32,7 @@ std::array<Cuboid, 8> Cuboid::subdivide() const // returns an array of 8 cuboids
 }
 
 std::array<Cuboid, 8>
-Cuboid::subdivideAtP(myvec3 P) const // returns an array of 8 cuboids, splitting the parent
+Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, splitting the parent
                                      // cuboid in half along each dimension (i.e. Octant)
 {
   myvec3 minP = center - dimension/2.0;

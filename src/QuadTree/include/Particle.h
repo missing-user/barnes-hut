@@ -4,8 +4,8 @@
 #include <sstream>
 #include <vector>
 
-//#define GLM_FORCE_SSE2
-//#define GLM_FORCE_ALIGNED
+#define GLM_FORCE_INTRINSICS
+//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 //#define GLM_FORCE_INLINE // Didn't make a measurable difference
 #include <glm/glm.hpp>
 #include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;

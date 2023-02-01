@@ -65,8 +65,8 @@ void Tree::subdivideBreadth()
   {
     leaf = false;
     computeCOM_NonRecursive();
-    divisor = COM.p;
-    createBranchesAtP(divisor); // If there aren't any branches, create them.
+divisor = COM.p;
+    createBranchesAtP(divisor); // If there aren't any branches, create them. 
     for (auto &pnt : particles) // This is parallelizable
     {
       branches[selectOctant(pnt->p)].insertNonRecursive(std::move(pnt));
@@ -89,6 +89,7 @@ CenterOfMass Tree::computeCOM_NonRecursive()
     COM += *p; // Adding two particles creates a new particle which
                // represents the center of mass of the two particles
   }
+  
   return COM;
 }
 
