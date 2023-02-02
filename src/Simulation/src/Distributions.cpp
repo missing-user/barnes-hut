@@ -238,6 +238,39 @@ std::vector<Particle> collision(int n)
   return first_half;
 }
 
+std::vector<Particle> plummer(int n){
+  // https://en.wikipedia.org/wiki/Plummer_model
+  // https://en.wikipedia.org/wiki/Plummer_sphere
+
+  std::vector<Particle> particles;
+  particles.resize(n);
+
+  const myfloat M = 1;
+  const myfloat r_s = 1;
+
+  std::uniform_real_distribution<myfloat> uniform(0, 1);
+
+  for(int i = 0; i < n; i++){
+    myfloat r = r_s / std::pow(uniform(mt), 2.0/3.0);
+    myfloat theta = 2 * glm::pi<myfloat>() * uniform(mt);
+    myfloat phi = glm::pi<myfloat>() * uniform(mt);
+
+    myfloat x = r * std::sin(phi) * std::cos(theta);
+    myfloat y = r * std::sin(phi) * std::sin(theta);
+    myfloat z = r * std::cos(phi);
+
+    myfloat vx = std::sqrt(M / r) * std::sin(phi) * std::cos(theta);
+    myfloat vy = std::sqrt(M / r) * std::sin(phi) * std::sin(theta);
+    myfloat vz = std::sqrt(M / r) * std::cos(phi);
+
+    myfloat m = M / static_cast<myfloat>(n);
+    
+    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m, i);
+  }
+
+  return particles;
+}
+
 std::vector<Particle> make_universe(Distribution dist, int num_particles)
 {
   switch (dist)
@@ -250,6 +283,8 @@ std::vector<Particle> make_universe(Distribution dist, int num_particles)
     return collision(num_particles);
   case Distribution::UNIVERSE4:
     return universe4(num_particles);
+  case Distribution::PLUMMER:
+    return plummer(num_particles);
   case Distribution::BIGBANG:
     return bigbang(num_particles);
   case Distribution::STABLE_ORBIT:

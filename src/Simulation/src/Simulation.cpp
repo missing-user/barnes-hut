@@ -4,6 +4,7 @@
 #include <string>
 #include <iomanip>
 #include <fstream>
+#include <thread>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
                                      myfloat dt, double theta) {
@@ -37,7 +38,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
   // TODO: Reuse this octree for the next timestep
 
   const Tree mytree2(particles_next);
-
+ 
 #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++) {
     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
@@ -49,6 +50,23 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
 
   return particles_next;
 }
+
+void writeToFile(const std::vector<Particle> &particles,
+                        const std::string &filename) {  
+  // Create and immediately detach a thread to write the file
+  std::thread([&filename, &particles](){ 
+    
+  // Open a csv file and write the positions of all particles
+    std::ofstream csvfile;
+    if (csvfile.is_open()) {
+      std::cerr << "Could not open file " << filename << " for writing\n";
+    }
+    csvfile.open(filename);
+    csvfile << "x,y,z,m\n";
+    csvfile << particles;
+  }).detach();
+}
+
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
               bool outputwriter, bool brute_force, myfloat theta) {
   // The pointer to the outputwriter is optional and will receive the
@@ -70,12 +88,9 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
       particles = stepSimulation(particles, dt, theta);
 
     if (outputwriter){
-      // Open a csv file and write the positions of all particles
-      std::ofstream csvfile;
-      csvfile.open("output"+std::to_string(timestep)+".csv");
-      csvfile << "x,y,z,m\n";
-      csvfile << particles;
+      writeToFile(particles, "output"+std::to_string(timestep)+".csv");
     }
+
     ++show_progress;
   }
 
@@ -85,6 +100,5 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
       particles = stepSimulation(particles, residualTimestep);
     else
       particles = stepSimulation(particles, residualTimestep, theta);
- 
   }
 }

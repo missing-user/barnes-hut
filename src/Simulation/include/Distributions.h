@@ -14,6 +14,7 @@ enum class Distribution {
   STABLE_ORBIT,
   SPHERE,
   CRYSTALLINE,
+  PLUMMER
 };
 
 void set_seed(unsigned int seed);
