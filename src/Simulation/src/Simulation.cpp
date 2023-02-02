@@ -74,7 +74,8 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
   
 
   std::cout << "Starting " << duration << "s simulation with " << duration / dt
-            << " steps at dt =" << dt << "\n";
+            << " steps at dt=" << dt << "\nwith the "<< (brute_force ? "brute force" : "Barnes Hut") 
+            << " solver and n="<< particles.size() << " particles\n";
 
   boost::timer::progress_display show_progress(duration / dt);
 
