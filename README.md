@@ -19,6 +19,8 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 # Prerequisites
 
+This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
+
 You need `cmake`, `glm` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
 
 ```sh
@@ -29,13 +31,10 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
-Our simulation outputs .csv files that can be visualized in Paraview using the default CSV importer and TableToPoints filter. To do so, simply specify the --csv flag when running (e.g. `./barnes-hut --csv`)
 
 # Usage
 
-This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
-
-To execute the project, run the following commands:
+To compile and execute the project, run the following commands:
 
 ```sh
 mkdir build && cd build && cmake ..
@@ -54,6 +53,12 @@ make run
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
 5. Runs the python script for visualizing the behavior of the system of particles over a set period of time in 3D space with dynamic POV
+
+
+Our simulation can output .csv files to  be visualized in Paraview using the default CSV importer and TableToPoints filter. To do so, simply specify the `--csv` flag when running (e.g. `./barnes-hut --csv`) 
+
+To get a full list of available CLI parameters, run `./barnes-hut --help`.
+
 
 ### Additional dependencies
 
