@@ -62,7 +62,7 @@ To get a full list of available CLI parameters, run `./barnes-hut --help`.
 
 ### Additional dependencies
 
-To run the 3D visualization, you need to install `openframeworks` and possibly the addon `ofxGui`. The installation directory should be called `openFrameworks` and installed next to the project folder.
+To run the 3D visualization, you need to install [open frameworks](https://openframeworks.cc/) and possibly the addon `ofxGui`. The installation directory should be called `OF` and installed next to the project folder.
 
 # Project: Barnes Hut galaxy Simulation
 
