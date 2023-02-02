@@ -66,16 +66,16 @@ TEST(QuadTree, DepthCalculation) {
   // expected
   set_seed(4756);
   std::vector<Particle> particles =
-      make_universe(Distribution::CRYSTALLINE, 100);
+      make_universe(Distribution::UNIVERSE4, 100);
 
   Tree tree{particles};
-  EXPECT_EQ(tree.MaxDepthAndParticles().first, 5);
+  EXPECT_EQ(tree.MaxDepthAndParticles().first, 6);
 
   Tree::maxDepth = 64;
   Tree::maxParticles = 1;
-  particles = make_universe(Distribution::CRYSTALLINE, 1000);
+  particles = make_universe(Distribution::UNIVERSE4, 1000);
   Tree deeptree = Tree(particles);
-  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 8);
+  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 9);
 }
 
 TEST(FileWriting, IsValidCsv) {
