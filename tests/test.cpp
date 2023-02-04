@@ -5,6 +5,8 @@
 
 #include <fstream>
 #include <numbers>
+#include <chrono>
+#include <thread>
 
 TEST(Simulation, Analytical45Rotations) {
   // Simulate 4.5 rotations of two massless particles around a massive object.
@@ -83,28 +85,33 @@ TEST(FileWriting, IsValidCsv) {
 
   Particle p1 = {{5, 6, 7}, {1, 2, 3}, 20};
   std::vector<Particle> particles{p1};
-  auto simDuration = 1;
 
-  simulate(particles, simDuration, 0.5, true);
+  simulate(particles, 2, 0.5, true);
 
-  std::string expectedFileContent =
-      "x,y,z,m\n5.5,7,8.5,20\n";
+std::vector<std::string> files{"output1.csv", "output3.csv"};
+std::vector<std::string> expectedFileContents{
+    "x,y,z,m\n5.5,7,8.5,20\n",
+    "x,y,z,m\n7,10,13,20\n"};
 
-  std::ifstream f("output1.csv");
-  EXPECT_TRUE(f.good());
+  for(int i = 0; i<files.size(); i++){
+    std::ifstream f(files[i]);
+    // Wait for the file to be written, maximum 1 second
+    for(int i = 0; i<10||f.good(); i++){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    EXPECT_TRUE(f.good());
 
-  // Read the file into a string
-  std::string buffer;
-  buffer.assign(std::istreambuf_iterator<char>(f),
-                std::istreambuf_iterator<char>());
+    // Read the file into a string
+    std::string buffer;
+    buffer.assign(std::istreambuf_iterator<char>(f),
+                  std::istreambuf_iterator<char>());
 
-  EXPECT_EQ(buffer.compare(expectedFileContent), 0)
-      << "The real file content was:\n"
-      << buffer;
-      
-  f.close();
-  f = std::ifstream("output2.csv");
-  EXPECT_TRUE(f.good());
+    EXPECT_EQ(buffer.compare(expectedFileContents[i]), 0)
+        << "The real file content was:\n"
+        << buffer<<"\nbut we expected:\n"<<expectedFileContents[i]<<"\n";
+        
+    f.close();
+  }
 }
 
 TEST(BarnesHut, CompareTheta0) {

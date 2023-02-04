@@ -132,6 +132,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? (73% slower: 17.3s by value, 10.0s by reference)
 - [x] Compare if by value and by reference make a difference in Tree.cpp selectOctant() and lessThanTheta(). (No measurable difference. 10s by value, 10s by reference)
 - [x] OpenMP parallel for loop for multithreading the simulation.
+- [x] OmenMP dynamic scheduling for the simulation loop. (Improved performance by 12% in the UNIVERSE4 benchmark) Due to load imbalance between threads, the dynamic scheduling algorithm is more efficient in this scenario. The level of imbalance depends heavily on the distribution you are trying to simulate, e.g. if particles are clustered together in certain regions, load imbalance could be quite high.
 - [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s
   - Single-threaded, vectorized, subtraction instead of position comparison: 9.91s
