@@ -1,12 +1,12 @@
 #include "Simulation.h"
-#include "boost/timer/progress_display.hpp"
+#include "Progress.h"
 #include <chrono>
 #include <string>
 #include <iomanip>
 #include <fstream>
 #include <thread>
 
-std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
+std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
                                      myfloat dt, double theta) {
   // barnes hut optimized step
   // Buffer for the new state vector of particles

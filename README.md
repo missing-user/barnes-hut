@@ -140,6 +140,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
   - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
 - [x] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
 - [x] OpenMP parallel for loop for multithreading the tree construction. (Construction is memory bound and was slower using OpenMP tasks for recursive parallelization, except for very large numbers of particles)
+- [x] Imroved logging performance slightly by adding some noexcept statements
 
   ```
   Single-threaded gperf analysis:
@@ -169,6 +170,9 @@ In this sprint, we will analyze and optimize the performance and computation tim
   ```
 
 Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
+After some further investigations, we found that the static scheduling of the OpenMP parallel for loop was the problem. The load was not balanced between the threads, so the slowest thread would always be the bottleneck, while the other would be sitting idle. By switching to dynamic scheduling, the speedup per core became similiar to the brute force version.
+![multicore runtime speedup dynamic scheduling](images/coresSpeedupDynamic.png)
+Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well. This indicates, that there are still serial portions of the code that we could optimize. Copying the particles  
 
 ## Algorithmic Improvements
 

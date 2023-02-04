@@ -11,7 +11,7 @@ add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
 add_subdirectory(OctTree) #QuadTreeIndices
 add_subdirectory(Simulation)
 
-find_package(Boost CONFIG REQUIRED COMPONENTS program_options timer )
+find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
 # find_package(Boost home\jimmy\Packages\boost_1_81_0)
 
 find_package(glm CONFIG REQUIRED)
