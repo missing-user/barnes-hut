@@ -8,10 +8,12 @@ This project is an implementation of the Barnes-Hut algorithm for approximating 
 
 ![Spiral Galaxy from our simulation](images/spiral_galaxy.png)
 
+<p style="text-align:center;">
+  <img src="https://imgur.com/bk7yNkw.mp4" />
+  <img src="https://imgur.com/YoPuWtk.mp4" />
+  <img src="https://imgur.com/etHXSY3.mp4" />
+</p>
 
-![](https://imgur.com/bk7yNkw.mp4) 
-![](https://imgur.com/YoPuWtk.mp4)
-![](https://imgur.com/etHXSY3.mp4)
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
 
 This project was made for the Advanced Programming course at the Technical University of Munich.
