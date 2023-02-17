@@ -5,10 +5,12 @@
 // Parameters for the lennard jones potential
 constexpr myfloat epsilon = 1e2; // depth
 constexpr myfloat delta = 0.5;   // optimal distance from 0
-constexpr myfloat A = 4 * epsilon * pow(delta, 12);
-constexpr myfloat B = 4 * epsilon * pow(delta, 6);
+constexpr myfloat A = 4 * epsilon * std::pow(delta, 12);
+constexpr myfloat B = 4 * epsilon * std::pow(delta, 6);
 
 const myfloat lj_softening_param = 0.05;
+
+// #define LENNARD_JONES
 
 myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
   const myfloat r = glm::length2(diff) + lj_softening_param;
@@ -23,7 +25,9 @@ myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
    * F = diff * (12*A*r2^(-7) - 6*B*r2^(-4))
    */
 
-  return diff * (-12 * A / pow(r, 7) + 6 * B / pow(r, 4));
+  // For some reason the compiler does not optimize pow(r,7) and pow(r,4) in this case
+  // So writing the expression out explicitly is about 70% faster
+  return diff * (-12 * A / (r*r*r*r*r*r*r) + 6 * B / (r*r*r*r));
 }
 
 myvec3 gravityForce(const myvec3 &diff, myfloat mass) {
@@ -46,7 +50,12 @@ myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
    * reasons).
    */
 
-  return gravityForce(diff, mass); // + lennardJonesForce(diff, mass);
+  #ifndef LENNARD_JONES
+    return gravityForce(diff, mass);
+  #else
+    return gravityForce(diff, mass) + lennardJonesForce(diff, mass);
+  #endif
+
 }
 
 /* Potential energy
@@ -63,5 +72,10 @@ myfloat lennardJonesPotential(const myvec3 &diff, myfloat mass) {
 }
 
 myfloat potentialFunc(const myvec3 &diff, myfloat mass) {
-  return gravityPotential(diff, mass) + lennardJonesPotential(diff, mass);
+
+  #ifndef LENNARD_JONES
+    return gravityPotential(diff, mass);
+  #else
+    return gravityPotential(diff, mass) + lennardJonesPotential(diff, mass);
+  #endif  
 }

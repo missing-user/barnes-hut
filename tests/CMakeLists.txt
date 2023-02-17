@@ -13,7 +13,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ../src ${GTEST_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GTEST_LIBRARIES} Threads::Threads)
-target_link_libraries(tests PUBLIC Simulation QuadTree)
+target_link_libraries(tests PUBLIC Simulation OctTree)
 
 enable_testing()
 add_test(NAME tests COMMAND tests)

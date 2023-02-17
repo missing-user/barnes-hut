@@ -53,23 +53,8 @@ int main(int argc, char *argv[]) {
   if (!no_reorder && !brute_force)
     computeAndOrder(particles);
 
-  if (output_csv) {
-    // Create a CSV file for the particles and generate the header
-    std::ofstream csvfile;
-    csvfile.open("output.csv");
-    simulate(particles, duration, timestep, &csvfile, brute_force, theta);
-    csvfile.close();
-  } else {
-    simulate(particles, duration, timestep, nullptr, brute_force, theta);
-  }
 
-  // Check for nan and inf, throw if encountered
-  for (const auto &p : particles) {
-    if (std::isnan(p.p.x) || std::isnan(p.p.y) || std::isnan(p.p.z)) {
-      throw std::runtime_error("Nan encountered");
-    }
-    if (std::isinf(p.p.x) || std::isinf(p.p.y) || std::isinf(p.p.z)) {
-      throw std::runtime_error("Inf encountered");
-    }
-  }
+  simulate(particles, duration, timestep, output_csv, brute_force, theta);
+
+  return 0;
 }

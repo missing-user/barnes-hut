@@ -4,8 +4,8 @@
 #include <sstream>
 #include <vector>
 
-//#define GLM_FORCE_SSE2
-//#define GLM_FORCE_ALIGNED
+#define GLM_FORCE_INTRINSICS 
+//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES // Slowdowns on my machine
 //#define GLM_FORCE_INLINE // Didn't make a measurable difference
 #include <glm/glm.hpp>
 #include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
@@ -63,7 +63,7 @@ inline std::ostream &operator<<(std::ostream &out, const Particle &p) {
 inline std::ostream &operator<<(std::ostream &out,
                                 const std::vector<Particle> &particles) {
   for (auto &p : particles) {
-    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ",";
+    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ","<< p.m<< "\n";
   }
 
   return out;
