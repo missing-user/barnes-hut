@@ -3,7 +3,7 @@
 #include <numbers>
 #include <random>
 
-std::mt19937 mt{std::random_device{}()};
+thread_local std::mt19937 mt{std::random_device{}()};
 std::uniform_real_distribution uniform_dist{-1.0, 1.0};
 std::normal_distribution normal_dist{0.0, 1.0};
 
@@ -12,6 +12,7 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 std::vector<Particle> normal_distribution(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
@@ -24,6 +25,7 @@ std::vector<Particle> normal_distribution(int num_particles)
 std::vector<Particle> ball_dist(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::ballRand(1.0);
@@ -34,6 +36,7 @@ std::vector<Particle> ball_dist(int num_particles)
 std::vector<Particle> sphere_dist(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::sphericalRand(1.0);
@@ -44,6 +47,7 @@ std::vector<Particle> sphere_dist(int num_particles)
 std::vector<Particle> box_distribution(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = uniform_dist(mt);
@@ -61,6 +65,9 @@ std::vector<Particle> exponential_disk_distribution(int num_particles)
   std::normal_distribution vertical_dist{0.0, 1.0};
   std::uniform_real_distribution angle_dist{0.0, 2 * 3.14159265358};
 
+  // Since we use this distribution for testing and benchmarks, it has to be deterministic. 
+  // thread_local random numbers DO NOT GUARANTEE DETERMINISM ACROSS DIFFERENT RUNS! 
+  //#pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     auto r = radial_dist(mt);
@@ -138,6 +145,7 @@ std::vector<Particle> &set_maxwell_v_dist(std::vector<Particle> &particles,
   // setup the Maxwell distribution, i.e. gamma distribution with alpha = 3/2
   std::gamma_distribution<myfloat> maxwell(3. / 2., k_T);
 
+  #pragma omp parallel for
   for (auto &p : particles)
   {
     myfloat x, y, z;
@@ -238,6 +246,40 @@ std::vector<Particle> collision(int n)
   return first_half;
 }
 
+std::vector<Particle> plummer(int n){
+  // https://en.wikipedia.org/wiki/Plummer_model
+  // https://en.wikipedia.org/wiki/Plummer_sphere
+
+  std::vector<Particle> particles;
+  particles.resize(n);
+
+  const myfloat M = 1;
+  const myfloat r_s = 1;
+
+  std::uniform_real_distribution<myfloat> uniform(0, 1);
+
+  #pragma omp parallel for
+  for(int i = 0; i < n; i++){
+    myfloat r = r_s / std::pow(uniform(mt), 2.0/3.0);
+    myfloat theta = 2 * glm::pi<myfloat>() * uniform(mt);
+    myfloat phi = glm::pi<myfloat>() * uniform(mt);
+
+    myfloat x = r * std::sin(phi) * std::cos(theta);
+    myfloat y = r * std::sin(phi) * std::sin(theta);
+    myfloat z = r * std::cos(phi);
+
+    myfloat vx = std::sqrt(M / r) * std::sin(phi) * std::cos(theta);
+    myfloat vy = std::sqrt(M / r) * std::sin(phi) * std::sin(theta);
+    myfloat vz = std::sqrt(M / r) * std::cos(phi);
+
+    myfloat m = M / static_cast<myfloat>(n);
+    
+    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m, i);
+  }
+
+  return particles;
+}
+
 std::vector<Particle> make_universe(Distribution dist, int num_particles)
 {
   switch (dist)
@@ -250,6 +292,8 @@ std::vector<Particle> make_universe(Distribution dist, int num_particles)
     return collision(num_particles);
   case Distribution::UNIVERSE4:
     return universe4(num_particles);
+  case Distribution::PLUMMER:
+    return plummer(num_particles);
   case Distribution::BIGBANG:
     return bigbang(num_particles);
   case Distribution::STABLE_ORBIT:

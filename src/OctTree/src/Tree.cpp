@@ -1,29 +1,39 @@
 #include "Tree.h"
 
+// #define USE_CENTER_OF_MASS_FOR_SPLITTING
+
 int Tree::maxDepth = 64;
 int Tree::maxParticles = 1;
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
-    : cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), leaf(true) {}
+    : cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), leaf(true), divisor(cuboid.center) {}
 
-Tree::Tree(const std::vector<Particle> &particles)
-    : cuboid(bounding_box(particles)), level(0), COM({{0, 0, 0}, 0}),
-      leaf(true)
+Tree::Tree(const std::vector<Particle> &particles_in)
+    : cuboid(bounding_box(particles_in)), level(0), COM({{0, 0, 0}, 0}),
+      leaf(true), divisor(cuboid.center)
 {
-
-  for (const auto &p : particles)
+  for (const auto &p : particles_in)
   {
-    insert(p);
+    particles.push_back(std::make_unique<Particle>(p));
   }
-  computeCOM();
+  subdivide();
 }
 
-void Tree::createBranches()
+void Tree::insert(std::unique_ptr<Particle> p){
+  if (leaf){
+    particles.push_back(std::move(p));
+  }
+  else{
+    branches[selectOctant(p->p)].insert(std::move(p));
+  }
+}
+
+void Tree::createBranches(const myvec3 &pos)
 { // populates the branches array of this object
   // with new trees from subdividing this node
   branches.reserve(
       8); // reserve space for 8 branches to save on resize operations
-  for (Cuboid &r : cuboid.subdivide())
+  for (Cuboid &r : cuboid.subdivideAtP(pos))
   {
     Tree branch = Tree(r, level + 1);
     branches.push_back(std::move(branch));
@@ -33,66 +43,52 @@ void Tree::createBranches()
 int Tree::selectOctant(const myvec3 &pos) const
 {
   int octant = 0;
-  octant += (pos.x > cuboid.center.x) << 0;
-  octant += (pos.y > cuboid.center.y) << 1;
-  octant += (pos.z > cuboid.center.z) << 2;
+  octant += (pos.x > divisor.x) << 0;
+  octant += (pos.y > divisor.y) << 1;
+  octant += (pos.z > divisor.z) << 2;
   return octant;
 }
 
-void Tree::insert(const Particle &p)
-{ // adds a point to the tree structure.
-  // Depending how full the node is, new branches may be generated
-  insert(std::make_unique<Particle>(p));
-}
-
-void Tree::insert(std::unique_ptr<Particle> p)
+void Tree::subdivide()
 {
-  if (level < maxDepth && (particles.size() >= maxParticles || !leaf))
+  if (level < maxDepth && (particles.size() > maxParticles && leaf))
   {
-    if (leaf)
+    computeCOM(); // Compute COM while 
+    createBranches(divisor); // If there aren't any branches, create them. 
+    for (auto &pnt : particles) // This is parallelizable
     {
-      leaf = false;
-      createBranches(); // If there aren't any branches, create them.
-
-      for (auto &pnt : particles)
-      {
-        branches[selectOctant(pnt->p)].insert(std::move(pnt));
-      }
-      particles.clear();
+      branches[selectOctant(pnt->p)].insert(std::move(pnt));
     }
-    // Also add the new point to the appropriate branch
-    branches[selectOctant(p->p)].insert(std::move(p));
-  }
-  else
-  {
-    particles.push_back(std::move(p));
+    particles.clear();
+    for (auto &b : branches)
+    {
+      b.subdivide();
+    }
+    leaf = false;
   }
 }
 
 CenterOfMass Tree::computeCOM()
 { // calculate the center of mass for this node
   // and save it as the new COM
-  // Assumtions:
-  // This function is only called once per tree, and COM is initialized to zero
+  COM.m = 0;
+  COM.p *= 0;
 
-  if (leaf)
+  for (const auto &p : particles)
   {
-    // if this node doesn't have branches, calculate the center of mass the
-    // contained particles
-    for (const auto &p : particles)
-    {
-      COM += *p; // Adding two particles creates a new particle which
-                 // represents the center of mass of the two particles
-    }
+    COM += *p; // Adding two particles creates a new particle which
+                // represents the center of mass of the two particles
   }
-  else
+
+  // If we are a leaf, then branches is empty and no loop will not execute
+  for (Tree &t : branches)
   {
-    // This recursively calculates the center of mass of each branch sets it
-    for (Tree &t : branches)
-    {
-      COM += t.computeCOM();
-    }
+    COM += t.computeCOM();
   }
+
+  #ifdef USE_CENTER_OF_MASS_FOR_SPLITTING
+    divisor = COM.p;
+  #endif
 
   return COM;
 }
@@ -109,7 +105,7 @@ myvec3 Tree::computeAccFromPos(
     const myvec3 &pos,
     myfloat theta) const
 { // compute the total acceleration at this position
-  // due to all particles in this tree
+  // due to all particles in this Tree
   myvec3 acc{0, 0, 0};
 
   if (leaf)
@@ -124,7 +120,7 @@ myvec3 Tree::computeAccFromPos(
   }
   else
   {
-    if (less_than_theta(pos, theta))
+    if (lessThanTheta(pos, theta))
     { // Barnes-Hut threshold
       // if the threshold is met, approximate the acceleration using the center
       // of mass instead of summing the individual particle contributions
@@ -143,10 +139,14 @@ myvec3 Tree::computeAccFromPos(
   return acc;
 }
 
-bool Tree::less_than_theta(const myvec3 &pos, double theta) const
+bool Tree::lessThanTheta(const myvec3 &pos, double theta) const
 {
   return cuboid.diagonal2 < theta * glm::length2(pos - COM.p);
 }
+
+/***********************************************************************/
+/* Helpers and Statistics */
+/***********************************************************************/
 
 void Tree::print() const
 {
@@ -159,7 +159,7 @@ void Tree::print() const
 }
 
 std::vector<std::size_t> Tree::DFS() const
-{
+{ // Depth first search, returns a vector with the order of the particles
   std::vector<std::size_t> indices;
   if (leaf)
   {
@@ -181,7 +181,7 @@ std::vector<std::size_t> Tree::DFS() const
 }
 
 std::pair<int, int> Tree::MaxDepthAndParticles() const
-{
+{ // returns the maximum depth and number of particles in the Tree recursively (depth, particles)
   if (leaf)
   {
     return {level, particles.size()};
@@ -197,4 +197,24 @@ std::pair<int, int> Tree::MaxDepthAndParticles() const
     }
     return max;
   }
+}
+
+std::vector<DrawableCuboid> Tree::GetBoundingBoxes() const
+{ // returns a vector of drawable cuboids for the bounding boxes of the Tree
+  std::vector<DrawableCuboid> boxes;
+  if (leaf)
+  {
+    boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
+  }
+  else
+  {
+    for (const auto &b : branches)
+    {
+      const auto &v = b.GetBoundingBoxes();
+      boxes.insert(boxes.end(),
+                   std::make_move_iterator(v.begin()),
+                   std::make_move_iterator(v.end()));
+    }
+  }
+  return boxes;
 }
