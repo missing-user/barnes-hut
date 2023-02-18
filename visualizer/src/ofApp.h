@@ -18,6 +18,7 @@ private:
   ofEasyCam cam;
   ofMesh mesh;
   ofxPanel gui;
+  double prev_mass;
 
   // Adjustable parameters
   ofParameter<double> timestep_slider;

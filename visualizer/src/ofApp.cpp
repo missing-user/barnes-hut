@@ -5,6 +5,7 @@
 std::vector<Particle> particles;
 
 void ofApp::initializeParticles() {
+  mesh.clear();
   for (const auto &p : particles) {
     mesh.addVertex(p.p);
     auto cur = ofColor::white;
@@ -33,6 +34,7 @@ void ofApp::setup() {
 
   gui.add(num_particles_slider.set("num_particles", 1000, 100, 3e4));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
+  prev_mass = mass_slider;
   gui.add(text_output.set("frame time", "text"));
 
   gui.add(show_stats_toggle.set("Show Tree Stats", false));
@@ -48,8 +50,12 @@ void ofApp::setup() {
 void ofApp::update() {
   Tree::maxDepth = max_depth_slider;
   Tree::maxParticles = max_per_node_slider;
-
-  set_mass(particles, mass_slider);
+  
+  if (prev_mass != mass_slider) {
+    prev_mass = mass_slider;
+    set_mass(particles, mass_slider);
+  }
+  
   auto begin = std::chrono::steady_clock::now();
 
   if (!brute_force_toggle)
@@ -74,7 +80,7 @@ void ofApp::update() {
   for (std::size_t i = 0; i < mesh.getNumVertices(); i++) {
     mesh.setVertex(i, particles[i].p);
     double len = std::max(50.0, glm::length(particles[i].v) * maxv_inv);
-    mesh.setColor(i, ofColor(255 - len / 5, len * 4 / 5, len, 128));
+    mesh.setColor(i, ofColor(255 - len / 5, len * 4 / 5, len, 255));
   }
 }
 
@@ -130,17 +136,18 @@ std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
   if (key == 'r') {
-    mesh.clear();
     particles = make_universe(Distribution::BIGBANG, num_particles_slider);
     initializeParticles();
   }
   if (key == 't') {
-    mesh.clear();
     particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
     initializeParticles();
   }
+  if (key == 'p') {
+    particles = make_universe(Distribution::PLUMMER, num_particles_slider);
+    initializeParticles();
+  }
   if (key == 'e') {
-    mesh.clear();
     particles = make_universe(Distribution::CRYSTALLINE, num_particles_slider);
     initializeParticles();
   }

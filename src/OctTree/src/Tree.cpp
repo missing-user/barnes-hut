@@ -2,8 +2,8 @@
 
 // #define USE_CENTER_OF_MASS_FOR_SPLITTING
 
-int Tree::maxDepth = 64;
-int Tree::maxParticles = 1;
+int Tree::maxDepth = 32;
+int Tree::maxParticles = 4;
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
     : cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), leaf(true), divisor(cuboid.center) {}

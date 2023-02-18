@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
   po::options_description desc("Allowed options");
   desc.add_options()("help", "produce help message")(
-      "num_particles,n", po::value<int>(&num_particles),
+      "num-particles,num_particles,numparticles,n", po::value<int>(&num_particles),
       "number of particles in the simulation. Default is 1000")(
       "theta,T", po::value<myfloat>(&theta),
       "Multipole rejection threshold for barnes-hut. Default is 1.5")(
@@ -32,9 +32,9 @@ int main(int argc, char *argv[]) {
       "Simulation timestep. Default is 0.1s")(
       "csv", po::bool_switch(&output_csv),
       "output the results into a csv file")(
-      "brute_force", po::bool_switch(&brute_force),
+      "brute-force,brute_force,bruteforce", po::bool_switch(&brute_force),
       "Enable this flag to use the brute force algorithm")(
-      "noreorder", po::bool_switch(&no_reorder),
+      "no-reorder,no_reorder,noreorder", po::bool_switch(&no_reorder),
       "Reorders the particle array before starting the calculation to improve "
       "cache locality. This is only useful for the barnes-hut algorithm.");
   po::variables_map vm;
