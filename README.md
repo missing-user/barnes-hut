@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitLab Release](https://img.shields.io/badge/Release-Sprint%202-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/main)
-![Test Result Badge](https://gitlab.lrz.de/advprog2022/13/barnes-hut/badges/version2/pipeline.svg)
+![Test Result Badge](https://gitlab.lrz.de/advprog2022/13/barnes-hut/badges/main/pipeline.svg)
 
 # Barnes-Hut Simulation
 
