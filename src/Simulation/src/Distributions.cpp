@@ -248,33 +248,37 @@ std::vector<Particle> collision(int n)
 
 std::vector<Particle> plummer(int n){
   // https://en.wikipedia.org/wiki/Plummer_model
-  // https://en.wikipedia.org/wiki/Plummer_sphere
 
-  std::vector<Particle> particles;
-  particles.resize(n);
+  std::vector<Particle> particles{n};
 
   const myfloat M = 1;
   const myfloat r_s = 1;
-
+  const myfloat m = M / static_cast<myfloat>(n);
+  
   std::uniform_real_distribution<myfloat> uniform(0, 1);
 
-  #pragma omp parallel for
   for(int i = 0; i < n; i++){
-    myfloat r = r_s / std::pow(uniform(mt), 2.0/3.0);
-    myfloat theta = 2 * glm::pi<myfloat>() * uniform(mt);
-    myfloat phi = glm::pi<myfloat>() * uniform(mt);
+    const myfloat r = r_s / std::sqrt(std::pow(uniform(mt), -2.0/3.0) - 1);
+    const myfloat theta = std::acos(uniform_dist(mt));
+    const myfloat phi = 2 * glm::pi<myfloat>() * uniform(mt);
 
-    myfloat x = r * std::sin(phi) * std::cos(theta);
-    myfloat y = r * std::sin(phi) * std::sin(theta);
-    myfloat z = r * std::cos(phi);
+    const myfloat px = r * std::sin(theta) * std::cos(phi);
+    const myfloat py = r * std::sin(theta) * std::sin(phi);
+    const myfloat pz = r * std::cos(theta);
 
-    myfloat vx = std::sqrt(M / r) * std::sin(phi) * std::cos(theta);
-    myfloat vy = std::sqrt(M / r) * std::sin(phi) * std::sin(theta);
-    myfloat vz = std::sqrt(M / r) * std::cos(phi);
+    myfloat x = 0.0;
+    myfloat y = 0.1;
+    while (y > x*x*std::pow(1.0-x*x,3.5)){
+      x = uniform(mt);
+      y = uniform(mt)*0.1;
+    }
+    const myfloat velocity = x * std::sqrt(2.0) * std::pow(1.0 + r*r, -0.25);
 
-    myfloat m = M / static_cast<myfloat>(n);
-    
-    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m, i);
+    const myfloat vx = velocity /r * px;
+    const myfloat vy = velocity /r * py;
+    const myfloat vz = velocity /r * pz;
+
+    particles[i] = Particle({px,py,pz}, {vx,vy,vz}, m, i);
   }
 
   return particles;
