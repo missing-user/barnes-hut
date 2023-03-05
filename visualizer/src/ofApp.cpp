@@ -18,28 +18,29 @@ void ofApp::setup(){
   ofSetBackgroundColor(ofColor::black);
 
 	
-  particles = make_universe(Distribution::PLUMMER, 1000);
+  particles = make_universe(Distribution::CRYSTALLINE, 1000);
   initializeParticles();
 
 	icoSphere.setMode(OF_PRIMITIVE_TRIANGLES);
 	icoSphere.setResolution(0);
 
   gui.setup();
-  gui.add(max_per_node_slider.set("max_per_node", 1, 1, 64));
-  gui.add(max_depth_slider.set("max_depth", 64, 1, 96));
+  gui.add(max_per_node_slider.set("max_per_node", 4, 1, 64));
+  gui.add(max_depth_slider.set("max_depth", 32, 1, 48));
 
   gui.add(timestep_slider.set("timestep", 0.001, 0.0001, 0.01));
-  gui.add(brute_force_toggle.set("brute force", false));
+  //gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
   gui.add(show_stats_toggle.set("Show Tree", false));
-  gui.add(min_depth_slider.set("min visible level", 4, 0, 32));
+  gui.add(min_depth_slider.set("min visible level", 4, 0, 20));
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
   Tree::maxDepth = max_depth_slider;
   Tree::maxParticles = max_per_node_slider;
+	bool brute_force_toggle = false;
   if (brute_force_toggle)
     particles = stepSimulation(particles, timestep_slider);
   else

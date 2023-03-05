@@ -47,12 +47,7 @@ class ofApp : public ofBaseApp{
   ofParameter<myfloat> mass_slider;
   ofParameter<bool> brute_force_toggle;
 
-  // text output
-  ofParameter<std::string> text_output;
-
   // stats
-  ofParameter<std::string> depth_output;
-  ofParameter<std::string> pcount_output;
   ofParameter<int> min_depth_slider;
   ofParameter<bool> show_stats_toggle;
 };
