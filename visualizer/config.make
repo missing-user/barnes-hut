@@ -37,8 +37,7 @@ OF_ROOT = ../../OF
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_EXTERNAL_SOURCE_PATHS = ../src/OctTree/include
-PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
+# PROJECT_EXTERNAL_SOURCE_PATHS = 
 
 ################################################################################
 # PROJECT EXCLUSIONS
@@ -77,7 +76,7 @@ PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 # add a runtime path to search for those shared libraries, since they aren't 
 # incorporated directly into the final executable application binary.
 ################################################################################
-PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src/Simulation/libSimulation.a
+# PROJECT_LDFLAGS=-Wl,-rpath=./libs
 
 ################################################################################
 # PROJECT DEFINES
@@ -105,7 +104,7 @@ PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_CFLAGS += -fopenmp
+# PROJECT_CFLAGS = 
 
 ################################################################################
 # PROJECT OPTIMIZATION CFLAGS
@@ -128,7 +127,7 @@ PROJECT_CFLAGS += -fopenmp
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_OPTIMIZATION_CFLAGS_RELEASE = -Ofast
+# PROJECT_OPTIMIZATION_CFLAGS_RELEASE = 
 # PROJECT_OPTIMIZATION_CFLAGS_DEBUG = 
 
 ################################################################################

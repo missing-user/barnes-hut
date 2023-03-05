@@ -1,24 +1,42 @@
 #pragma once
 
-#include "Distributions.h"
-#include "Order.h"
-#include "Particle.h"
-#include "Simulation.h"
 #include "ofMain.h"
 #include "ofxGui.h"
-#include <string>
-#include <vector>
 
-class ofApp : public ofBaseApp
-{
+#include "Simulation/Distributions.h"
+#include "Simulation/Order.h"
+#include "OctTree/Particle.h"
+#include "Simulation/Simulation.h"
 
-private:
-  void initializeParticles();
-
-  ofEasyCam cam;
-  ofMesh mesh;
+class ofApp : public ofBaseApp{
+	private:
+		std::vector<Particle> particles;
+  	void initializeParticles();
+		void drawBoxes();
+	public:
+		void setup();
+		void update();
+		void draw();
+		
+		void keyPressed(int key);
+		void keyReleased(int key);
+		void mouseMoved(int x, int y);
+		void mouseDragged(int x, int y, int button);
+		void mousePressed(int x, int y, int button);
+		void mouseReleased(int x, int y, int button);
+		void mouseEntered(int x, int y);
+		void mouseExited(int x, int y);
+		void windowResized(int w, int h);
+		void dragEvent(ofDragInfo dragInfo);
+		void gotMessage(ofMessage msg);
+		
+		ofMesh mesh;
+		ofIcoSpherePrimitive icoSphere;
+		ofEasyCam cam;
+		
   ofxPanel gui;
-  double prev_mass;
+
+		
 
   // Adjustable parameters
   ofParameter<double> timestep_slider;
@@ -37,22 +55,4 @@ private:
   ofParameter<std::string> pcount_output;
   ofParameter<int> min_depth_slider;
   ofParameter<bool> show_stats_toggle;
-
-public:
-  void setup();
-  void update();
-  void draw();
-
-  void keyPressed(int key);
-  void keyReleased(int key);
-  void mouseMoved(int x, int y);
-  void mouseDragged(int x, int y, int button);
-  void mousePressed(int x, int y, int button);
-  void mouseReleased(int x, int y, int button);
-  void mouseEntered(int x, int y);
-  void mouseExited(int x, int y);
-  void windowResized(int w, int h);
-  void dragEvent(ofDragInfo dragInfo);
-  void gotMessage(ofMessage msg);
-  void HUDGuide();
 };
