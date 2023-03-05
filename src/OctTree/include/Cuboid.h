@@ -5,6 +5,7 @@
 // z
 #include "Particle.h"
 #include <utility>
+#include <array>
 
 class Cuboid
 {

@@ -78,7 +78,7 @@ PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 # incorporated directly into the final executable application binary.
 ################################################################################
 PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src/Simulation/libSimulation.a
-PROJECT_LDFLAGS += -fopenmp
+
 ################################################################################
 # PROJECT DEFINES
 #   Create a space-delimited list of DEFINES. The list will be converted into 

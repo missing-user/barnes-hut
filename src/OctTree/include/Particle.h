@@ -7,8 +7,8 @@
 #define GLM_FORCE_INTRINSICS 
 //#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES // Slowdowns on my machine
 //#define GLM_FORCE_INLINE // Didn't make a measurable difference
-#include <glm/glm.hpp>
-#include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
+#include "../../glm/glm/glm.hpp"
+#include "../../glm/glm/gtx/io.hpp" // Allows us to easily std::cout << pvec3;
 
 typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to
                            // float precision by adjusting these two variables
@@ -49,6 +49,11 @@ struct Particle { // A particle with position, velocity and unique id
   myvec3 v;
   myfloat m;
   size_t id;
+  Particle() = default;
+  Particle(const myvec3 &p, const myvec3 &v, const myfloat &m, const size_t &id)
+      : p(p), v(v), m(m), id(id) {}
+  Particle(const myvec3 &p, const myvec3 &v, const myfloat &m)
+      : p(p), v(v), m(m), id(0) {}
 };
 
 // Helper function for the particle class, so we can print and debug it easily

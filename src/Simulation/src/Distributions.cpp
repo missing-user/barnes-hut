@@ -1,5 +1,5 @@
 #include "Distributions.h"
-#include <glm/gtc/random.hpp>
+#include "../../glm/glm/gtc/random.hpp"
 #include <numbers>
 #include <random>
 
@@ -11,7 +11,8 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 
 std::vector<Particle> normal_distribution(int num_particles)
 {
-  std::vector<Particle> particles(num_particles);
+  std::vector<Particle> particles;
+particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -24,7 +25,8 @@ std::vector<Particle> normal_distribution(int num_particles)
 
 std::vector<Particle> ball_dist(int num_particles)
 {
-  std::vector<Particle> particles(num_particles);
+  std::vector<Particle> particles;
+particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -35,7 +37,8 @@ std::vector<Particle> ball_dist(int num_particles)
 
 std::vector<Particle> sphere_dist(int num_particles)
 {
-  std::vector<Particle> particles(num_particles);
+  std::vector<Particle> particles;
+particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -46,7 +49,8 @@ std::vector<Particle> sphere_dist(int num_particles)
 
 std::vector<Particle> box_distribution(int num_particles)
 {
-  std::vector<Particle> particles(num_particles);
+  std::vector<Particle> particles;
+particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -59,7 +63,8 @@ std::vector<Particle> box_distribution(int num_particles)
 
 std::vector<Particle> exponential_disk_distribution(int num_particles)
 {
-  std::vector<Particle> particles(num_particles);
+  std::vector<Particle> particles;
+particles.reserve(num_particles);
 
   std::exponential_distribution radial_dist{1.0};
   std::normal_distribution vertical_dist{0.0, 1.0};
@@ -249,7 +254,8 @@ std::vector<Particle> collision(int n)
 std::vector<Particle> plummer(int n){
   // https://en.wikipedia.org/wiki/Plummer_model
 
-  std::vector<Particle> particles{n};
+  std::vector<Particle> particles;
+particles.reserve(n);
 
   const myfloat M = 1;
   const myfloat r_s = 1;
@@ -278,7 +284,7 @@ std::vector<Particle> plummer(int n){
     const myfloat vy = velocity /r * py;
     const myfloat vz = velocity /r * pz;
 
-    particles[i] = Particle({px,py,pz}, {vx,vy,vz}, m, i);
+    particles[i] = Particle(myvec3(px,py,pz), myvec3(vx,vy,vz), m, i);
   }
 
   return particles;
