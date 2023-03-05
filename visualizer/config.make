@@ -127,7 +127,7 @@ OF_ROOT = ../../OF
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_OPTIMIZATION_CFLAGS_RELEASE = 
+PROJECT_OPTIMIZATION_CFLAGS_RELEASE = -O3 --closure 1
 # PROJECT_OPTIMIZATION_CFLAGS_DEBUG = 
 
 ################################################################################

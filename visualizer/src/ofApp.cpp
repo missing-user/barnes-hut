@@ -18,7 +18,7 @@ void ofApp::setup(){
   ofSetBackgroundColor(ofColor::black);
 
 	
-  particles = make_universe(Distribution::CRYSTALLINE, 1000);
+  particles = make_universe(Distribution::PLUMMER, 1000);
   initializeParticles();
 
 	icoSphere.setMode(OF_PRIMITIVE_TRIANGLES);
@@ -28,7 +28,7 @@ void ofApp::setup(){
   gui.add(max_per_node_slider.set("max_per_node", 4, 1, 64));
   gui.add(max_depth_slider.set("max_depth", 32, 1, 48));
 
-  gui.add(timestep_slider.set("timestep", 0.001, 0.0001, 0.01));
+  gui.add(timestep_slider.set("timestep", 0.05, 0.001, 0.1));
   //gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
