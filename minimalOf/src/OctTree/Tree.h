@@ -1,7 +1,6 @@
 #ifndef WEIGHT_TREE
 #define WEIGHT_TREE
 
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -12,15 +11,15 @@
 class Tree
 {
 protected:
+  Cuboid cuboid;
+  int level;  
   CenterOfMass COM;
-  std::vector<Tree> branches;
-  std::vector<std::unique_ptr<Particle>> particles;
-
-  const Cuboid cuboid;
-  const int level;  
   
-  myvec3 divisor;
   bool leaf;
+  myvec3 divisor;
+
+  std::vector<Tree> branches;
+  std::vector<std::shared_ptr<Particle>> particles;
 
   bool lessThanTheta(const myvec3 &pos, double theta) const;
   void createBranches();
@@ -28,7 +27,7 @@ protected:
   int selectOctant(const myvec3 &pos) const;
   CenterOfMass computeCOM();
 
-  void insert(std::unique_ptr<Particle> p);
+  void insert(std::shared_ptr<Particle> p);
   void subdivide();
   void print() const;
 

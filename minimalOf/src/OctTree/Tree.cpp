@@ -5,6 +5,7 @@
 int Tree::maxDepth = 32;
 int Tree::maxParticles = 4;
 
+
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
     : cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), leaf(true), divisor(cuboid.center) {}
 
@@ -14,12 +15,12 @@ Tree::Tree(const std::vector<Particle> &particles_in)
 {
   for (const auto &p : particles_in)
   {
-    particles.push_back(std::make_unique<Particle>(p));
+    particles.push_back(std::make_shared<Particle>(p));
   }
   subdivide();
 }
 
-void Tree::insert(std::unique_ptr<Particle> p){
+void Tree::insert(std::shared_ptr<Particle> p){
   if (leaf){
     particles.push_back(std::move(p));
   }
@@ -31,12 +32,11 @@ void Tree::insert(std::unique_ptr<Particle> p){
 void Tree::createBranches(const myvec3 &pos)
 { // populates the branches array of this object
   // with new trees from subdividing this node
-  branches.reserve(
-      8); // reserve space for 8 branches to save on resize operations
+  //branches.reserve(8); // reserve space for 8 branches to save on resize operations
   for (Cuboid &r : cuboid.subdivideAtP(pos))
   {
-    Tree branch = Tree(r, level + 1);
-    branches.push_back(std::move(branch));
+    //Tree branch = ;
+    branches.emplace_back(Tree(r, level + 1));
   }
 }
 
@@ -150,8 +150,8 @@ bool Tree::lessThanTheta(const myvec3 &pos, double theta) const
 
 void Tree::print() const
 {
-  std::cout << " level: " << level << " nPoints:" << particles.size()
-            << " Center of Mass: " << COM << ", leaf:" << leaf << "\n";
+  //std::cout << " level: " << level << " nPoints:" << particles.size()
+  //          << " Center of Mass: " << COM << ", leaf:" << leaf << "\n";
   for (const auto &b : branches)
   {
     b.print();
@@ -204,7 +204,7 @@ std::vector<DrawableCuboid> Tree::GetBoundingBoxes() const
   std::vector<DrawableCuboid> boxes;
   if (leaf)
   {
-    boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
+    boxes.push_back(DrawableCuboid(cuboid, level));
   }
   else
   {

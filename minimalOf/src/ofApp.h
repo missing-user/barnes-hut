@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Distributions.h"
-#include "Order.h"
-#include "Particle.h"
-#include "Simulation.h"
 #include "ofMain.h"
+#include "Simulation/Distributions.h"
+#include "Simulation/Order.h"
+#include "OctTree/Particle.h"
+#include "Simulation/Simulation.h"
 
 class ofApp : public ofBaseApp{
 	public:

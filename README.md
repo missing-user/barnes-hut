@@ -131,7 +131,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] At least one function should utilize vectorized instructions
 - Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
-- [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly, reduced memory footprint)
+- [x] Switched from shared_ptr to shared_ptr implementation for the tree (Improved tree build times by slightly, reduced memory footprint)
 - [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers in our implementation from the previous O(N*log(N)) to N 
 - [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache reports confirmed, that L1 hit rate was improved)
 - [x] Compare ways of computing forces: branchless by subtracting the "self interaction" force at the end, or checking if the interacting particle is itself every iteration. The result varies depending on how expensive the force computation is. The branchless implementation is about 5% slower for Lennard Jones potentials (two more force evaluations per particle), 5% faster for gravity (less branching)
@@ -156,7 +156,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
     %   cumulative   self              self     total           
   time   seconds   seconds    calls   s/call   s/call  name    
   98.38      4.26     4.26   120000     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
-    0.46      4.28     0.02   120000     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+    0.46      4.28     0.02   120000     0.00     0.00  Tree::insert(std::shared_ptr<Particle, std::default_delete<Particle> >)
     0.46      4.30     0.02                             _init
     0.23      4.31     0.01       96     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
     ```
@@ -169,7 +169,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
     %   cumulative   self              self     total           
   time   seconds   seconds    calls   s/call   s/call  name    
   71.08      1.18     1.18     6786     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
-  16.27      1.45     0.27   266225     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+  16.27      1.45     0.27   266225     0.00     0.00  Tree::insert(std::shared_ptr<Particle, std::default_delete<Particle> >)
     7.23      1.57     0.12       17     0.01     0.01  Tree::computeCOM()
     3.61      1.63     0.06      387     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
     1.81      1.66     0.03   135658     0.00     0.00  Tree::createBranches()

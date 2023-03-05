@@ -38,8 +38,6 @@ OF_ROOT = ../../OF
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
 # PROJECT_EXTERNAL_SOURCE_PATHS = 
-PROJECT_EXTERNAL_SOURCE_PATHS = ../src/OctTree/include
-PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 
 ################################################################################
 # PROJECT EXCLUSIONS
@@ -79,7 +77,6 @@ PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 # incorporated directly into the final executable application binary.
 ################################################################################
 # PROJECT_LDFLAGS=-Wl,-rpath=./libs
-PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src/Simulation/libSimulation.a
 
 ################################################################################
 # PROJECT DEFINES

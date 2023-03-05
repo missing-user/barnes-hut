@@ -1,8 +1,6 @@
 #include "Simulation.h"
-#include "Progress.h"
 #include <chrono>
 #include <string>
-#include <iomanip>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
                                      myfloat dt, double theta) {
@@ -55,11 +53,9 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
   // positions of all particles at each timestep if passes
   
 
-  std::cout << "Starting " << duration << "s simulation with " << duration / dt
-            << " steps at dt=" << dt << "\nwith the "<< (brute_force ? "brute force" : "Barnes Hut") 
-            << " solver and n="<< particles.size() << " particles\n";
-
-  boost::timer::progress_display show_progress(duration / dt);
+  //std::cout << "Starting " << duration << "s simulation with " << duration / dt
+  //          << " steps at dt=" << dt << "\nwith the "<< (brute_force ? "brute force" : "Barnes Hut") 
+  //          << " solver and n="<< particles.size() << " particles\n";
 
   // The timestep must start at 1 or we will simulate one timestep more than
   // necessary
@@ -69,9 +65,6 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
       particles = stepSimulation(particles, dt);
     else // Barnes Hut step
       particles = stepSimulation(particles, dt, theta);
-
-
-    ++show_progress;
   }
 
   myfloat residualTimestep = duration - dt * static_cast<size_t>(duration / dt);

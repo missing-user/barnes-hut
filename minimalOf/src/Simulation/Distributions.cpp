@@ -1,5 +1,4 @@
 #include "Distributions.h"
-#include "../../glm/glm/gtc/random.hpp"
 #include <numbers>
 #include <random>
 
@@ -23,6 +22,26 @@ particles.reserve(num_particles);
   return particles;
 }
 
+template<typename T>
+	myvec3 ballRand(T Radius)
+	{
+		assert(Radius > static_cast<T>(0));
+
+		myvec3 Result(T(0));
+		T LenRadius(T(0));
+
+		do
+		{
+      Result.x = uniform_dist(mt);
+      Result.y = uniform_dist(mt);
+      Result.z = uniform_dist(mt);
+			LenRadius = glm::length2(Result);
+		}
+		while(LenRadius > Radius*Radius);
+
+		return Result;
+	}
+
 std::vector<Particle> ball_dist(int num_particles)
 {
   std::vector<Particle> particles;
@@ -30,10 +49,11 @@ particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
-    particles[i].p = glm::ballRand(1.0);
+    particles[i].p = ballRand(1.0);
   }
   return particles;
 }
+
 
 std::vector<Particle> sphere_dist(int num_particles)
 {
@@ -42,7 +62,7 @@ particles.reserve(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
-    particles[i].p = glm::sphericalRand(1.0);
+    particles[i].p = glm::normalize(ballRand(1.0));
   }
   return particles;
 }

@@ -11,9 +11,9 @@ class Cuboid
 {
 
 public:
-  const myvec3 center;     // center point
-  const myvec3 dimension;  // length of each dimension
-  const myfloat diagonal2; // length squared of the diagonal of the cuboid
+   myvec3 center;     // center point
+   myvec3 dimension;  // length of each dimension
+   myfloat diagonal2; // length squared of the diagonal of the cuboid
 
   Cuboid(const myvec3& center, const myvec3& dimension);
   std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
