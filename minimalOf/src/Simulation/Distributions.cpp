@@ -11,7 +11,7 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 std::vector<Particle> normal_distribution(int num_particles)
 {
   std::vector<Particle> particles;
-particles.reserve(num_particles);
+particles.resize(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -45,7 +45,7 @@ template<typename T>
 std::vector<Particle> ball_dist(int num_particles)
 {
   std::vector<Particle> particles;
-particles.reserve(num_particles);
+  particles.resize(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -58,7 +58,7 @@ particles.reserve(num_particles);
 std::vector<Particle> sphere_dist(int num_particles)
 {
   std::vector<Particle> particles;
-particles.reserve(num_particles);
+particles.resize(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -70,7 +70,7 @@ particles.reserve(num_particles);
 std::vector<Particle> box_distribution(int num_particles)
 {
   std::vector<Particle> particles;
-particles.reserve(num_particles);
+particles.resize(num_particles);
   #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
@@ -84,7 +84,7 @@ particles.reserve(num_particles);
 std::vector<Particle> exponential_disk_distribution(int num_particles)
 {
   std::vector<Particle> particles;
-particles.reserve(num_particles);
+particles.resize(num_particles);
 
   std::exponential_distribution radial_dist{1.0};
   std::normal_distribution vertical_dist{0.0, 1.0};
@@ -275,7 +275,7 @@ std::vector<Particle> plummer(int n){
   // https://en.wikipedia.org/wiki/Plummer_model
 
   std::vector<Particle> particles;
-particles.reserve(n);
+particles.resize(n);
 
   const myfloat M = 1;
   const myfloat r_s = 1;

@@ -7,6 +7,10 @@
 #include "Simulation/Simulation.h"
 
 class ofApp : public ofBaseApp{
+	private:
+		std::vector<Particle> particles;
+  	void initializeParticles();
+		void drawBoxes();
 	public:
 		void setup();
 		void update();
