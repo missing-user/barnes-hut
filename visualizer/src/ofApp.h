@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLM_FORCE_PURE
+//#define GLM_PRECISION_MEDIUMP_FLOAT
 #include "ofMain.h"
 #include "ofxGui.h"
 

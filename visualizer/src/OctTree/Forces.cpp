@@ -38,7 +38,7 @@ myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
 }
 
 myvec3 gravityForce(const myvec3 &diff, myfloat mass) {
-  const myfloat softening_param = 0.025;
+  const myfloat softening_param = 0.25;
   return diff * mass /
          (glm::length2(diff) * glm::length(diff) + softening_param);
 

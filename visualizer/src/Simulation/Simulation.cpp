@@ -17,7 +17,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for num_threads(4)
   for (size_t i = 0; i < particles.size(); i++) {
     // First update the positions
     const auto &p1 = particles[i];
@@ -35,7 +35,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
 
   const Tree mytree2(particles_next);
  
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for num_threads(4)
   for (size_t i = 0; i < particles.size(); i++) {
     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
     auto &p2 = particles_next[i];

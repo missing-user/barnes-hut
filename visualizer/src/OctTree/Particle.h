@@ -1,7 +1,6 @@
 #ifndef PARTICLE
 #define PARTICLE
 
-#include <sstream>
 #include <vector>
 
 #include "../ofMain.h"
@@ -11,7 +10,7 @@
 //#include "../../glm/glm/glm.hpp"
 //#include "../../glm/glm/gtx/io.hpp" // Allows us to easily std::cout << pvec3;
 
-typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to
+typedef glm::vec3 myvec3; // We can easily switch the entire implementation to
                            // float precision by adjusting these two variables
 typedef double myfloat;
 
@@ -51,28 +50,10 @@ struct Particle { // A particle with position, velocity and unique id
   myfloat m;
   size_t id;
   Particle() = default;
-  Particle(const myvec3 &p, const myvec3 &v, const myfloat &m, const size_t &id)
+  Particle(const myvec3 &p, const myvec3 &v, myfloat m, size_t id)
       : p(p), v(v), m(m), id(id) {}
-  Particle(const myvec3 &p, const myvec3 &v, const myfloat &m)
+  Particle(const myvec3 &p, const myvec3 &v, myfloat m)
       : p(p), v(v), m(m), id(0) {}
 };
-
-// Helper function for the particle class, so we can print and debug it easily
-inline std::ostream &operator<<(std::ostream &out, const CenterOfMass &p) {
-  return out << p.p << "\tm=" << p.m;
-}
-inline std::ostream &operator<<(std::ostream &out, const Particle &p) {
-  return out << p.p << "\tv=" << p.v << "\tm=" << p.m;
-}
-
-// Print the resulting values of all particles in a .csv format
-inline std::ostream &operator<<(std::ostream &out,
-                                const std::vector<Particle> &particles) {
-  for (auto &p : particles) {
-    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ","<< p.m<< "\n";
-  }
-
-  return out;
-}
 
 #endif

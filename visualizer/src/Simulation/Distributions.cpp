@@ -12,7 +12,6 @@ std::vector<Particle> normal_distribution(int num_particles)
 {
   std::vector<Particle> particles;
 particles.resize(num_particles);
-  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
@@ -46,7 +45,6 @@ std::vector<Particle> ball_dist(int num_particles)
 {
   std::vector<Particle> particles;
   particles.resize(num_particles);
-  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p = ballRand(1.0);
@@ -59,7 +57,6 @@ std::vector<Particle> sphere_dist(int num_particles)
 {
   std::vector<Particle> particles;
 particles.resize(num_particles);
-  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::normalize(ballRand(1.0));
@@ -71,7 +68,6 @@ std::vector<Particle> box_distribution(int num_particles)
 {
   std::vector<Particle> particles;
 particles.resize(num_particles);
-  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = uniform_dist(mt);
@@ -92,7 +88,6 @@ particles.resize(num_particles);
 
   // Since we use this distribution for testing and benchmarks, it has to be deterministic. 
   // thread_local random numbers DO NOT GUARANTEE DETERMINISM ACROSS DIFFERENT RUNS! 
-  //#pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     auto r = radial_dist(mt);
@@ -170,7 +165,6 @@ std::vector<Particle> &set_maxwell_v_dist(std::vector<Particle> &particles,
   // setup the Maxwell distribution, i.e. gamma distribution with alpha = 3/2
   std::gamma_distribution<myfloat> maxwell(3. / 2., k_T);
 
-  #pragma omp parallel for
   for (auto &p : particles)
   {
     myfloat x, y, z;
@@ -277,8 +271,8 @@ std::vector<Particle> plummer(int n){
   std::vector<Particle> particles;
 particles.resize(n);
 
-  const myfloat M = 1;
-  const myfloat r_s = 1;
+  const myfloat M = 100;
+  const myfloat r_s = 100;
   const myfloat m = M / static_cast<myfloat>(n);
   
   std::uniform_real_distribution<myfloat> uniform(0, 1);
@@ -300,11 +294,16 @@ particles.resize(n);
     }
     const myfloat velocity = x * std::sqrt(2.0) * std::pow(1.0 + r*r, -0.25);
 
-    const myfloat vx = velocity /r * px;
-    const myfloat vy = velocity /r * py;
-    const myfloat vz = velocity /r * pz;
+    const myfloat vx = velocity/r * px;
+    const myfloat vy = velocity/r * py;
+    const myfloat vz = velocity/r * pz;
 
+    
     particles[i] = Particle(myvec3(px,py,pz), myvec3(vx,vy,vz), m, i);
+    // Limit the maximum distance to 10*r_s
+    if (glm::length(particles[i].p) > 10*r_s){
+      i--; // try again
+    }
   }
 
   return particles;
