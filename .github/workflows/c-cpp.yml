@@ -1,0 +1,40 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up GCC
+        run: |
+          sudo apt-get install -yqq g++ cmake libgtest-dev libglm-dev libboost-timer-dev libboost-program-options-dev
+        continue-on-error: true
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          echo "compiling with $(nproc) cores"
+          make -j $(nproc)
+        working-directory: ${{ github.workspace }}
+
+      - name: Test
+        run: |
+          cd build
+          ./tests/tests --gtest_output=xml:xunit.xml
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: build/xunit.xml

@@ -12,7 +12,7 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 std::vector<Particle> normal_distribution(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
-  #pragma omp parallel for
+#pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
