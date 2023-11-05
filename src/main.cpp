@@ -14,7 +14,7 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[]) {
   bool output_csv = false;
   bool brute_force = false;
-  bool reorder_first = true;
+  bool no_reorder = true;
   int num_particles = 1000;
   myfloat theta = 1.5;
   double duration = 10;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
       "output the results into a csv file")(
       "brute_force", po::bool_switch(&brute_force),
       "Enable this flag to use the brute force algorithm")(
-      "reorder", po::bool_switch(&reorder_first),
+      "noreorder", po::bool_switch(&no_reorder),
       "Reorders the particle array before starting the calculation to improve "
       "cache locality. This is only useful for the barnes-hut algorithm.");
   po::variables_map vm;
@@ -50,18 +50,11 @@ int main(int argc, char *argv[]) {
   std::vector<Particle> particles =
       make_universe(Distribution::UNIVERSE4, num_particles);
 
-  if (reorder_first && !brute_force)
+  if (!no_reorder && !brute_force)
     computeAndOrder(particles);
 
-  if (output_csv) {
-    // Create a CSV file for the particles and generate the header
-    std::ofstream csvfile;
-    csvfile.open("output.csv");
-    simulate(particles, duration, timestep, &csvfile, brute_force, theta);
-    csvfile.close();
-  } else {
-    simulate(particles, duration, timestep, nullptr, brute_force, theta);
-  }
+
+  simulate(particles, duration, timestep, output_csv, brute_force, theta);
 
   // Check for nan and inf, throw if encountered
   for (const auto &p : particles) {

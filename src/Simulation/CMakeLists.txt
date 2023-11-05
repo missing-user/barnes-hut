@@ -10,4 +10,4 @@ add_library(Simulation STATIC ${SOURCE_FILES})
 target_include_directories(Simulation PUBLIC include)
 target_link_directories(Simulation PRIVATE src)
 
-target_link_libraries(Simulation PUBLIC QuadTree)
+target_link_libraries(Simulation PUBLIC OctTree)

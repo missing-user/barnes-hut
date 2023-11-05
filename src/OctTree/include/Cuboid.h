@@ -6,27 +6,30 @@
 #include "Particle.h"
 #include <utility>
 
-class Cuboid {
+class Cuboid
+{
 
 public:
   const myvec3 center;     // center point
   const myvec3 dimension;  // length of each dimension
   const myfloat diagonal2; // length squared of the diagonal of the cuboid
 
-  Cuboid(myvec3 center, myvec3 dimension);
+  Cuboid(const myvec3& center, const myvec3& dimension);
+  std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
+                                                      // cuboid at the given vector P
 
-  std::array<Cuboid, 8>
-  subdivide() const; // returns an array of 8 cuboids, splitting the parent
-                     // cuboid in half along each dimension (i.e. Octant)
   std::string print() const;
 };
 
 // A function to calculate the bounding box of a group of particles
-template <typename T> Cuboid bounding_box(const std::vector<T> &particles) {
+template <typename T>
+Cuboid bounding_box(const std::vector<T> &particles)
+{
   myvec3 bmin = particles.at(0).p;
   myvec3 bmax = particles.at(0).p;
 
-  for (const auto &p : particles) {
+  for (const auto &p : particles)
+  {
     bmin = glm::min(bmin, p.p);
     bmax = glm::max(bmax, p.p);
   }
@@ -37,5 +40,15 @@ template <typename T> Cuboid bounding_box(const std::vector<T> &particles) {
 
   return Cuboid((bmin + bmax) / 2.0, bmax - bmin);
 }
+
+
+class DrawableCuboid{
+  // Like a cuboid, but with a depth level field, so that we can draw it colored by depth
+public:
+  myvec3 center;
+  myvec3 dimension;
+  int level; // depth level of the cuboid
+  DrawableCuboid(const Cuboid &cuboid, int level);
+};
 
 #endif

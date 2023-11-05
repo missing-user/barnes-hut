@@ -38,7 +38,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
  * faster. This is because the inner loop is very short and the overhead of
  * creating threads is too high.
  */
-#pragma omp parallel
+#pragma omp parallel if (particles.size() > 1000)
   {
 #pragma omp for
     for (size_t i = 0; i < particles.size(); i++) {

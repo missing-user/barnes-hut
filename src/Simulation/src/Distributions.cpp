@@ -3,7 +3,7 @@
 #include <numbers>
 #include <random>
 
-std::mt19937 mt{std::random_device{}()};
+thread_local std::mt19937 mt{std::random_device{}()};
 std::uniform_real_distribution uniform_dist{-1.0, 1.0};
 std::normal_distribution normal_dist{0.0, 1.0};
 
@@ -12,6 +12,7 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 std::vector<Particle> normal_distribution(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+#pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
@@ -21,17 +22,23 @@ std::vector<Particle> normal_distribution(int num_particles)
   return particles;
 }
 
-std::vector<Particle> ball_dist(int num_particles) {
+std::vector<Particle> ball_dist(int num_particles)
+{
   std::vector<Particle> particles(num_particles);
-  for (size_t i = 0; i < num_particles; i++) {
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_particles; i++)
+  {
     particles[i].p = glm::ballRand(1.0);
   }
   return particles;
 }
 
-std::vector<Particle> sphere_dist(int num_particles) {
+std::vector<Particle> sphere_dist(int num_particles)
+{
   std::vector<Particle> particles(num_particles);
-  for (size_t i = 0; i < num_particles; i++) {
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_particles; i++)
+  {
     particles[i].p = glm::sphericalRand(1.0);
   }
   return particles;
@@ -40,6 +47,7 @@ std::vector<Particle> sphere_dist(int num_particles) {
 std::vector<Particle> box_distribution(int num_particles)
 {
   std::vector<Particle> particles(num_particles);
+  #pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     particles[i].p.x = uniform_dist(mt);
@@ -57,6 +65,9 @@ std::vector<Particle> exponential_disk_distribution(int num_particles)
   std::normal_distribution vertical_dist{0.0, 1.0};
   std::uniform_real_distribution angle_dist{0.0, 2 * 3.14159265358};
 
+  // Since we use this distribution for testing and benchmarks, it has to be deterministic. 
+  // thread_local random numbers DO NOT GUARANTEE DETERMINISM ACROSS DIFFERENT RUNS! 
+  //#pragma omp parallel for
   for (size_t i = 0; i < num_particles; i++)
   {
     auto r = radial_dist(mt);
@@ -108,15 +119,18 @@ std::vector<Particle> &add_velocity(std::vector<Particle> &particles, myfloat x,
 std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
                                             myvec3 axis)
 {
+  const auto mag = glm::length(axis);
   for (auto &p : particles)
   {
-    p.v += glm::cross(p.p, axis);
+    p.v += glm::normalize(glm::cross(p.p, axis)) * mag;
   }
   return particles;
 }
 
-std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m) {
-  for (auto &p : particles) {
+std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m)
+{
+  for (auto &p : particles)
+  {
     p.m = m;
   }
   return particles;
@@ -131,6 +145,7 @@ std::vector<Particle> &set_maxwell_v_dist(std::vector<Particle> &particles,
   // setup the Maxwell distribution, i.e. gamma distribution with alpha = 3/2
   std::gamma_distribution<myfloat> maxwell(3. / 2., k_T);
 
+  #pragma omp parallel for
   for (auto &p : particles)
   {
     myfloat x, y, z;
@@ -158,7 +173,8 @@ std::vector<Particle> &add_radial_velocity(std::vector<Particle> &particles,
 
 /*******************************************************************/
 
-std::vector<Particle> universe2() {
+std::vector<Particle> universe2()
+{
   auto initial_dist = ball_dist(100);
   scale(initial_dist, 100, 100, 100);
   set_mass(initial_dist, 10);
@@ -177,11 +193,11 @@ std::vector<Particle> universe1()
   scale(initial_dist, diameter, diameter, 10); // flat disk
   set_mass(initial_dist, 200);
 
-  // add_angular_momentum(initial_dist, myvec3(0, .0, .1) / diameter);
   return initial_dist;
 }
 
-std::vector<Particle> universe4(int n) {
+std::vector<Particle> universe4(int n)
+{
   // A disk shaped universe with just 5k particles, will be used for performance
   // eval eventually
   auto initial_dist = exponential_disk_distribution(n);
@@ -190,11 +206,12 @@ std::vector<Particle> universe4(int n) {
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
   set_mass(initial_dist, 50);
 
-  add_angular_momentum(initial_dist, myvec3(0, .0, 10) / diameter);
+  add_angular_momentum(initial_dist, myvec3(0, .0, 50));
   return initial_dist;
 }
 
-std::vector<Particle> bigbang(int n) {
+std::vector<Particle> bigbang(int n)
+{
   auto initial_dist = ball_dist(n);
 
   const myfloat diameter = 10;
@@ -217,7 +234,8 @@ std::vector<Particle> stable_orbit()
   return particles;
 }
 
-std::vector<Particle> collision(int n) {
+std::vector<Particle> collision(int n)
+{
   auto first_half = universe4(n / 2);
   auto second_half = universe4(n / 2);
 
@@ -228,8 +246,44 @@ std::vector<Particle> collision(int n) {
   return first_half;
 }
 
-std::vector<Particle> make_universe(Distribution dist, int num_particles) {
-  switch (dist) {
+std::vector<Particle> plummer(int n){
+  // https://en.wikipedia.org/wiki/Plummer_model
+  // https://en.wikipedia.org/wiki/Plummer_sphere
+
+  std::vector<Particle> particles;
+  particles.resize(n);
+
+  const myfloat M = 1;
+  const myfloat r_s = 1;
+
+  std::uniform_real_distribution<myfloat> uniform(0, 1);
+
+  #pragma omp parallel for
+  for(int i = 0; i < n; i++){
+    myfloat r = r_s / std::pow(uniform(mt), 2.0/3.0);
+    myfloat theta = 2 * glm::pi<myfloat>() * uniform(mt);
+    myfloat phi = glm::pi<myfloat>() * uniform(mt);
+
+    myfloat x = r * std::sin(phi) * std::cos(theta);
+    myfloat y = r * std::sin(phi) * std::sin(theta);
+    myfloat z = r * std::cos(phi);
+
+    myfloat vx = std::sqrt(M / r) * std::sin(phi) * std::cos(theta);
+    myfloat vy = std::sqrt(M / r) * std::sin(phi) * std::sin(theta);
+    myfloat vz = std::sqrt(M / r) * std::cos(phi);
+
+    myfloat m = M / static_cast<myfloat>(n);
+    
+    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m, i);
+  }
+
+  return particles;
+}
+
+std::vector<Particle> make_universe(Distribution dist, int num_particles)
+{
+  switch (dist)
+  {
   case Distribution::UNIVERSE1:
     return universe1();
   case Distribution::UNIVERSE2:
@@ -238,17 +292,21 @@ std::vector<Particle> make_universe(Distribution dist, int num_particles) {
     return collision(num_particles);
   case Distribution::UNIVERSE4:
     return universe4(num_particles);
+  case Distribution::PLUMMER:
+    return plummer(num_particles);
   case Distribution::BIGBANG:
     return bigbang(num_particles);
   case Distribution::STABLE_ORBIT:
     return stable_orbit();
-  case Distribution::SPHERE: {
+  case Distribution::SPHERE:
+  {
     auto particles = sphere_dist(num_particles);
     scale(particles, 100, 100, 100);
     set_mass(particles, 10);
     return particles;
   }
-  case Distribution::CRYSTALLINE: {
+  case Distribution::CRYSTALLINE:
+  {
     auto particles = ball_dist(num_particles);
     scale(particles, 100, 100, 100);
     set_mass(particles, 10);

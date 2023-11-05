@@ -1,10 +1,12 @@
 #include "Distributions.h"
-#include "QuadTree.h"
+#include "Tree.h"
 #include "Simulation.h"
 #include <gtest/gtest.h>
 
 #include <fstream>
 #include <numbers>
+#include <chrono>
+#include <thread>
 
 TEST(Simulation, Analytical45Rotations) {
   // Simulate 4.5 rotations of two massless particles around a massive object.
@@ -66,16 +68,16 @@ TEST(QuadTree, DepthCalculation) {
   // expected
   set_seed(4756);
   std::vector<Particle> particles =
-      make_universe(Distribution::CRYSTALLINE, 100);
+      make_universe(Distribution::UNIVERSE4, 100);
 
   Tree tree{particles};
-  EXPECT_EQ(tree.MaxDepthAndParticles().first, 5);
+  EXPECT_EQ(tree.MaxDepthAndParticles().first, 6);
 
   Tree::maxDepth = 64;
   Tree::maxParticles = 1;
-  particles = make_universe(Distribution::CRYSTALLINE, 1000);
+  particles = make_universe(Distribution::UNIVERSE4, 1000);
   Tree deeptree = Tree(particles);
-  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 8);
+  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 9);
 }
 
 TEST(FileWriting, IsValidCsv) {
@@ -83,16 +85,33 @@ TEST(FileWriting, IsValidCsv) {
 
   Particle p1 = {{5, 6, 7}, {1, 2, 3}, 20};
   std::vector<Particle> particles{p1};
-  auto simDuration = 1;
 
-  std::stringstream buffer;
-  simulate(particles, simDuration, 0.5, &buffer);
+  simulate(particles, 2, 0.5, true);
 
-  std::string expectedFileContent =
-      "px_0,py_0,pz_0,time\n5.5,7,8.5,0.5\n6,8,10,1\n";
-  EXPECT_EQ(buffer.str().compare(expectedFileContent), 0)
-      << "The real file content was:\n"
-      << buffer.str();
+std::vector<std::string> files{"output1.csv", "output3.csv"};
+std::vector<std::string> expectedFileContents{
+    "x,y,z,m\n5.5,7,8.5,20\n",
+    "x,y,z,m\n7,10,13,20\n"};
+
+  for(int i = 0; i<files.size(); i++){
+    std::ifstream f(files[i]);
+    // Wait for the file to be written, maximum 1 second
+    for(int i = 0; i<10||f.good(); i++){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    EXPECT_TRUE(f.good());
+
+    // Read the file into a string
+    std::string buffer;
+    buffer.assign(std::istreambuf_iterator<char>(f),
+                  std::istreambuf_iterator<char>());
+
+    EXPECT_EQ(buffer.compare(expectedFileContents[i]), 0)
+        << "The real file content was:\n"
+        << buffer<<"\nbut we expected:\n"<<expectedFileContents[i]<<"\n";
+        
+    f.close();
+  }
 }
 
 TEST(BarnesHut, CompareTheta0) {
@@ -110,7 +129,7 @@ TEST(BarnesHut, CompareTheta0) {
 
   simulate(particles, simDuration, timestep);
 
-  simulate(particlesTree, simDuration, timestep, nullptr, false, 0);
+  simulate(particlesTree, simDuration, timestep, false, false, 0);
 
   for (int i = 0; i < particles.size(); i++) {
     EXPECT_FLOAT_EQ(particles[i].p.x, particlesTree[i].p.x);
@@ -135,7 +154,7 @@ TEST(BarnesHut, CompareApproximation) {
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, nullptr, false, 1.2);
+  simulate(particlesTree, simDuration, timestep, false, false, 1.2);
 
   for (int i = 0; i < particles.size(); i++) {
     // The approximate values should not be identical to the real ones

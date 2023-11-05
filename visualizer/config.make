@@ -8,7 +8,7 @@
 #   The location of your root openFrameworks installation
 #       (default) OF_ROOT = ../../.. 
 ################################################################################
-OF_ROOT = /mnt/d/UserD/Programming/C++/CSE/openframeworks/
+OF_ROOT = ../../OF
 
 ################################################################################
 # PROJECT ROOT
@@ -37,8 +37,8 @@ OF_ROOT = /mnt/d/UserD/Programming/C++/CSE/openframeworks/
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_EXTERNAL_SOURCE_PATHS = /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/QuadTree/include
-PROJECT_EXTERNAL_SOURCE_PATHS += /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src/Simulation/include
+PROJECT_EXTERNAL_SOURCE_PATHS = ../src/OctTree/include
+PROJECT_EXTERNAL_SOURCE_PATHS += ../src/Simulation/include
 
 ################################################################################
 # PROJECT EXCLUSIONS
@@ -77,7 +77,7 @@ PROJECT_EXTERNAL_SOURCE_PATHS += /mnt/d/UserD/Programming/C++/CSE/barnes-hut/src
 # add a runtime path to search for those shared libraries, since they aren't 
 # incorporated directly into the final executable application binary.
 ################################################################################
-PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/QuadTree/libQuadTree.a ../build/src/Simulation/libSimulation.a
+PROJECT_LDFLAGS=-Wl,-rpath=./libs ../build/src/OctTree/libOctTree.a ../build/src/Simulation/libSimulation.a
 PROJECT_LDFLAGS += -fopenmp
 ################################################################################
 # PROJECT DEFINES
@@ -128,7 +128,7 @@ PROJECT_CFLAGS += -fopenmp
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-# PROJECT_OPTIMIZATION_CFLAGS_RELEASE =
+PROJECT_OPTIMIZATION_CFLAGS_RELEASE = -Ofast
 # PROJECT_OPTIMIZATION_CFLAGS_DEBUG = 
 
 ################################################################################

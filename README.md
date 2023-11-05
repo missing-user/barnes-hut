@@ -8,6 +8,12 @@
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
+![Spiral Galaxy from our simulation](images/spiral_galaxy.png)
+
+## Preview video
+[![Watch the video](https://img.youtube.com/vi/woft9_h10j4/maxresdefault.jpg)](https://youtu.be/woft9_h10j4)
+
+
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
 
 ![Visualization of the tree structure](docs/tree_100_particles.png)
@@ -23,6 +29,8 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 # Prerequisites
 
+This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
+
 You need `cmake`, `glm` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
 
 ```sh
@@ -33,13 +41,10 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
-A simple python visualizer is included, which is usable for small simulations <100 particles. Running it requires python3 and the following packages: `plotly`, `numpy`, `pandas`. `Pandas` and `numpy` are used for reading and transforming the data into a format that can be visualized. `Plotly` is used for creating the interactive 3D plot.
 
 # Usage
 
-This project was made with only Linux in mind. There is no guarantee this would work on any other OS.
-Please also insure that the latest version of Compiler is installed and set as default.
-To execute the project, run the following commands:
+To compile and execute the project, run the following commands:
 
 ```sh
 mkdir build && cd build && cmake ..
@@ -51,10 +56,6 @@ cd ..
 cd visualizer
 sudo make
 make run
-
-cd ..
-pip install -r requirements.txt 
-python plot.py
 ```
 
 1. Creates a folder called `build`, navigates into it, and creates the makefile
@@ -62,6 +63,16 @@ python plot.py
 3. Runs the executable. This produces a .csv file called output.csv as an output of the simulation
 4. Installs all the python dependencies for visualizing the results from requirements.txt
 5. Runs the python script for visualizing the behavior of the system of particles over a set period of time in 3D space with dynamic POV
+
+
+Our simulation can output .csv files to  be visualized in Paraview using the default CSV importer and TableToPoints filter. To do so, simply specify the `--csv` flag when running (e.g. `./barnes-hut --csv`) 
+
+To get a full list of available CLI parameters, run `./barnes-hut --help`.
+
+
+### Additional dependencies
+
+To run the 3D visualization, you need to install [open frameworks](https://openframeworks.cc/) and possibly the addon `ofxGui`. The installation directory should be called `OF` and installed next to the project folder.
 
 # Project: Barnes Hut galaxy Simulation
 
@@ -75,7 +86,7 @@ We want to approximate the effect of gravity in the formation of gas clouds and 
 
 The [Barnes-Hut algorithm](https://en.m.wikipedia.org/wiki/Barnes%E2%80%93Hut_simulation#/media/File%3A2D_Quad-Tree_partitioning_of_100_bodies.png) is commonly used in computational physics, specifically to approximately compute n-body interactions.
 
-![](https://upload.wikimedia.org/wikipedia/commons/9/93/2D_Quad-Tree_partitioning_of_100_bodies.png)
+![](images/irregularTree.png)
 
 ## Sprint 1 (basics)
 
@@ -107,31 +118,82 @@ In this sprint, we will add visualization capabilities to the project, allow the
 - [x] Create an Interactive GUI for the Simulation
 - [x] Support Different Initial Conditions
 
+![Big Bang](images/bigbang_clustering.png)
+
+Molecular dynamics simulation using the newly added Lennard Jones potential. By gradually removing energy from the system, the particles start forming hexagonal crystaline structures.
+
+![Crystal](images/hexagonal_structure.png)
+
 ## Sprint 3 (performance and/or STL)
 
 In this sprint, we will analyze and optimize the performance and computation time of the program. The focus will be to study how much impact each section of the code has on the total runtime and the effect of each optimization step taken to reduce computation time.
 
 ### Sprint 3: Definition of "done"
 
-- [ ] Measure how much time is consumed during each section in the code
+- [x] Measure how much time is consumed during each section in the code (single and multithreaded profiles at the bottom of the README)
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [x] At least one function should utilize vectorized instructions
-- (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
+- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 
-- [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
-- [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers from Nlog(N) to N
-- [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Confirmed using Valgrind Cache reports)
-
-- [x] Checking if the distance is zero in the force computation is more expensive than just computing and subtracting the softened force (always compute and subtract: 50k 52s 9.9s vs check if the distance is zero: 50k 54s 10.5s) 5k: 6.8s 6.9s vs 6.7s 6.6s
-- [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? No. (17.3s by value, 10.0s by reference)
-- [x] Also compare if by value and by reference make a difference in Tree.cpp selectOctant() and less_than_theta(). No measurable difference. (10s by value, 10s by reference)
-
-- [ ] Currently, the leading cause for L1 Cache misses is the `if(leaf)` statement in the Tree traversal. Could this be improved somehow?
+- [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly, reduced memory footprint)
+- [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers in our implementation from the previous O(N*log(N)) to N 
+- [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache reports confirmed, that L1 hit rate was improved)
+- [x] Compare ways of computing forces: branchless by subtracting the "self interaction" force at the end, or checking if the interacting particle is itself every iteration. The result varies depending on how expensive the force computation is. The branchless implementation is about 5% slower for Lennard Jones potentials (two more force evaluations per particle), 5% faster for gravity (less branching)
+- [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? (73% slower: 17.3s by value, 10.0s by reference)
+- [x] Compare if by value and by reference make a difference in Tree.cpp selectOctant() and lessThanTheta(). (No measurable difference. 10s by value, 10s by reference)
 - [x] OpenMP parallel for loop for multithreading the simulation.
-- [ ] OpenMP parallel for loop for multithreading the tree construction.
-- [x] Brute force optimizations: 
+- [x] OmenMP dynamic scheduling for the simulation loop. (Improved performance by 12% in the UNIVERSE4 benchmark) Due to load imbalance between threads, the dynamic scheduling algorithm is more efficient in this scenario. The level of imbalance depends heavily on the distribution you are trying to simulate, e.g. if particles are clustered together in certain regions, load imbalance could be quite high.
+- [x] Brute force optimizations:
   - Single-threaded, vectorized: 9.57s
   - Single-threaded, vectorized, subtraction instead of position comparison: 9.91s
   - Multi-threaded, vectorized, parallel inner loop: 36.86s (16cores)
   - Multi-threaded, vectorized, parallel outer loop: 1.13s  (16cores)
-- [-] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
+- [x] OpenMP for explicit SIMD for vectorization. (All our attempts resulted in longer runtimes than. GLM already uses some SIMD instructions for the vector math)
+- [x] OpenMP parallel for loop for multithreading the tree construction. (Construction is memory bound and was slower using OpenMP tasks for recursive parallelization, except for very large numbers of particles)
+- [x] Imroved logging performance slightly by adding some noexcept statements
+
+  ```
+  Single-threaded gperf analysis:
+  Flat profile:
+
+  Each sample counts as 0.01 seconds.
+    %   cumulative   self              self     total           
+  time   seconds   seconds    calls   s/call   s/call  name    
+  98.38      4.26     4.26   120000     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
+    0.46      4.28     0.02   120000     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+    0.46      4.30     0.02                             _init
+    0.23      4.31     0.01       96     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
+    ```
+
+  ```
+  Multi-threaded gperf analysis with 16 cores:
+  Flat profile:
+
+  Each sample counts as 0.01 seconds.
+    %   cumulative   self              self     total           
+  time   seconds   seconds    calls   s/call   s/call  name    
+  71.08      1.18     1.18     6786     0.00     0.00  Tree::computeAccFromPos(glm::vec<3, double, (glm::qualifier)0> const&, double) const
+  16.27      1.45     0.27   266225     0.00     0.00  Tree::insert(std::unique_ptr<Particle, std::default_delete<Particle> >)
+    7.23      1.57     0.12       17     0.01     0.01  Tree::computeCOM()
+    3.61      1.63     0.06      387     0.00     0.00  std::vector<Tree, std::allocator<Tree> >::~vector()
+    1.81      1.66     0.03   135658     0.00     0.00  Tree::createBranches()
+  ```
+
+Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
+After some further investigations, we found that the static scheduling of the OpenMP parallel for loop was the problem. The load was not balanced between the threads, so the slowest thread would always be the bottleneck, while the other would be sitting idle. By switching to dynamic scheduling, the speedup per core became similiar to the brute force version.
+![multicore runtime speedup dynamic scheduling](images/coresSpeedupDynamic.png)
+Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well. This indicates, that there are still serial portions of the code that we could optimize. Copying the particles  
+
+## Algorithmic Improvements
+
+We added another type of tree that can be enabled with `#define USE_CENTER_OF_MASS_FOR_SPLITTING` and creates shallower, but irregular trees than the default OctTree splitting. Instead of dividing each cell into 8 equal parts, the center of mass of the particles in the cell is calculated and the cell is split into 8 cells at that point.
+
+## Gallery
+
+![Pretty image](images/flatIrregularTree.png)
+
+And a few videos:
+
+
+[![Watch the video](https://img.youtube.com/vi/SRe4MOF6JOs/maxresdefault.jpg)](https://youtu.be/SRe4MOF6JOs)
+[![Watch the video](https://img.youtube.com/vi/K-4VUi-bIeo/maxresdefault.jpg)](https://youtu.be/K-4VUi-bIeo)
