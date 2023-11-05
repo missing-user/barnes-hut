@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,7 +15,6 @@ jobs:
 
       - name: Set up GCC
         run: |
-          sudo apt-get update
           sudo apt-get install -yqq g++ cmake libgtest-dev libglm-dev libboost-timer-dev libboost-program-options-dev
         continue-on-error: true
 
@@ -27,12 +26,6 @@ jobs:
           echo "compiling with $(nproc) cores"
           make -j $(nproc)
         working-directory: ${{ github.workspace }}
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
       - name: Test
         run: |
