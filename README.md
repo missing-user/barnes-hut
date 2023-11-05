@@ -4,7 +4,7 @@
 
 # Barnes-Hut Galaxy Simulation
 
-![Spiral Galaxy simulation](docs/spiral_galaxy.png)
+![Spiral Galaxy simulation](images/spiral_galaxy.png)
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
@@ -186,7 +186,7 @@ We added another type of tree that can be enabled with `#define USE_CENTER_OF_MA
 
 ![Big Bang](images/bigbang_clustering.png)
 
-![Visualization of the tree structure](docs/tree_100_particles.png)
+![Visualization of the tree structure](images/tree_100_particles.png)
 
 And a few videos:
 
