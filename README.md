@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitLab Release](https://img.shields.io/badge/Release-Sprint%201-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/version2)
 
-# Barnes-Hut Simulation
+# Barnes-Hut Galaxy Simulation
 
 ![Spiral Galaxy simulation](docs/spiral_galaxy.png)
 
