@@ -8,17 +8,11 @@
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
-![Spiral Galaxy from our simulation](images/spiral_galaxy.png)
-
 ## Preview video
 [![Watch the video](https://img.youtube.com/vi/woft9_h10j4/maxresdefault.jpg)](https://youtu.be/woft9_h10j4)
 
 
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
-
-![Visualization of the tree structure](docs/tree_100_particles.png)
-
-![Clustering simulation in barnes hut](docs/bigbang_clustering.png)
 
 This project was made for the Advanced Programming course at the Technical University of Munich.
 Authors: Phillip Jurašić & Islam Elgamal
@@ -118,8 +112,6 @@ In this sprint, we will add visualization capabilities to the project, allow the
 - [x] Create an Interactive GUI for the Simulation
 - [x] Support Different Initial Conditions
 
-![Big Bang](images/bigbang_clustering.png)
-
 Molecular dynamics simulation using the newly added Lennard Jones potential. By gradually removing energy from the system, the particles start forming hexagonal crystaline structures.
 
 ![Crystal](images/hexagonal_structure.png)
@@ -191,6 +183,10 @@ We added another type of tree that can be enabled with `#define USE_CENTER_OF_MA
 ## Gallery
 
 ![Pretty image](images/flatIrregularTree.png)
+
+![Big Bang](images/bigbang_clustering.png)
+
+![Visualization of the tree structure](docs/tree_100_particles.png)
 
 And a few videos:
 
