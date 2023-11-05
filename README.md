@@ -1,12 +1,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitLab Release](https://img.shields.io/badge/Release-Sprint%201-red)](https://gitlab.lrz.de/advprog2022/13/barnes-hut/-/tree/version2)
-![Test Result Badge](https://gitlab.lrz.de/advprog2022/13/barnes-hut/badges/version2/pipeline.svg)
 
 # Barnes-Hut Simulation
+
+![Spiral Galaxy simulation](docs/spiral_galaxy.png)
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
+
+![Visualization of the tree structure](docs/tree_100_particles.png)
+
+![Clustering simulation in barnes hut](docs/bigbang_clustering.png)
 
 This project was made for the Advanced Programming course at the Technical University of Munich.
 Authors: Phillip Jurašić & Islam Elgamal
