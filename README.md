@@ -109,7 +109,7 @@ In this sprint, we will analyze and optimize the performance and computation tim
 
 - [ ] Measure how much time is consumed during each section in the code
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
-- [ ] At least one function should utilize vectorized instructions
+- [x] At least one function should utilize vectorized instructions
 - (Optional) Try Feedback-Directed Compiler Optimization (FDO) in g++ and MSVC <https://learn.microsoft.com/en-us/cpp/build/profile-guided-optimizations?view=msvc-170>
 
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly)
