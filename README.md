@@ -35,6 +35,13 @@ cd /usr/src/gtest
 cmake CMakeLists.txt && make
 ```
 
+For GUI and visualization, follow the instructions on [https://openframeworks.cc/setup/linux-install/](https://openframeworks.cc/setup/linux-install/) and to run the 3D live particle visualization:
+```sh
+cd visualizer
+sudo make
+make run
+```
+
 
 # Usage
 
@@ -45,11 +52,6 @@ mkdir build && cd build && cmake ..
 
 make barnes-hut
 ./src/barnes-hut
-#to run the 3D live particle visualization:
-cd ..
-cd visualizer
-sudo make
-make run
 ```
 
 1. Creates a folder called `build`, navigates into it, and creates the makefile
