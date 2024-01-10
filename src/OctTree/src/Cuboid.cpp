@@ -4,8 +4,7 @@
 // For this class to work, the cuboids edges must be parallel to the x, y, and z
 Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
     : center(center), dimension(dimension), diagonal2(glm::length2(dimension))
-{
-}
+{}
 
 Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) // returns a cuboid with the given min and max coords
 {
