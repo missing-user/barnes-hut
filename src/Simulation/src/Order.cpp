@@ -6,10 +6,11 @@ void reorder(std::vector<Particle> &data,
   // Reorder function from
   // https://stackoverflow.com/questions/838384/reorder-vector-using-a-vector-of-indices
   std::vector<Particle> tmp; // create an empty vector
-  tmp.reserve(data.size());  // ensure memory and avoid moves in the vector
+  tmp.resize(data.size());  // ensure memory and avoid moves in the vector
+  #pragma omp parallel for
   for (std::size_t i = 0; i < order.size(); ++i)
   {
-    tmp.push_back(data[order[i]]);
+    tmp[i] = data[order[i]];
   }
   data.swap(tmp); // swap vector contents
 }
