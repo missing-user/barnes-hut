@@ -48,7 +48,6 @@ struct Particle { // A particle with position, velocity and unique id
   myvec3 p;
   myvec3 v;
   myfloat m;
-  size_t id;
 };
 
 // Helper function for the particle class, so we can print and debug it easily

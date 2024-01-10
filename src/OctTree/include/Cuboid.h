@@ -8,11 +8,9 @@
 #include <array>
 
 class Cuboid
-{
-protected:
-  myvec3 dimension;  // length of each dimension
-  
+{ 
 public:
+  myvec3 dimension;  // length of each dimension
   myvec3 center;     // center point
   myfloat diagonal2; // length squared of the diagonal of the cuboid
 

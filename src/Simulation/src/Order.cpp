@@ -17,12 +17,6 @@ void reorder(std::vector<Particle> &data,
 
 void computeAndOrder(std::vector<Particle> &particles)
 {
-  // Assign ids to particles for reordering
-  for (size_t i = 0; i < particles.size(); i++)
-  {
-    particles[i].id = i;
-  }
-
   Tree mytree(particles);
   reorder(particles, mytree.DFS());
 }

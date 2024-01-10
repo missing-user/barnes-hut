@@ -13,14 +13,11 @@ class Tree
 {
 protected:
   CenterOfMass COM;
-  std::vector<Tree> branches;
-  std::vector<std::unique_ptr<Particle>> particles;
+  Tree* branches;
+  std::vector<int> particles;
 
-  const Cuboid cuboid;
-  const int level;  
-  
-  myvec3 divisor;
-  bool leaf;
+  Cuboid cuboid;
+  int level;  
 
   bool lessThanTheta(const myvec3 &pos, double theta) const;
   void createBranches();
@@ -28,16 +25,19 @@ protected:
   int selectOctant(const myvec3 &pos) const;
   CenterOfMass computeCOM();
 
-  void insert(std::unique_ptr<Particle> p);
+  void insert(int p);
   void subdivide();
   void print() const;
 
 public:
   static int maxDepth;
   static int maxParticles;
+  static const Particle* firstP;
 
-  Tree(const Cuboid &cuboidIn, int levelIn);
+  Tree();
   Tree(const std::vector<Particle> &particles);
+  ~Tree();
+  Tree(const Cuboid &cuboidIn, int levelIn);
 
   std::vector<std::size_t> DFS() const;
   std::pair<int, int> MaxDepthAndParticles() const;

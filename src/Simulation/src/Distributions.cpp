@@ -274,7 +274,7 @@ std::vector<Particle> plummer(int n){
 
     myfloat m = M / static_cast<myfloat>(n);
     
-    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m, i);
+    particles[i] = Particle({x,y,z}, {vx,vy,vz}, m);
   }
 
   return particles;

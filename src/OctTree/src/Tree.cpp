@@ -4,67 +4,76 @@
 
 int Tree::maxDepth = 64;
 int Tree::maxParticles = 1;
+const Particle* Tree::firstP = nullptr;
+
+Tree::Tree()
+    : cuboid(Cuboid({0,0,0},{0,0,0})), level(-1), 
+    COM({{0, 0, 0}, 0}), branches(nullptr) {}
 
 Tree::Tree(const Cuboid &cuboidIn, int levelIn)
-    : cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), leaf(true), divisor(cuboid.center) {}
+: cuboid(cuboidIn), level(levelIn), COM({{0, 0, 0}, 0}), branches(nullptr) {}
+
 
 Tree::Tree(const std::vector<Particle> &particles_in)
     : cuboid(bounding_box(particles_in)), level(0), COM({{0, 0, 0}, 0}),
-      leaf(true), divisor(cuboid.center)
+      branches(nullptr)
 {
-  for (const auto &p : particles_in)
+  firstP = const_cast<Particle *>(&particles_in[0]);
+  for (auto &p : particles_in)
   {
-    particles.push_back(std::make_unique<Particle>(p));
+    particles.push_back(std::distance(&particles_in[0], &p));
   }
   subdivide();
 }
 
-void Tree::insert(std::unique_ptr<Particle> p){
-  if (leaf){
-    particles.push_back(std::move(p));
-  }
-  else{
-    branches[selectOctant(p->p)].insert(std::move(p));
+Tree::~Tree(){
+  delete [] branches;
+}
+
+void Tree::insert(int p){
+  if (branches){
+    branches[selectOctant((firstP+p)->p)].insert(p);
+  }else{
+    particles.push_back(p);
   }
 }
 
 void Tree::createBranches(const myvec3 &pos)
 { // populates the branches array of this object
   // with new trees from subdividing this node
-  branches.reserve(
-      8); // reserve space for 8 branches to save on resize operations
+  int i = 0;
+  branches = new Tree[8];
   for (Cuboid &r : cuboid.subdivideAtP(pos))
   {
-    Tree branch = Tree(r, level + 1);
-    branches.push_back(std::move(branch));
+    branches[i] = Tree(r, level + 1);
+    i++;
   }
 }
 
 int Tree::selectOctant(const myvec3 &pos) const
 {
   int octant = 0;
-  octant += (pos.x > divisor.x) << 0;
-  octant += (pos.y > divisor.y) << 1;
-  octant += (pos.z > divisor.z) << 2;
+  octant += (pos.x > cuboid.center.x) << 0;
+  octant += (pos.y > cuboid.center.y) << 1;
+  octant += (pos.z > cuboid.center.z) << 2;
   return octant;
 }
 
 void Tree::subdivide()
 {
-  if (level < maxDepth && (particles.size() > maxParticles && leaf))
+  if (level < maxDepth && (particles.size() > maxParticles && !branches))
   {
     computeCOM(); // Compute COM while 
-    createBranches(divisor); // If there aren't any branches, create them. 
+    createBranches(cuboid.center); // If there aren't any branches, create them. 
     for (auto &pnt : particles) // This is parallelizable
     {
-      branches[selectOctant(pnt->p)].insert(std::move(pnt));
+      branches[selectOctant((firstP+pnt)->p)].insert(pnt);
     }
     particles.clear();
-    for (auto &b : branches)
+    for (int i = 0; i < 8; i++)
     {
-      b.subdivide();
+      branches[i].subdivide();
     }
-    leaf = false;
   }
 }
 
@@ -76,19 +85,16 @@ CenterOfMass Tree::computeCOM()
 
   for (const auto &p : particles)
   {
-    COM += *p; // Adding two particles creates a new particle which
+    COM += *(firstP+p); // Adding two particles creates a new particle which
                 // represents the center of mass of the two particles
   }
 
   // If we are a leaf, then branches is empty and no loop will not execute
-  for (Tree &t : branches)
-  {
-    COM += t.computeCOM();
-  }
-
-  #ifdef USE_CENTER_OF_MASS_FOR_SPLITTING
-    divisor = COM.p;
-  #endif
+  if(branches)
+    for (int i = 0; i < 8; i++)
+    {
+      COM += branches[i].computeCOM();
+    }
 
   return COM;
 }
@@ -108,14 +114,14 @@ myvec3 Tree::computeAccFromPos(
   // due to all particles in this Tree
   myvec3 acc{0, 0, 0};
 
-  if (leaf)
+  if (!branches)
   {
     for (const auto &sp : particles)
     {
-      if (sp->p == pos)
+      if ((firstP+sp)->p == pos)
         continue;
 
-      acc += accelFunc(sp->p - pos, sp->m);
+      acc += accelFunc((firstP+sp)->p - pos, (firstP+sp)->m);
     }
   }
   else
@@ -129,9 +135,9 @@ myvec3 Tree::computeAccFromPos(
     else
     { // if threshold not met, compute the acceleration due to the
       // branches inside this node
-      for (const Tree &b : branches)
+      for (int i = 0; i < 8; i++)
       {
-        acc += b.computeAccFromPos(pos, theta);
+        acc += branches[i].computeAccFromPos(pos, theta);
       }
     }
   }
@@ -151,30 +157,29 @@ bool Tree::lessThanTheta(const myvec3 &pos, double theta) const
 void Tree::print() const
 {
   std::cout << " level: " << level << " nPoints:" << particles.size()
-            << " Center of Mass: " << COM << ", leaf:" << leaf << "\n";
-  for (const auto &b : branches)
-  {
-    b.print();
-  }
+            << " Center of Mass: " << COM << ", leaf:" << (!branches) << "\n";
+  if(branches)
+    for (int i = 0; i < 8; i++)
+    {
+      branches[i].print();
+    }
 }
 
 std::vector<std::size_t> Tree::DFS() const
 { // Depth first search, returns a vector with the order of the particles
   std::vector<std::size_t> indices;
-  if (leaf)
+  if (branches)
   {
+      for (int i = 0; i < 8; i++)
+      {
+        const auto &v = branches[i].DFS();
+        indices.insert(indices.end(), v.begin(), v.end());
+      }
+  }else{
     indices.reserve(particles.size());
-    for (const auto &p : particles)
+    for (auto &p : particles)
     {
-      indices.push_back(p->id);
-    }
-  }
-  else
-  {
-    for (const auto &b : branches)
-    {
-      const auto &v = b.DFS();
-      indices.insert(indices.end(), v.begin(), v.end());
+      indices.push_back(p);
     }
   }
   return indices;
@@ -182,39 +187,35 @@ std::vector<std::size_t> Tree::DFS() const
 
 std::pair<int, int> Tree::MaxDepthAndParticles() const
 { // returns the maximum depth and number of particles in the Tree recursively (depth, particles)
-  if (leaf)
-  {
-    return {level, particles.size()};
-  }
-  else
+  if (branches)
   {
     std::pair<int, int> max = {0, 0};
-    for (const auto &b : branches)
-    {
-      const auto &v = b.MaxDepthAndParticles();
+    for (int i = 0; i < 8; i++)
+    {    
+      const auto &v = branches[i].MaxDepthAndParticles();
       max.first = std::max(max.first, v.first);
       max.second = std::max(max.second, v.second);
     }
     return max;
+  }else{
+    return {level, particles.size()};
   }
 }
 
 std::vector<DrawableCuboid> Tree::GetBoundingBoxes() const
 { // returns a vector of drawable cuboids for the bounding boxes of the Tree
   std::vector<DrawableCuboid> boxes;
-  if (leaf)
+  if (branches)
   {
-    boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
-  }
-  else
-  {
-    for (const auto &b : branches)
-    {
-      const auto &v = b.GetBoundingBoxes();
+    for (int i = 0; i < 8; i++)
+    {    
+      const auto &v = branches[i].GetBoundingBoxes();
       boxes.insert(boxes.end(),
                    std::make_move_iterator(v.begin()),
                    std::make_move_iterator(v.end()));
     }
+  }else{
+    boxes.push_back(std::move(DrawableCuboid(cuboid, level)));
   }
   return boxes;
 }
