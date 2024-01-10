@@ -96,8 +96,11 @@ std::vector<std::string> expectedFileContents{
   for(int i = 0; i<files.size(); i++){
     std::ifstream f(files[i]);
     // Wait for the file to be written, maximum 1 second
-    for(int i = 0; i<10||f.good(); i++){
+    for(int i = 0; i<10; i++){
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      if(f.good() && !f.is_open()){
+        break;
+      }
     }
     EXPECT_TRUE(f.good());
 
@@ -109,7 +112,6 @@ std::vector<std::string> expectedFileContents{
     EXPECT_EQ(buffer.compare(expectedFileContents[i]), 0)
         << "The real file content was:\n"
         << buffer<<"\nbut we expected:\n"<<expectedFileContents[i]<<"\n";
-        
     f.close();
   }
 }

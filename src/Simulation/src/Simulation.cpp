@@ -52,9 +52,8 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
 }
 
 void writeToFile(const std::vector<Particle> &particles,
-                        const std::string &filename) {  
-  // Create and immediately detach a thread to write the file
-  std::thread([&filename, &particles](){ 
+                        const std::string &filename) {  // Create and immediately detach a thread to write the file
+  //std::thread([&filename, particles](){ 
     
   // Open a csv file and write the positions of all particles
     std::ofstream csvfile;
@@ -64,7 +63,8 @@ void writeToFile(const std::vector<Particle> &particles,
     csvfile.open(filename);
     csvfile << "x,y,z,m\n";
     csvfile << particles;
-  }).detach();
+    csvfile.close();
+  //}).detach();
 }
 
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
