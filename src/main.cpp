@@ -8,35 +8,40 @@
 #include "Order.h"
 #include "Particle.h"
 #include "Simulation.h"
+#include "OutputWriter.h"
 
 namespace po = boost::program_options;
 
 int main(int argc, char *argv[]) {
   bool output_csv = false;
+  bool output_pcd = false;
   bool brute_force = false;
-  bool no_reorder = true;
+  int reorder = 100;
   int num_particles = 1000;
   myfloat theta = 1.5;
   double duration = 10;
   myfloat timestep = .1;
 
   po::options_description desc("Allowed options");
-  desc.add_options()("help", "produce help message")(
+  desc.add_options()("help,h", "produce this help message")(
       "num_particles,n", po::value<int>(&num_particles),
-      "number of particles in the simulation. Default is 1000")(
+      "number of particles in the simulation. (default 1000)")(
       "theta,T", po::value<myfloat>(&theta),
-      "Multipole rejection threshold for barnes-hut. Default is 1.5")(
+      "Multipole rejection threshold for barnes-hut. (default 1.5)")(
       "duration,d", po::value<myfloat>(&duration),
-      "Simulation duration. Default is 10s")(
+      "Simulation duration. (default 10s)")(
       "timestep,t", po::value<myfloat>(&timestep),
-      "Simulation timestep. Default is 0.1s")(
+      "Simulation timestep. (default 0.1s)")(
       "csv", po::bool_switch(&output_csv),
-      "output the results into a csv file")(
+      "output the results into a .csv file")(
+      "bin", po::bool_switch(&output_pcd),
+      "output the results into a .particles file (binary format)")(
       "brute_force", po::bool_switch(&brute_force),
       "Enable this flag to use the brute force algorithm")(
-      "noreorder", po::bool_switch(&no_reorder),
-      "Reorders the particle array before starting the calculation to improve "
-      "cache locality. This is only useful for the barnes-hut algorithm.");
+      "reorder,r", po::value<int>(&reorder),
+      "Reorders the particle array every r steps (default 100) to improve "
+      "cache locality. This increses performance for the barnes-hut algorithm. "
+      "r <= 0 disables the optimization.");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
@@ -50,11 +55,17 @@ int main(int argc, char *argv[]) {
   std::vector<Particle> particles =
       make_universe(Distribution::UNIVERSE4, num_particles);
 
-  if (!no_reorder && !brute_force)
+  if (reorder>0 && !brute_force)
     computeAndOrder(particles);
-
-
-  simulate(particles, duration, timestep, output_csv, brute_force, theta);
+  
+  if (output_csv)
+  {
+    simulate(particles, duration, timestep, brute_force, theta, writeToCsvFile);
+  }else if(output_pcd){
+    simulate(particles, duration, timestep, brute_force, theta, writeToBinaryFile);
+  }else{
+    simulate(particles, duration, timestep, brute_force, theta);
+  }
 
   // Check for nan and inf, throw if encountered
   for (const auto &p : particles) {

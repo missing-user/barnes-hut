@@ -1,6 +1,7 @@
 #include "Distributions.h"
 #include "Tree.h"
 #include "Simulation.h"
+#include "OutputWriter.h"
 #include <gtest/gtest.h>
 
 #include <fstream>
@@ -156,7 +157,7 @@ TEST(BarnesHut, CompareApproximation) {
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, false, false, 1.2);
+  simulate(particlesTree, simDuration, timestep, false, 1.2, writeToCsvFile);
 
   for (int i = 0; i < particles.size(); i++) {
     // The approximate values should not be identical to the real ones

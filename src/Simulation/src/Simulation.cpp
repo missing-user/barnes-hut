@@ -2,9 +2,6 @@
 #include "Progress.h"
 #include <chrono>
 #include <string>
-#include <iomanip>
-#include <fstream>
-#include <thread>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
                                      myfloat dt, double theta) {
@@ -51,24 +48,8 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
   return particles_next;
 }
 
-void writeToFile(const std::vector<Particle> &particles,
-                        const std::string &filename) {  // Create and immediately detach a thread to write the file
-  //std::thread([&filename, particles](){ 
-    
-  // Open a csv file and write the positions of all particles
-    std::ofstream csvfile;
-    if (csvfile.is_open()) {
-      std::cerr << "Could not open file " << filename << " for writing\n";
-    }
-    csvfile.open(filename);
-    csvfile << "x,y,z,m\n";
-    csvfile << particles;
-    csvfile.close();
-  //}).detach();
-}
-
-void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
-              bool outputwriter, bool brute_force, myfloat theta) {
+void simulate(std::vector<Particle> &particles, double duration, myfloat dt, bool brute_force, 
+              myfloat theta, std::function<void(const std::vector<Particle>&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
   
@@ -88,8 +69,8 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
     else // Barnes Hut step
       particles = stepSimulation(particles, dt, theta);
 
-    if (outputwriter){
-      writeToFile(particles, "output"+std::to_string(timestep)+".csv");
+    if (writeCallback){
+      writeCallback(particles, timestep);
     }
 
     ++show_progress;
