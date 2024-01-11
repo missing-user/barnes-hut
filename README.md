@@ -127,10 +127,10 @@ In this sprint, we will analyze and optimize the performance and computation tim
 - [x] Measure how much time is consumed during each section in the code (single and multithreaded profiles at the bottom of the README)
 - [x] Utilize at least three different optimization techniques and study their impact on total runtime
 - [x] At least one function should utilize vectorized instructions
-- Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
-
+- [x] Try Feedback-Directed Compiler Optimization (FDO) in g++ using the -fprofile-generate and -fprofile-use flags (8% improvement with large particle systems >5k). (*Optional*:  Compare to performance using -fauto-profile and Linux perf)
 - [x] Switched from shared_ptr to unique_ptr implementation for the tree (Improved tree build times by slightly, reduced memory footprint)
 - [x] Only leaf nodes store a vector of pointers, reducing the number of stored particle pointers in our implementation from the previous O(N*log(N)) to N 
+- [x] Replacing th the Particle pointers with integer offsets into the particle vector (32 bits per particle in a leaf node instead of 64 bits for the unique_ptr), reducing the size of the Tree object by replacing `bool leaf` and `std::vector<Tree> branches` with `Tree* branches` (`nullptr` then automatically means it is a leaf) reduces the storage per Octree Node by `1 byte for bool + 2*64 bit for vector = 9bytes`: 10% performance jump, reduced memory footprint.
 - [x] Sorting the particle array before the simulation to improve cache coherence (In single-threaded benchmark UNIVERSE4 with 30k particles, 10s and 0.1s timestep the execution time was reduced from 1m13.605 to 55.010s. **That is a 30% improvement in execution time**) (Valgrind Cache reports confirmed, that L1 hit rate was improved)
 - [x] Compare ways of computing forces: branchless by subtracting the "self interaction" force at the end, or checking if the interacting particle is itself every iteration. The result varies depending on how expensive the force computation is. The branchless implementation is about 5% slower for Lennard Jones potentials (two more force evaluations per particle), 5% faster for gravity (less branching)
 - [x] Is passing the position vector by value faster than by reference in the computeAcceleration function? (73% slower: 17.3s by value, 10.0s by reference)
