@@ -62,10 +62,34 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
 
   // The timestep must start at 1 or we will simulate one timestep more than
   // necessary
+
+  Particles bodies{};
+  bodies.x = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.y = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.z = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.vx = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.vy = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.vz = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.x2 = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.y2 = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.z2 = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.m = (myfloat*)aligned_alloc(64, sizeof(myfloat)*particles.size());
+  bodies.count = particles.size();
+  for (size_t i = 0; i < bodies.count; i++) {
+    bodies.x[i] = particles[i].p.x;
+    bodies.y[i] = particles[i].p.y;
+    bodies.z[i] = particles[i].p.z;
+    bodies.vx[i] = particles[i].v.x;
+    bodies.vy[i] = particles[i].v.y;
+    bodies.vz[i] = particles[i].v.z;
+    bodies.m[i] = particles[i].m;
+  }
+
+
   for (size_t timestep = 1; timestep <= duration / dt; timestep++) {
 
     if (brute_force) // Brute force step
-      particles = stepSimulation(particles, dt);
+      stepSimulation(bodies, dt);
     else // Barnes Hut step
       particles = stepSimulation(particles, dt, theta);
 
@@ -79,7 +103,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
   myfloat residualTimestep = duration - dt * static_cast<size_t>(duration / dt);
   if (residualTimestep != 0.0) {
     if (brute_force)
-      particles = stepSimulation(particles, residualTimestep);
+      stepSimulation(bodies, residualTimestep);
     else
       particles = stepSimulation(particles, residualTimestep, theta);
   }

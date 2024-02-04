@@ -50,6 +50,19 @@ struct Particle { // A particle with position, velocity and unique id
   myfloat m;
 };
 
+struct Particles{
+  myfloat *x, *y, *z;
+  myfloat *vx, *vy, *vz;
+  myfloat *x2, *y2, *z2; // Temp storage for the second step of the integration
+  myfloat *m;
+  size_t count;
+
+  Particle operator[](size_t i) const {
+    return {{x[i], y[i], z[i]}, {vx[i], vy[i], vz[i]}, m[i]};
+  }
+};
+
+
 // Helper function for the particle class, so we can print and debug it easily
 inline std::ostream &operator<<(std::ostream &out, const CenterOfMass &p) {
   return out << p.p << "\tm=" << p.m;

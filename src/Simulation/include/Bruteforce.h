@@ -5,6 +5,6 @@
 #include "Particle.h"
 #include <vector>
 
-std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
+void stepSimulation(Particles &particles,
                                      myfloat dt);
 #endif
