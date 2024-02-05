@@ -25,14 +25,21 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
 
-You need `cmake`, `glm` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
+You need `cmake`, `glm`, `libmorton` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
 
 ```sh
 apt-get install g++-11 cmake 
 apt-get install -y libglm-dev libboost-all-dev libgtest-dev 
 
+# Possibly need to run the following commands to build gtest
 cd /usr/src/gtest
 cmake CMakeLists.txt && make
+cd -
+
+# Clone and install libmorton
+git clone https://github.com/Forceflow/libmorton.git
+cd libmorton && mkdir build && cd build && cmake .. && make && make install
+
 ```
 
 For GUI and visualization, follow the instructions on [https://openframeworks.cc/setup/linux-install/](https://openframeworks.cc/setup/linux-install/) and to run the 3D live particle visualization:
