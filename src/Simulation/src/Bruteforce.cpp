@@ -1,5 +1,6 @@
 #include "Bruteforce.h"
 
+//#pragma omp declare simd
 void bruteForceAcc(myfloat __restrict__ *accx, myfloat __restrict__ *accy, myfloat  __restrict__ *accz,
                     const myfloat __restrict__ *xin, const myfloat  __restrict__ *yin, const myfloat __restrict__ *zin,
                     const myfloat __restrict__ *m, const size_t count, const size_t me) {
@@ -9,15 +10,15 @@ void bruteForceAcc(myfloat __restrict__ *accx, myfloat __restrict__ *accy, myflo
    */
 
   const myfloat softening_param = 0.025;
-  //#pragma omp simd reduction(+:accx[me], accy[me], accz[me])
-  // reduction made it slower
+  // #pragma omp simd reduction(+:accx[me], accy[me], accz[me])
+  // simd reduction made it slower
   for (size_t i = 0; i < count; i++)
   {
     myfloat diffx = xin[i] - xin[me];
     myfloat diffy = yin[i] - yin[me];
     myfloat diffz = zin[i] - zin[me];
     myfloat r2 = diffx*diffx + diffy*diffy + diffz*diffz;
-    myfloat r = sqrt(r2);
+    myfloat r = std::sqrt(r2);
     accx[me] += diffx * m[i] / (r2*r + softening_param);
     accy[me] += diffy * m[i] / (r2*r + softening_param);
     accz[me] += diffz * m[i] / (r2*r + softening_param);
