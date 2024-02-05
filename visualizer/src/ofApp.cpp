@@ -31,7 +31,7 @@ void ofApp::setup() {
   gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 1000, 100, 3e4));
+  gui.add(num_particles_slider.set("num_particles", 1000, 100, 5e4));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
@@ -132,6 +132,11 @@ void ofApp::keyPressed(int key) {
   if (key == 'r') {
     mesh.clear();
     particles = make_universe(Distribution::BIGBANG, num_particles_slider);
+    initializeParticles();
+  }
+  if (key == 'p') {
+    mesh.clear();
+    particles = make_universe(Distribution::PLUMMER, num_particles_slider);
     initializeParticles();
   }
   if (key == 't') {
