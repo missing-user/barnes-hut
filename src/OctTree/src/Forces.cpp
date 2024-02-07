@@ -5,14 +5,14 @@
 // Parameters for the lennard jones potential
 constexpr myfloat epsilon = 1e2; // depth
 constexpr myfloat delta = 0.5;   // optimal distance from 0
-constexpr myfloat A = 4 * epsilon * std::pow(delta, 12);
-constexpr myfloat B = 4 * epsilon * std::pow(delta, 6);
+const myfloat A = 4 * epsilon * std::pow(delta, 12);
+const myfloat B = 4 * epsilon * std::pow(delta, 6);
 
 const myfloat lj_softening_param = 0.05;
 
 // #define LENNARD_JONES
 
-myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
+static myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
   const myfloat r = glm::length2(diff) + lj_softening_param;
 
   /* !!! diff is not normalized (|diff| is r) !!!
@@ -30,18 +30,25 @@ myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
   return diff * (-12 * A / (r*r*r*r*r*r*r) + 6 * B / (r*r*r*r));
 }
 
-myvec3 gravityForce(const myvec3 &diff, myfloat mass) {
-  const myfloat softening_param = 0.025;
-  return diff * mass /
-         (glm::length2(diff) * glm::length(diff) + softening_param);
-
+#pragma omp declare simd
+void gravityForce(myfloat*  accx, myfloat*  accy, myfloat*  accz, 
+  myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
+  constexpr myfloat softening_param = 0.025;
+  auto r2 = length2(diffx, diffy, diffz);
+  auto r = std::sqrt(r2);
+  
+  *accx += diffx * mass /(r2 * r + softening_param);
+  *accy += diffy * mass /(r2 * r + softening_param);
+  *accz += diffz * mass /(r2 * r + softening_param);
   // about 5% slower than the above. same using glm::fastNormalize
   // This function would also fail at r=0, due to glm::normalize()
   // return glm::normalize(diff) * mass / (glm::length2(diff) +
   // softening_param);
 }
 
-myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
+#pragma omp declare simd
+static void accelFunc(myfloat* accx, myfloat* accy, myfloat* accz, 
+  myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
   /*
    * This function is used to compute the acceleration of a particle
    * given the difference vector between the particle attracting particles mass.
@@ -51,7 +58,7 @@ myvec3 accelFunc(const myvec3 &diff, myfloat mass) {
    */
 
   #ifndef LENNARD_JONES
-    return gravityForce(diff, mass);
+    gravityForce(accx, accy, accz, diffx, diffy, diffz, mass);
   #else
     return gravityForce(diff, mass) + lennardJonesForce(diff, mass);
   #endif
