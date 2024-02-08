@@ -312,6 +312,27 @@ std::vector<Particle> make_universe(Distribution dist, int num_particles)
     set_mass(particles, 10);
     return particles;
   }
+  case Distribution::DEBUG_CUBE:
+  {
+    std::vector<Particle> particles;
+    int numx = std::pow(static_cast<double>(num_particles), 0.33);
+    int numy = std::pow(static_cast<double>(num_particles), 0.33);
+    int numz = std::pow(static_cast<double>(num_particles), 0.33);
+    particles.resize(numx*numy*numz);
+    for (int x = 0; x < numx; x++)
+    {
+      for (int y = 0; y < numy; y++)
+      {
+        for (int z = 0; z < numz; z++)
+        {
+          particles[x*numz*numy+ y*numz + z] = Particle{{x, y, z}, {0, 0, 0}, 1};
+        }
+      }
+    }
+    
+    set_mass(particles, 10);
+    return particles;
+  }
   default:
     return {};
   }
