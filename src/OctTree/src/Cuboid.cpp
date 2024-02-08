@@ -32,6 +32,15 @@ Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, sp
   return subcuboids;
 }
 
+Cuboid bounding_box(const Vectors &positions, const size_t count)
+{
+  auto xx = std::minmax_element(positions.x, positions.x + count);
+  auto yy = std::minmax_element(positions.y, positions.y + count);
+  auto zz = std::minmax_element(positions.z, positions.z + count);
+
+  return minMaxCuboid(myvec3(*xx.first, *yy.first, *zz.first), myvec3(*xx.second, *yy.second, *zz.second));
+}
+
 std::string Cuboid::print() const
 {
   std::ostringstream str;

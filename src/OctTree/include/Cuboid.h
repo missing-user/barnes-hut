@@ -6,6 +6,8 @@
 #include "Particle.h"
 #include <utility>
 #include <array>
+#include <algorithm>
+
 
 class Cuboid
 { 
@@ -18,28 +20,13 @@ public:
   std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid at the given vector P
   std::string print() const;
+  myvec3 min() const { return center - dimension*0.5; }
+  myvec3 max() const { return center + dimension*0.5; }
 };
 
 // A function to calculate the bounding box of a group of particles
-template <typename T>
-Cuboid bounding_box(const std::vector<T> &particles)
-{
-  myvec3 bmin = particles.at(0).p;
-  myvec3 bmax = particles.at(0).p;
-
-  for (const auto &p : particles)
-  {
-    bmin = glm::min(bmin, p.p);
-    bmax = glm::max(bmax, p.p);
-  }
-  // Bounding box containment is defined as a half open interval: [min, max)
-  // To actually make the particles be contained within bmax, we need to add a
-  // small offset
-  bmax += myvec3{1e-6, 1e-6, 1e-6};
-
-  return Cuboid((bmin + bmax) / 2.0, bmax - bmin);
-}
-
+Cuboid bounding_box(const Vectors &positions, const size_t count);
+Cuboid minMaxCuboid(const myvec3& min, const myvec3& max); // returns a cuboid with the given min and max coords
 
 class DrawableCuboid{
   // Like a cuboid, but with a depth level field, so that we can draw it colored by depth

@@ -16,7 +16,6 @@ int main(int argc, char *argv[]) {
   bool output_csv = false;
   bool output_pcd = false;
   bool brute_force = false;
-  int reorder = 100;
   int num_particles = 1000;
   myfloat theta = 1.5;
   double duration = 10;
@@ -37,11 +36,7 @@ int main(int argc, char *argv[]) {
       "bin", po::bool_switch(&output_pcd),
       "output the results into a .particles file (binary format)")(
       "brute_force", po::bool_switch(&brute_force),
-      "Enable this flag to use the brute force algorithm")(
-      "reorder,r", po::value<int>(&reorder),
-      "Reorders the particle array every r steps (default 100) to improve "
-      "cache locality. This increses performance for the barnes-hut algorithm. "
-      "r <= 0 disables the optimization.");
+      "Enable this flag to use the brute force algorithm");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
@@ -54,9 +49,6 @@ int main(int argc, char *argv[]) {
   set_seed(42);
   std::vector<Particle> particles =
       make_universe(Distribution::UNIVERSE4, num_particles);
-
-  if (reorder>0 && !brute_force)
-    computeAndOrder(particles);
   
   if (output_csv)
   {

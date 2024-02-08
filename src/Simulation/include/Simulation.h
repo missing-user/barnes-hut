@@ -6,9 +6,9 @@
 #include <functional>
 
 #include "Bruteforce.h"
-#include "Tree.h"
+#include "Barneshut.h"
 
-std::vector<Particle> stepSimulation(const std::vector<Particle> &particles,
+void stepSimulation(const Particles &particles,
                                      myfloat dt, double theta);
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
               bool brute_force = true, myfloat theta = 0, 

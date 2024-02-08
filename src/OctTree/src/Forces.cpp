@@ -47,7 +47,7 @@ void gravityForce(myfloat*  accx, myfloat*  accy, myfloat*  accz,
 }
 
 #pragma omp declare simd
-static void accelFunc(myfloat* accx, myfloat* accy, myfloat* accz, 
+void accelFunc(myfloat* accx, myfloat* accy, myfloat* accz, 
   myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
   /*
    * This function is used to compute the acceleration of a particle
