@@ -4,6 +4,7 @@
 #include <libmorton/morton.h>
 #include <chrono>
 
+//#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG(x) do { std::cout << x; } while (0)
 #else
@@ -15,29 +16,31 @@
                       (particles.p.y[i] <= node_pos.y + node_dim.y) &&\
                       (particles.p.z[i] <= node_pos.z + node_dim.z))
 
-// bool IN_BOUNDS(int i, const Vectors& p, const myvec3& node_pos, const myvec3& node_dim){
-//   DEBUG("  IN_BOUNDS x: "<<p.x[i] << "<"<<(node_pos.x+node_dim.x)<<" "<<(p.x[i] <= node_pos.x + node_dim.x)<< "\n")
-//   DEBUG("  IN_BOUNDS y: "<<p.y[i] << "<"<<(node_pos.y+node_dim.y)<<" "<<(p.y[i] <= node_pos.y + node_dim.y)<< "\n")
-//   DEBUG("  IN_BOUNDS z: "<<p.z[i] << "<"<<(node_pos.z+node_dim.z)<<" "<<(p.z[i] <= node_pos.z + node_dim.z)<< "\n")
-//   return ((p.x[i] <= node_pos.x + node_dim.x) && (p.y[i] <= node_pos.y + node_dim.y) && (p.z[i] <= node_pos.z + node_dim.z));
-// }
-
 struct Node{
-  int start; // index of the first particle
-  int count; // number of particles, since the particles are sorted, the last particle is start+count-1
-  myvec3 center_of_mass;
-  myfloat mass;
-  // The immediate child of this node is always at index-1 if it exists.
-  // Check if the child exists by checking if the index is negative
   // Check Figure 3. in https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf 
-  int prev_sibling; // index of the previous sibling is unknown, since children may contain subnodes
+  int start; // index of the first particle
+             // If internal node, start is the index of the first child. All Nodes up to start+8 are children 
+  int count; // number of particles, since the particles are sorted, the last particle is start+count-1
+             // Negative count indicates that this is an internal node
+  myvec3 center_of_mass{0,0,0};
+  myfloat mass{0};
+
+  bool isLeaf() const { return count >= 0; }
+  void setInternal(int first_child){
+    start = first_child;
+    count = -1;
+  }
 };
 
 void bh_superstep(Particles& particles, size_t count){
-  auto boundingbox = bounding_box(particles.p, count);
-  computeAndOrder(particles, boundingbox);
 
   auto time1 = std::chrono::high_resolution_clock::now();
+  auto boundingbox = bounding_box(particles.p, count);
+  std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Bounding Box calculation took " << elapsed.count()<<"s "<< std::endl;
+  computeAndOrder(particles, boundingbox);
+  time1 = std::chrono::high_resolution_clock::now();
+
 
   DEBUG("Particles: \n");
   for (size_t i = 0; i < count; i++)
@@ -46,8 +49,10 @@ void bh_superstep(Particles& particles, size_t count){
   }
   
   // Create the tree
+  const int depth_max = 15;
+  const int leaf_max = 4; // maximum particles per node
   std::vector<DrawableCuboid> drawcuboids;
-  std::vector<Node> nodes;
+  std::array<std::vector<Node>, depth_max+1> tree;
   // build_tree();
   /* Since we know the particles are sorted in Morton order, we can use out of core
   * Tree construction as described in http://www.thesalmons.org/john/pubs/siam97/salmon.pdf
@@ -55,16 +60,15 @@ void bh_superstep(Particles& particles, size_t count){
   * once the first particle outside the group is found. (morton order ensures there will be 
   * no subsequent particles in the group)
   */
-  const int depth_max = 21;
-  const int leaf_max = 4; // maximum particles per node
-  int i = 0;
+  size_t i = 0;
   int depth = 0; // 0 = root
   myvec3 node_pos{boundingbox.min()}; // lower left corner
   myvec3 node_dim{boundingbox.dimension}; // length of each dimension
-  char stack[depth_max+1];
-  memset(stack, 0, sizeof(stack));
+  short stack[depth_max+1];
+  std::memset(stack, 0, sizeof(stack));
 
-  std::queue<int> fifo; // indices of the particles
+  std::queue<size_t> fifo; // indices of the particles
+  fifo.push(i);
   while(i<particles.size()){
     // Add the first leaf_max+1 particles to the queue
     node_pos = boundingbox.min();
@@ -74,20 +78,29 @@ void bh_superstep(Particles& particles, size_t count){
       node_pos.y += ((stack[d]>>1) & 1) * boundingbox.dimension.y/(1<<d);
       node_pos.z += ((stack[d]>>2) & 1) * boundingbox.dimension.z/(1<<d);
     }
-
-    while (fifo.size() < leaf_max+1 && i<particles.size()-1)
+    for (int j = fifo.size(); j <= leaf_max; j++)
     {
-      fifo.push(i);
-      i++;
+      if(i >= particles.size()-1) [[unlikely]] { break; } // Early exit before we exceed the number of particles
+      fifo.push(++i);
+      DEBUG(i<<" pushed into fifo: " << fifo.size() <<"\n");
     }
-    DEBUG(i<<" pushed fifo: " << fifo.size() << std::endl);
     // Find the first depth level that does not contain all particles
     // i.e. the last particle (morton order)
     node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
-    while (IN_BOUNDS(i) && depth < depth_max && fifo.size() > 0)
+    while (IN_BOUNDS(i) && depth < depth_max && fifo.size() > 1)
     { 
       depth++;
       node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
+      DEBUG("subdivide, i="<<i<<" is still in range"<<node_dim<<(fifo.size())<<"\n");
+    }
+    if(depth >= depth_max) { 
+      // Max depth reached, ignore the particle count limit and fill the node 
+      // To avoid infinite deepening of the tree when particles are on the same position
+      DEBUG("Max depth reached, ignoring particle count limit\n");
+      while(IN_BOUNDS(i) && i < particles.size()-1){
+        fifo.push(++i);
+        DEBUG(i<<"[Override] pushed into fifo: " << fifo.size() <<"\n");
+      }  
     }
 
     DEBUG("pos "<<node_pos<<" node_dim "<<node_dim <<" and stack: ");
@@ -97,20 +110,17 @@ void bh_superstep(Particles& particles, size_t count){
     }
     DEBUG(std::endl);
 
-    Node node;
-    node.start = fifo.front();
-    node.count = 0;
+    Node leaf;
+    leaf.start = fifo.front(); // index of the first particle
+    leaf.count = 0; // number of particles, since the particles are sorted, all particles up to start+count-1 are contained
     // Add all particles that are in bounds to the node
     while(IN_BOUNDS(fifo.front()) && fifo.size() > 0){
-      //if(fifo.size() == 0)
-      //  throw std::runtime_error("Fifo is empty, but we are still in bounds. This should not happen, since the last particle must be out of bounds. Exceeded max depth?");
-      
-      DEBUG("popped "<<particles.p.x[fifo.front()] << " " << particles.p.y[fifo.front()] << " " << particles.p.z[fifo.front()] << std::endl);
+      DEBUG("popped "<<fifo.front()<<" ("<<particles.p.x[fifo.front()] << " " << particles.p.y[fifo.front()] << " " << particles.p.z[fifo.front()]<<")" << std::endl);
       fifo.pop();
-      node.count++;
+      leaf.count++;
     }
-    nodes.push_back(node);
-    DEBUG("Finalizing Leaf at depth "<<depth<<" with planets "<<node.count<<std::endl);
+    tree[depth].push_back(leaf);
+    DEBUG("Finalizing Leaf at depth "<<depth<<" with num_planets="<<leaf.count<<std::endl);
     drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos, node_pos+node_dim), depth));
     
     // Go to next node (at this depth if possible)
@@ -120,9 +130,15 @@ void bh_superstep(Particles& particles, size_t count){
       // Go to the next depth
       while(stack[depth] == 7){
         stack[depth] = 0;
+
+        Node node;
+        node.setInternal(tree[depth].size()-8); // index of the first child (8 children per node)
+
         depth--;
-        node_dim *= 2;
+        tree[depth].push_back(node);
         DEBUG("Finalizing Node at depth "<<depth<<std::endl);
+        node_dim *= 2;
+
       }
       stack[depth]++;
       if(depth == 0){
@@ -132,27 +148,46 @@ void bh_superstep(Particles& particles, size_t count){
     }
   }
 
-  std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Tree building " << elapsed.count()<<"s"<< std::endl;
 
-
-  // COM and mass calculation
-  for (size_t i = 0; i < nodes.size(); i++)
-  {
-    myvec3 com{0,0,0};
-    myfloat mass = 0;
-    for (size_t j = nodes[i].start; j < nodes[i].start+nodes[i].count; j++)
-    {
-      com.x += particles.p.x[j] * particles.m[j];
-      com.y += particles.p.y[j] * particles.m[j];
-      com.z += particles.p.z[j] * particles.m[j];
-      mass += particles.m[j];
-    }
-    com /= mass;
-    nodes[i].center_of_mass = com;
-    nodes[i].mass = mass;
-  }
+  time1 = std::chrono::high_resolution_clock::now();
   
+  // COM and mass calculation
+  for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
+  {
+    DEBUG("Depth "<<d<<" has "<<tree[d].size()<<" nodes\n");
+    for (size_t i = 0; i < tree[d].size(); i++)
+    {
+      auto& currentnode = tree[d][i];
+      if(currentnode.isLeaf()){
+        DEBUG("Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n");
+        for (size_t j = currentnode.start; j < currentnode.start+currentnode.count; j++)
+        {
+          currentnode.center_of_mass.x += particles.p.x[j] * particles.m[j];
+          currentnode.center_of_mass.y += particles.p.y[j] * particles.m[j];
+          currentnode.center_of_mass.z += particles.p.z[j] * particles.m[j];
+          currentnode.mass += particles.m[j];
+        }
+        if(currentnode.mass != 0)
+          currentnode.center_of_mass /= currentnode.mass;
+      }else{
+        // TODO: SIMD this, test unrolling
+        DEBUG("Internal Node "<<i<<" with start "<<currentnode.start);
+        for (size_t j = currentnode.start; j < currentnode.start + 8; j++)
+        {
+          currentnode.center_of_mass += tree[d+1][j].center_of_mass * tree[d+1][j].mass;
+          currentnode.mass += tree[d+1][j].mass;
+
+        }
+        DEBUG(<<"=d COM "<<currentnode.center_of_mass<<" and mass "<<currentnode.mass<<"\n");
+        if(currentnode.mass != 0)
+          currentnode.center_of_mass /= currentnode.mass;
+      }
+    }
+  }
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "COM computation "<<tree[0][0].center_of_mass<<"took " << elapsed.count()<<"s"<< std::endl;
 }
 
 void stepSimulation(Particles& particles, myfloat dt, double theta) {
