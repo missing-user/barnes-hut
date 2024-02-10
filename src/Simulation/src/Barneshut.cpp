@@ -34,13 +34,9 @@ struct Node{
 const int depth_max = 15;
 const int leaf_max = 4; // maximum particles per node
 
-bool lessThanTheta(const myfloat* x, const myfloat* y, const myfloat* z, 
-myfloat comxbegin,
-myfloat comybegin,
-myfloat comzbegin,
-double theta, std::array<myfloat, depth_max+1>::const_iterator diagonal2)
+inline bool lessThanTheta(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
 {
-  return *diagonal2 < theta * length2(*x - comxbegin, *y - comybegin, *z - comzbegin);
+  return diagonal2 < theta * length2(dx,dy,dz);
 }
 
 void recursive_force(
@@ -52,7 +48,7 @@ void recursive_force(
   const std::array<std::vector<myfloat>, depth_max+1>& comybegin,
   const std::array<std::vector<myfloat>, depth_max+1>& comzbegin,
    myfloat* accx,  myfloat* accy,  myfloat* accz, 
-  const std::array<myfloat, depth_max+1>::const_iterator diagonal2,
+  const std::array<myfloat, depth_max+1>& diagonal2,
   int depth, int begin){
     DEBUG("Enter recursive_force at depth "<<depth<<" with begin "<<begin<<"\n");
     for (auto it = begin; it < begin+8; it++)
@@ -70,17 +66,16 @@ void recursive_force(
         }
         
       }else{
-        if(lessThanTheta(x,y,z, comxbegin[depth][it], comybegin[depth][it], comzbegin[depth][it], 1.5, diagonal2)){
+        myfloat dx = comxbegin[depth][it] - *x;
+        myfloat dy = comybegin[depth][it] - *y;
+        myfloat dz = comzbegin[depth][it] - *z;
+        if(lessThanTheta(dx,dy,dz, 1.5, diagonal2[depth])){
            DEBUG("Computing COM force at depth "<<depth<<"\n");
           // Compute the COM force
-          accelFunc(accx, accy, accz, 
-          comxbegin[depth][it] - *x, 
-          comybegin[depth][it] - *y, 
-          comzbegin[depth][it] - *z, 
-          massbegin[depth][it]);
+          accelFunc(accx, accy, accz,dx,dy,dz,massbegin[depth][it]);
         }else{
             recursive_force(particles, tree, x,y,z, massbegin, comxbegin, comybegin, comzbegin,
-          accx, accy, accz, diagonal2+1, depth+1, node.start);
+          accx, accy, accz, diagonal2, depth+1, node.start);
         }
       }
     }
@@ -267,7 +262,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   {
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2.begin(), 1, 0);
+    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2, 1, 0);
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;

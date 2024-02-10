@@ -1,5 +1,5 @@
 #include "Bruteforce.h"
-
+#include "Forces.h"
 //#pragma omp declare simd
 
 void bruteForceAcc(myfloat  *accx, myfloat  *accy, myfloat   *accz,
