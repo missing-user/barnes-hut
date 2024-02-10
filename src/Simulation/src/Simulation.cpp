@@ -5,7 +5,7 @@
 #include "Order.h"
 
 void simulate(std::vector<Particle> &particles, double duration, myfloat dt, bool brute_force, 
-              myfloat theta, std::function<void(const std::vector<Particle>&, size_t)> writeCallback) {
+              myfloat theta, std::function<void(const Particles&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
   
@@ -36,7 +36,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
       stepSimulation(bodies, dt, theta);
 
     if (writeCallback){
-      writeCallback(particles, timestep);
+      writeCallback(bodies, timestep);
     }
 
     ++show_progress;

@@ -22,8 +22,6 @@ struct Node{
              // If internal node, start is the index of the first child. All Nodes up to start+8 are children 
   int count; // number of particles, since the particles are sorted, the last particle is start+count-1
              // Negative count indicates that this is an internal node
-  myvec3 center_of_mass{0,0,0};
-  myfloat mass{0};
 
   bool isLeaf() const { return count >= 0; }
   void setInternal(int first_child){
@@ -32,8 +30,62 @@ struct Node{
   }
 };
 
-void bh_superstep(Particles& particles, size_t count){
+const int depth_max = 15;
+const int leaf_max = 4; // maximum particles per node
 
+bool lessThanTheta(const myfloat* x, const myfloat* y, const myfloat* z, 
+myfloat comxbegin,
+myfloat comybegin,
+myfloat comzbegin,
+double theta, std::array<myfloat, depth_max+1>::const_iterator diagonal2)
+{
+  return *diagonal2 < theta * length2(*x - comxbegin, *y - comybegin, *z - comzbegin);
+}
+
+void recursive_force(
+  const Particles& particles,
+  const std::array<std::vector<Node>, depth_max+1>& tree,
+  const myfloat* x, const myfloat* y, const myfloat* z, 
+  const std::array<std::vector<myfloat>, depth_max+1>& massbegin, 
+  const std::array<std::vector<myfloat>, depth_max+1>& comxbegin,
+  const std::array<std::vector<myfloat>, depth_max+1>& comybegin,
+  const std::array<std::vector<myfloat>, depth_max+1>& comzbegin,
+   myfloat* accx,  myfloat* accy,  myfloat* accz, 
+  const std::array<myfloat, depth_max+1>::const_iterator diagonal2,
+  int depth, int begin){
+    DEBUG("Enter recursive_force at depth "<<depth<<" with begin "<<begin<<"\n");
+    for (auto it = begin; it < begin+8; it++)
+    {
+      auto& node = tree[depth][it];
+      if(tree[depth][it].isLeaf()){
+        DEBUG("Computing leaf force for "<<node.count<<" particles\n");
+        // Compute the force
+        for (size_t i = node.start; i < node.start + node.count; i++)
+        {
+          accelFunc(accx, accy, accz,
+                    particles.p.x[i] - *x,
+                    particles.p.y[i] - *y,
+                    particles.p.z[i] - *z, particles.m[i]); // TODO replace 50 with the mass
+        }
+        
+      }else{
+        if(lessThanTheta(x,y,z, comxbegin[depth][it], comybegin[depth][it], comzbegin[depth][it], 1.5, diagonal2)){
+           DEBUG("Computing COM force at depth "<<depth<<"\n");
+          // Compute the COM force
+          accelFunc(accx, accy, accz, 
+          comxbegin[depth][it] - *x, 
+          comybegin[depth][it] - *y, 
+          comzbegin[depth][it] - *z, 
+          massbegin[depth][it]);
+        }else{
+            recursive_force(particles, tree, x,y,z, massbegin, comxbegin, comybegin, comzbegin,
+          accx, accy, accz, diagonal2+1, depth+1, node.start);
+        }
+      }
+    }
+  }
+
+void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
   std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
@@ -49,8 +101,6 @@ void bh_superstep(Particles& particles, size_t count){
   }
   
   // Create the tree
-  const int depth_max = 15;
-  const int leaf_max = 4; // maximum particles per node
   std::vector<DrawableCuboid> drawcuboids;
   std::array<std::vector<Node>, depth_max+1> tree;
   // build_tree();
@@ -80,7 +130,7 @@ void bh_superstep(Particles& particles, size_t count){
     }
     for (int j = fifo.size(); j <= leaf_max; j++)
     {
-      if(i >= particles.size()-1) [[unlikely]] { break; } // Early exit before we exceed the number of particles
+      if(i+1 >= particles.size()) [[unlikely]] { break; } // Early exit before we exceed the number of particles
       fifo.push(++i);
       DEBUG(i<<" pushed into fifo: " << fifo.size() <<"\n");
     }
@@ -151,52 +201,85 @@ void bh_superstep(Particles& particles, size_t count){
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Tree building " << elapsed.count()<<"s"<< std::endl;
 
+  std::array<std::vector<myfloat>, depth_max+1> centers_of_massx;
+  std::array<std::vector<myfloat>, depth_max+1> centers_of_massy;
+  std::array<std::vector<myfloat>, depth_max+1> centers_of_massz;
+  std::array<std::vector<myfloat>, depth_max+1> masses;
+  for (int d = 0; d <= depth_max; d++)
+  {
+    //centers_of_mass.emplace_back(std::move(Vectors{tree[d].size()+1, 0.0}));
+    centers_of_massx[d].resize(tree[d].size(), 0.0);
+    centers_of_massy[d].resize(tree[d].size(), 0.0);
+    centers_of_massz[d].resize(tree[d].size(), 0.0);
+    masses[d].resize(tree[d].size(), 0.0);
+  }
   time1 = std::chrono::high_resolution_clock::now();
   
   // COM and mass calculation
   for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
   {
-    DEBUG("Depth "<<d<<" has "<<tree[d].size()<<" nodes\n");
+    DEBUG("Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl);
     for (size_t i = 0; i < tree[d].size(); i++)
     {
       auto& currentnode = tree[d][i];
       if(currentnode.isLeaf()){
-        DEBUG("Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n");
+        //DEBUG("Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n");
         for (size_t j = currentnode.start; j < currentnode.start+currentnode.count; j++)
         {
-          currentnode.center_of_mass.x += particles.p.x[j] * particles.m[j];
-          currentnode.center_of_mass.y += particles.p.y[j] * particles.m[j];
-          currentnode.center_of_mass.z += particles.p.z[j] * particles.m[j];
-          currentnode.mass += particles.m[j];
+          centers_of_massx[d][i] += particles.p.x[j] * particles.m[j];
+          centers_of_massy[d][i] += particles.p.y[j] * particles.m[j];
+          centers_of_massz[d][i] += particles.p.z[j] * particles.m[j];
+          masses[d][i] += particles.m[j];
         }
-        if(currentnode.mass != 0)
-          currentnode.center_of_mass /= currentnode.mass;
       }else{
         // TODO: SIMD this, test unrolling
-        DEBUG("Internal Node "<<i<<" with start "<<currentnode.start);
+        DEBUG("Internal Node "<<i<<" with start "<<currentnode.start<<"\n");
         for (size_t j = currentnode.start; j < currentnode.start + 8; j++)
         {
-          currentnode.center_of_mass += tree[d+1][j].center_of_mass * tree[d+1][j].mass;
-          currentnode.mass += tree[d+1][j].mass;
+          centers_of_massx[d][i] += centers_of_massx[d+1][j] * masses[d+1][j];
+          centers_of_massy[d][i] += centers_of_massy[d+1][j] * masses[d+1][j];
+          centers_of_massz[d][i] += centers_of_massz[d+1][j] * masses[d+1][j];
+          masses[d][i] += masses[d+1][j];
 
         }
-        DEBUG(<<"=d COM "<<currentnode.center_of_mass<<" and mass "<<currentnode.mass<<"\n");
-        if(currentnode.mass != 0)
-          currentnode.center_of_mass /= currentnode.mass;
+      }
+      if(masses[d][i] != 0){
+        centers_of_massx[d][i] /= masses[d][i];
+        centers_of_massy[d][i] /= masses[d][i];
+        centers_of_massz[d][i] /= masses[d][i];
       }
     }
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "COM computation "<<tree[0][0].center_of_mass<<"took " << elapsed.count()<<"s"<< std::endl;
+  std::cout << "COM computation "<<centers_of_massx[0][0]<<centers_of_massy[0][0]<<centers_of_massz[0][0]<<"took " << elapsed.count()<<"s"<< std::endl;
+
+  // Force calculation
+  std::array<myfloat, depth_max+1> diagonal2;
+  for (int d = 0; d <= depth; d++)
+  {
+    diagonal2[d] = length2(boundingbox.dimension.x/(1<<d), boundingbox.dimension.y/(1<<d), boundingbox.dimension.z/(1<<d));
+  }
+
+  time1 = std::chrono::high_resolution_clock::now();
+  for (size_t i = 0; i < particles.size(); i++)
+  {
+    recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
+    masses, centers_of_massx, centers_of_massy, centers_of_massz, 
+    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2.begin(), 1, 0);
+    std::cout << "Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<std::endl;
+  }
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Force calculation took " << elapsed.count()<<"s"<< std::endl;
+  
 }
 
 void stepSimulation(Particles& particles, myfloat dt, double theta) {
   // barnes hut optimized step
   // Buffer for the new state vector of particles
-  Vectors acc{particles.size()};
+  Vectors acc{particles.size(), 0.0};
   Vectors p2{particles.size()};
 
-  bh_superstep(particles, particles.size());
+  bh_superstep(particles, particles.size(), acc);
   // We have constructed the tree, use it to efficiently compute the
   // accelerations. Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
@@ -207,25 +290,19 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < particles.size(); i++) {
     // First update the positions
-    //mytree.computeAccFromPos(acc[i], particles.p[i], theta);
-    p2.x[i] = particles.p.x[i] + particles.v.x[i] * dt + acc.x[i] * dt * dt / 2.;
-    p2.y[i] = particles.p.y[i] + particles.v.y[i] * dt + acc.y[i] * dt * dt / 2.;
-    p2.z[i] = particles.p.z[i] + particles.v.z[i] * dt + acc.z[i] * dt * dt / 2.;
+    particles.p.x[i] = particles.p.x[i] + particles.v.x[i] * dt + acc.x[i] * dt * dt / 2.;
+    particles.p.y[i] = particles.p.y[i] + particles.v.y[i] * dt + acc.y[i] * dt * dt / 2.;
+    particles.p.z[i] = particles.p.z[i] + particles.v.z[i] * dt + acc.z[i] * dt * dt / 2.;
   }
 
-  // New Octree using the updated particle positions
-  // Since the following loop will not change the positions of particles_next,
-  // we can safely reuse the vector for iteration and acceleration calculation
-  // TODO: Reuse this octree for the next timestep
-  
-#pragma omp parallel for schedule(dynamic)
-  for (size_t i = 0; i < particles.size(); i++) {
-    // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
-    myfloat currentaccx, currentaccy, currentaccz;
-    GlmView currentacc{&currentaccx, &currentaccy, &currentaccz};
-    //mytree.computeAccFromPos(currentacc, p2[i], theta);
-    particles.v.x[i] += (*currentacc.x + acc.x[i]) * dt / 2.;
-    particles.v.y[i] += (*currentacc.y + acc.y[i]) * dt / 2.;
-    particles.v.z[i] += (*currentacc.z + acc.z[i]) * dt / 2.;
-  }
+// #pragma omp parallel for schedule(dynamic)
+//   for (size_t i = 0; i < particles.size(); i++) {
+//     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
+//     myfloat currentaccx, currentaccy, currentaccz;
+//     GlmView currentacc{&currentaccx, &currentaccy, &currentaccz};
+//     //mytree.computeAccFromPos(currentacc, p2[i], theta);
+//     particles.v.x[i] += (*currentacc.x + acc.x[i]) * dt / 2.;
+//     particles.v.y[i] += (*currentacc.y + acc.y[i]) * dt / 2.;
+//     particles.v.z[i] += (*currentacc.z + acc.z[i]) * dt / 2.;
+//   }
 }
