@@ -3,13 +3,23 @@
 #include <chrono>
 
 std::vector<Particle> particles;
+Particles bodies{1000};
 
 void ofApp::initializeParticles() {
-  for (const auto &p : particles) {
-    mesh.addVertex(p.p);
+  for (size_t i = 0; i <bodies.size(); i++)
+  {
+    bodies.p[i] = particles[i].p;
+    bodies.v[i] = particles[i].v;
+    bodies.m[i] = particles[i].m;
+  }
+
+  for (size_t i = 0; i <bodies.size(); i++)
+  {
+    mesh.addVertex(myvec3(bodies.p.x[i], bodies.p.y[i], bodies.p.z[i]));
     auto cur = ofColor::white;
     mesh.addColor(cur);
   }
+  std::cout << "Initialized " << bodies.size() << " particles\n";
 }
 
 //--------------------------------------------------------------
@@ -28,7 +38,7 @@ void ofApp::setup() {
   gui.add(max_depth_slider.set("max_depth", 64, 1, 96));
 
   gui.add(timestep_slider.set("timestep", 0.001, 0.0001, 0.01));
-  gui.add(brute_force_toggle.set("brute force", false));
+  gui.add(brute_force_toggle.set("brute force", true));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
   gui.add(num_particles_slider.set("num_particles", 1000, 100, 5e4));
@@ -40,22 +50,22 @@ void ofApp::setup() {
   gui.add(depth_output.set("tree depth", "?"));
   gui.add(pcount_output.set("max particles leafs", "?"));
 
-  particles = make_universe(Distribution::UNIVERSE4, num_particles_slider);
+  particles = make_universe(Distribution::PLUMMER, num_particles_slider);
   initializeParticles();
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-  Tree::maxDepth = max_depth_slider;
-  Tree::maxParticles = max_per_node_slider;
+  //Tree::maxDepth = max_depth_slider;
+  //Tree::maxParticles = max_per_node_slider;
 
   set_mass(particles, mass_slider);
   auto begin = std::chrono::steady_clock::now();
 
-  if (!brute_force_toggle)
-    particles = stepSimulation(particles, timestep_slider, theta_slider);
+  if (brute_force_toggle)
+    stepSimulation(bodies, timestep_slider);
   else
-    particles = stepSimulation(particles, timestep_slider);
+    stepSimulation(bodies, timestep_slider, theta_slider);
 
   auto end = std::chrono::steady_clock::now();
   auto elapsed =
@@ -63,18 +73,11 @@ void ofApp::update() {
 
   text_output = std::to_string(elapsed.count()) + " ms";
 
-  // Find particle with max v
-  auto maxv2 = std::max_element(particles.begin(), particles.end(),
-                                [](const Particle &a, const Particle &b) {
-                                  return glm::length2(a.v) < glm::length2(b.v);
-                                });
-  const double maxv_inv = 255.0 / glm::length(maxv2->v);
-
   // loop through all mesh vertecies and update their positions
   for (std::size_t i = 0; i < mesh.getNumVertices(); i++) {
-    mesh.setVertex(i, particles[i].p);
-    double len = std::max(50.0, glm::length(particles[i].v) * maxv_inv);
-    mesh.setColor(i, ofColor(255 - len / 5, len * 4 / 5, len, 128));
+    mesh.setVertex(i, myvec3(bodies.p.x[i], bodies.p.y[i], bodies.p.z[i]));
+    //double len = std::max(50.0, glm::length(bodies.v[i]) * maxv_inv);
+    mesh.setColor(i, ofColor(255 - 255.*i/mesh.getNumVertices(), 255.*i/mesh.getNumVertices(), 255.*i/mesh.getNumVertices(), 128));
   }
 }
 
@@ -83,29 +86,28 @@ void ofApp::draw() {
   gui.draw();
   cam.begin();
 
-  Tree mytree{particles};
-  auto boxes = mytree.GetBoundingBoxes();
+  //Tree mytree{bodies};
+  //auto boxes = mytree.GetBoundingBoxes();
   ofNoFill();
 
   if(show_stats_toggle)
   {
-    Tree mytree{particles};
-    auto mdp = mytree.MaxDepthAndParticles();
-    depth_output = std::to_string(mdp.first);
-    pcount_output = std::to_string(mdp.second);
+    // auto mdp = mytree.MaxDepthAndParticles();
+    // depth_output = std::to_string(mdp.first);
+    // pcount_output = std::to_string(mdp.second);
 
-    for (const auto &b : boxes) {
-      if (b.level >= min_depth_slider)
-      {
-        const auto visualLevel = std::max(0, b.level - min_depth_slider);
-        const auto maxLevel = std::max(1, mdp.first - min_depth_slider);
-        ofSetColor((255/maxLevel) * visualLevel,
-                    255 - (255/maxLevel) * visualLevel, 
-                    0, 128);
-        ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
-      }
-    }
-    ofSetColor(255);
+    // for (const auto &b : boxes) {
+    //   if (b.level >= min_depth_slider)
+    //   {
+    //     const auto visualLevel = std::max(0, b.level - min_depth_slider);
+    //     const auto maxLevel = std::max(1, mdp.first - min_depth_slider);
+    //     ofSetColor((255/maxLevel) * visualLevel,
+    //                 255 - (255/maxLevel) * visualLevel, 
+    //                 0, 128);
+    //     ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
+    //   }
+    // }
+    // ofSetColor(255);
   }
   mesh.draw();
   cam.end();
@@ -151,7 +153,7 @@ void ofApp::keyPressed(int key) {
   }
 
   if (key == 'o') {
-    computeAndOrder(particles);
+    computeAndOrder(bodies, bounding_box(bodies.p, bodies.size()));
   }
 
   if (key == 'l') {
