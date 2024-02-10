@@ -32,7 +32,6 @@ void writeToBinaryFile(const Particles &particles,
   }
   vtkfile.open(filename, std::ios::binary);
   std::vector<float> output;
-  int i = 0;
   for (size_t i = 0; i < particles.size(); i++) {
     output.push_back(particles.p.x[i]);
     output.push_back(particles.p.y[i]);

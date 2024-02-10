@@ -12,8 +12,8 @@
 class Cuboid
 { 
 public:
-  myvec3 dimension;  // length of each dimension
   myvec3 center;     // center point
+  myvec3 dimension;  // length of each dimension
   myfloat diagonal2; // length squared of the diagonal of the cuboid
 
   Cuboid(const myvec3& center, const myvec3& dimension);

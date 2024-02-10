@@ -57,7 +57,7 @@ void recursive_force(
       if(tree[depth][it].isLeaf()){
         DEBUG("Computing leaf force for "<<node.count<<" particles\n");
         // Compute the force
-        for (size_t i = node.start; i < node.start + node.count; i++)
+        for (int i = node.start; i < node.start + node.count; i++)
         {
           accelFunc(accx, accy, accz,
                     particles.p.x[i] - *x,
@@ -220,7 +220,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
       auto& currentnode = tree[d][i];
       if(currentnode.isLeaf()){
         //DEBUG("Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n");
-        for (size_t j = currentnode.start; j < currentnode.start+currentnode.count; j++)
+        for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
         {
           centers_of_massx[d][i] += particles.p.x[j] * particles.m[j];
           centers_of_massy[d][i] += particles.p.y[j] * particles.m[j];
@@ -230,7 +230,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
       }else{
         // TODO: SIMD this, test unrolling
         DEBUG("Internal Node "<<i<<" with start "<<currentnode.start<<"\n");
-        for (size_t j = currentnode.start; j < currentnode.start + 8; j++)
+        for (int j = currentnode.start; j < currentnode.start + 8; j++)
         {
           centers_of_massx[d][i] += centers_of_massx[d+1][j] * masses[d+1][j];
           centers_of_massy[d][i] += centers_of_massy[d+1][j] * masses[d+1][j];

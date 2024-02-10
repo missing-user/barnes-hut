@@ -24,6 +24,6 @@ std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m);
 
 /*******************************************************************/
 
-std::vector<Particle> make_universe(Distribution dist, int num_particles);
+std::vector<Particle> make_universe(Distribution dist, size_t num_particles);
 
 #endif

@@ -9,7 +9,7 @@ std::normal_distribution normal_dist{0.0, 1.0};
 
 void set_seed(unsigned int seed) { mt.seed(seed); }
 
-std::vector<Particle> normal_distribution(int num_particles)
+std::vector<Particle> normal_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
 #pragma omp parallel for
@@ -22,7 +22,7 @@ std::vector<Particle> normal_distribution(int num_particles)
   return particles;
 }
 
-std::vector<Particle> ball_dist(int num_particles)
+std::vector<Particle> ball_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
@@ -33,7 +33,7 @@ std::vector<Particle> ball_dist(int num_particles)
   return particles;
 }
 
-std::vector<Particle> sphere_dist(int num_particles)
+std::vector<Particle> sphere_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
@@ -44,7 +44,7 @@ std::vector<Particle> sphere_dist(int num_particles)
   return particles;
 }
 
-std::vector<Particle> box_distribution(int num_particles)
+std::vector<Particle> box_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
@@ -57,7 +57,7 @@ std::vector<Particle> box_distribution(int num_particles)
   return particles;
 }
 
-std::vector<Particle> exponential_disk_distribution(int num_particles)
+std::vector<Particle> exponential_disk_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
 
@@ -280,7 +280,7 @@ std::vector<Particle> plummer(int n){
   return particles;
 }
 
-std::vector<Particle> make_universe(Distribution dist, int num_particles)
+std::vector<Particle> make_universe(Distribution dist, size_t num_particles)
 {
   switch (dist)
   {

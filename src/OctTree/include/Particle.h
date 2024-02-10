@@ -112,12 +112,13 @@ struct Vectors{
 };
 
 class Particles{
-private:
-  size_t count;
 public:
   Vectors p, v;
   myfloat *m;
   Vectors p2; // For the next timestep, should this really be here?
+private:
+  size_t count;
+public:
 
   ParticleView operator[](size_t i) const {
     return {p.x+i,p.y+i,p.z+i, 
