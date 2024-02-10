@@ -252,7 +252,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     }
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "COM computation "<<centers_of_massx[0][0]<<centers_of_massy[0][0]<<centers_of_massz[0][0]<<"took " << elapsed.count()<<"s"<< std::endl;
+  std::cout << "COM computation took " << elapsed.count()<<"s"<< std::endl;
 
   // Force calculation
   std::array<myfloat, depth_max+1> diagonal2;
@@ -262,6 +262,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   }
 
   time1 = std::chrono::high_resolution_clock::now();
+  #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++)
   {
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
@@ -288,7 +289,7 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for simd
   for (size_t i = 0; i < particles.size(); i++) {
     // First update the positions
     particles.p.x[i] = particles.p.x[i] + particles.v.x[i] * dt + acc.x[i] * dt * dt / 2.;
@@ -296,7 +297,7 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
     particles.p.z[i] = particles.p.z[i] + particles.v.z[i] * dt + acc.z[i] * dt * dt / 2.;
   }
 
-// #pragma omp parallel for schedule(dynamic)
+// #pragma omp parallel for
 //   for (size_t i = 0; i < particles.size(); i++) {
 //     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
 //     myfloat currentaccx, currentaccy, currentaccz;
