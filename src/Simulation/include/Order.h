@@ -2,7 +2,7 @@
 #define ORDER
 
 #include "Particle.h"
-#include "Tree.h"
+#include "Cuboid.h"
 
 void computeAndOrder(std::vector<Particle> &particles);
 void computeAndOrder(Particles &particles, Cuboid bb);

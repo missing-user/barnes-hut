@@ -1,5 +1,6 @@
 #include "Barneshut.h"
 #include "Order.h"
+#include "Forces.h"
 #include <queue>
 #include <libmorton/morton.h>
 #include <chrono>
@@ -266,7 +267,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
     &acc.x[i],&acc.y[i],&acc.z[i], diagonal2.begin(), 1, 0);
-    std::cout << "Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<std::endl;
+    DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()<<"s"<< std::endl;
