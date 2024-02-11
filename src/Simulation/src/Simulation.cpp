@@ -1,5 +1,6 @@
 #include "Simulation.h"
 #include "Progress.h"
+#include <iostream>
 #include <chrono>
 #include <string>
 #include "Order.h"
@@ -28,6 +29,9 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
   }
 
 
+  if (writeCallback){
+    writeCallback(bodies, 0); // Write initial state
+  }
   for (size_t timestep = 1; timestep <= duration / dt; timestep++) {
 
     if (brute_force) // Brute force step

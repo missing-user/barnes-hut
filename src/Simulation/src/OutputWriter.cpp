@@ -16,7 +16,7 @@ void writeToCsvFile(const Particles &particles,
   csvfile.open(filename);
   csvfile << "x,y,z,m\n";
   for (size_t i = 0; i < particles.size(); i++) {
-    csvfile << particles.p[i].x << "," << particles.p[i].y << "," << particles.p[i].z << "," << particles.m[i] << "\n";
+    csvfile << particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] << "," << particles.m[i] << "\n";
   }
   csvfile.close();
   //}).detach();
