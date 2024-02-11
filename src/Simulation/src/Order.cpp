@@ -50,8 +50,7 @@ void computeAndOrder(std::vector<Particle> &particles)
   }
 }
 
-
-void computeAndOrder(Particles &particles, Cuboid bb)
+std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, Cuboid bb)
 {
   std::vector<uint_fast64_t> mortonCodes(particles.size());
   myvec3 invRange = (std::pow(2, 21)-1) / bb.dimension;
@@ -62,6 +61,12 @@ void computeAndOrder(Particles &particles, Cuboid bb)
     uint_fast32_t z = (particles.p.z[i] - bb.min().z) * invRange.z;
     mortonCodes[i] = libmorton::morton3D_64_encode(x,y,z);
   }
+  return mortonCodes;
+}
+
+void computeAndOrder(Particles &particles, Cuboid bb)
+{
+  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, bb);
 
   // morton order allows for 21 bits per dimension = 63 bits, scale all entries to this size
   // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
