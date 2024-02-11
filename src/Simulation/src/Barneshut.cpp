@@ -51,7 +51,7 @@ struct Node{
   }
 };
 
-const int depth_max = 15;
+const int depth_max = 16;
 const int leaf_max = 4; // maximum particles per node
 
 inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
@@ -87,7 +87,7 @@ void recursive_force(
     myfloat dx = comx[depth][start] - *x;
     myfloat dy = comy[depth][start] - *y;
     myfloat dz = comz[depth][start] - *z;
-    if(isApproximationValid(dx,dy,dz, 0.75, diagonal2[depth])){
+    if(isApproximationValid(dx,dy,dz, 1.5, diagonal2[depth])){
       DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(
         comx[depth][start], comy[depth][start], comz[depth][start]
       )<<"\n", depth);
@@ -110,7 +110,11 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   auto boundingbox = bounding_box(particles.p, count);
   std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Bounding Box calculation took " << elapsed.count()<<"s "<< std::endl;
+  
+  time1 = std::chrono::high_resolution_clock::now();
   computeAndOrder(particles, boundingbox);
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Index reordering took " << elapsed.count()<<"s"<< "\n";
   time1 = std::chrono::high_resolution_clock::now();
 
 
@@ -221,7 +225,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   }
 
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Tree building " << elapsed.count()<<"s"<< std::endl;
+  std::cout << "Tree building " << elapsed.count()<<"s\n";
 
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massx;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massy;
@@ -278,17 +282,19 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     }
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "COM computation took " << elapsed.count()<<"s"<< std::endl;
+  std::cout << "COM computation took " << elapsed.count()<<"s\n";
 
   // Force calculation
   std::array<myfloat, depth_max+1> diagonal2;
-  for (int d = 0; d <= depth; d++)
+  for (int d = 0; d <= depth_max; d++)
   {
-    diagonal2[d] = length2(boundingbox.dimension.x/(1<<d), boundingbox.dimension.y/(1<<d), boundingbox.dimension.z/(1<<d));
+    diagonal2[d] = length2(boundingbox.dimension.x/(1<<d), 
+                           boundingbox.dimension.y/(1<<d), 
+                           boundingbox.dimension.z/(1<<d));
   }
 
   time1 = std::chrono::high_resolution_clock::now();
-  //#pragma omp parallel for
+  #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++)
   {
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
@@ -297,7 +303,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Force calculation took " << elapsed.count()<<"s"<< std::endl;
+  std::cout << "Force calculation took " << elapsed.count()<<"s\n";
   
 }
 
@@ -323,14 +329,11 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
     particles.p.z[i] = particles.p.z[i] + particles.v.z[i] * dt + acc.z[i] * dt * dt / 2.;
   }
 
-// #pragma omp parallel for
-//   for (size_t i = 0; i < particles.size(); i++) {
-//     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
-//     myfloat currentaccx, currentaccy, currentaccz;
-//     GlmView currentacc{&currentaccx, &currentaccy, &currentaccz};
-//     //mytree.computeAccFromPos(currentacc, p2[i], theta);
-//     particles.v.x[i] += (*currentacc.x + acc.x[i]) * dt / 2.;
-//     particles.v.y[i] += (*currentacc.y + acc.y[i]) * dt / 2.;
-//     particles.v.z[i] += (*currentacc.z + acc.z[i]) * dt / 2.;
-//   }
+#pragma omp parallel for
+  for (size_t i = 0; i < particles.size(); i++) {
+    // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
+    particles.v.x[i] += (acc.x[i] + acc.x[i]) * dt / 2.;
+    particles.v.y[i] += (acc.y[i] + acc.y[i]) * dt / 2.;
+    particles.v.z[i] += (acc.z[i] + acc.z[i]) * dt / 2.;
+  }
 }

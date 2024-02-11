@@ -53,8 +53,6 @@ void computeAndOrder(std::vector<Particle> &particles)
 
 void computeAndOrder(Particles &particles, Cuboid bb)
 {
-  auto time1 = std::chrono::high_resolution_clock::now();
-
   std::vector<uint_fast64_t> mortonCodes(particles.size());
   myvec3 invRange = (std::pow(2, 21)-1) / bb.dimension;
   #pragma omp parallel for
@@ -93,7 +91,4 @@ void computeAndOrder(Particles &particles, Cuboid bb)
   std::swap(particles.v.y, reorderedParticles.v.y);
   std::swap(particles.v.z, reorderedParticles.v.z);
   std::swap(particles.m, reorderedParticles.m);
-
-  std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Index reordering took " << elapsed.count()<<"s"<< "\n";
 }

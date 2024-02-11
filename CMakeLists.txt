@@ -11,7 +11,7 @@ if (OPENMP_FOUND)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -Wall")# -flto
   if (OPENMP_FOUND)
     add_compile_definitions(_GLIBCXX_PARALLEL)
   endif()
