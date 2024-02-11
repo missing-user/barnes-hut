@@ -1,19 +1,39 @@
 #include "Barneshut.h"
 #include "Order.h"
-#include "Forces.h"
 #include <queue>
 #include <libmorton/morton.h>
 #include <chrono>
 
 //#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
-#define DEBUG(x) do { std::cout << x; } while (0)
+#define DEBUG_D(x, d) do { \
+  for (int DEBUG_DEPTH = 0; DEBUG_DEPTH < d; DEBUG_DEPTH++){std::cout << " ";}\
+  std::cout << x; } while (0)
 #else
-#define DEBUG(x)
+#define DEBUG_D(x, depth)
 #endif
 
+#define DEBUG(x) DEBUG_D(x, 0)
+
+
+// FIXME: accelFunc is a duplicate of the function in Forces.h, but for some reason the linker cant find it
+//#include "Forces.h"
+//#pragma omp declare simd linear(accx, accy, accz)
+void accelFunc(myfloat*  accx, myfloat*  accy, myfloat*  accz, 
+  myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
+  constexpr myfloat softening_param = 0.025;
+  auto r2 = length2(diffx, diffy, diffz);
+  auto r = std::sqrt(r2);
+  
+  *accx += diffx * mass /(r2 * r + softening_param);
+  *accy += diffy * mass /(r2 * r + softening_param);
+  *accz += diffz * mass /(r2 * r + softening_param);
+}
+
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
-#define IN_BOUNDS(i) ((particles.p.x[i] <= node_pos.x + node_dim.x) &&\
+// Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
+#define IN_BOUNDS(i) ((i + 1 < particles.size()) &&\
+                      (particles.p.x[i] <= node_pos.x + node_dim.x) &&\
                       (particles.p.y[i] <= node_pos.y + node_dim.y) &&\
                       (particles.p.z[i] <= node_pos.z + node_dim.z))
 
@@ -34,7 +54,7 @@ struct Node{
 const int depth_max = 15;
 const int leaf_max = 4; // maximum particles per node
 
-inline bool lessThanTheta(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
+inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
 {
   return diagonal2 < theta * length2(dx,dy,dz);
 }
@@ -43,43 +63,47 @@ void recursive_force(
   const Particles& particles,
   const std::array<std::vector<Node>, depth_max+1>& tree,
   const myfloat* x, const myfloat* y, const myfloat* z, 
-  const std::array<std::vector<myfloat>, depth_max+1>& massbegin, 
-  const std::array<std::vector<myfloat>, depth_max+1>& comxbegin,
-  const std::array<std::vector<myfloat>, depth_max+1>& comybegin,
-  const std::array<std::vector<myfloat>, depth_max+1>& comzbegin,
-   myfloat* accx,  myfloat* accy,  myfloat* accz, 
-  const std::array<myfloat, depth_max+1>& diagonal2,
-  int depth, int begin){
-    DEBUG("Enter recursive_force at depth "<<depth<<" with begin "<<begin<<"\n");
-    for (auto it = begin; it < begin+8; it++)
+  const std::array<std::vector<myfloat>, depth_max+1>& commass, 
+  const std::array<std::vector<myfloat>, depth_max+1>& comx,
+  const std::array<std::vector<myfloat>, depth_max+1>& comy,
+    const std::array<std::vector<myfloat>, depth_max+1>& comz,
+     myfloat* accx,  myfloat* accy,  myfloat* accz, 
+    const std::array<myfloat, depth_max+1>& diagonal2,
+    int depth, int start){
+  //DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
+  auto& node = tree[depth][start];
+  if(node.isLeaf()){
+    DEBUG_D("recursive_force leaf with "<<node.count<<" particles\n", depth);
+    // Compute the force
+    for (int i = node.start; i < node.start + node.count; i++)
     {
-      auto& node = tree[depth][it];
-      if(tree[depth][it].isLeaf()){
-        DEBUG("Computing leaf force for "<<node.count<<" particles\n");
-        // Compute the force
-        for (int i = node.start; i < node.start + node.count; i++)
-        {
-          accelFunc(accx, accy, accz,
-                    particles.p.x[i] - *x,
-                    particles.p.y[i] - *y,
-                    particles.p.z[i] - *z, particles.m[i]); // TODO replace 50 with the mass
-        }
-        
-      }else{
-        myfloat dx = comxbegin[depth][it] - *x;
-        myfloat dy = comybegin[depth][it] - *y;
-        myfloat dz = comzbegin[depth][it] - *z;
-        if(lessThanTheta(dx,dy,dz, 1.5, diagonal2[depth])){
-           DEBUG("Computing COM force at depth "<<depth<<"\n");
-          // Compute the COM force
-          accelFunc(accx, accy, accz,dx,dy,dz,massbegin[depth][it]);
-        }else{
-            recursive_force(particles, tree, x,y,z, massbegin, comxbegin, comybegin, comzbegin,
-          accx, accy, accz, diagonal2, depth+1, node.start);
-        }
+      accelFunc(accx, accy, accz,
+                particles.p.x[i] - *x,
+                particles.p.y[i] - *y,
+                particles.p.z[i] - *z, particles.m[i]); // TODO replace 50 with the mass
+    }
+  }else{
+
+    myfloat dx = comx[depth][start] - *x;
+    myfloat dy = comy[depth][start] - *y;
+    myfloat dz = comz[depth][start] - *z;
+    if(isApproximationValid(dx,dy,dz, 0.75, diagonal2[depth])){
+      DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(
+        comx[depth][start], comy[depth][start], comz[depth][start]
+      )<<"\n", depth);
+      // Compute the COM force
+      accelFunc(accx, accy, accz,dx,dy,dz,commass[depth][start]);
+    }else{
+      for (auto it = node.start; it < node.start+8; it++)
+      {
+        recursive_force(particles, tree, x,y,z, commass, comx, comy, comz,
+        accx, accy, accz, diagonal2, depth+1, it);
       }
     }
   }
+
+  //DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
+}
 
 void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   auto time1 = std::chrono::high_resolution_clock::now();
@@ -133,7 +157,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     // Find the first depth level that does not contain all particles
     // i.e. the last particle (morton order)
     node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
-    while (IN_BOUNDS(i) && depth < depth_max && fifo.size() > 1)
+    while (IN_BOUNDS(i) && depth < depth_max)
     { 
       depth++;
       node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
@@ -143,7 +167,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
       // Max depth reached, ignore the particle count limit and fill the node 
       // To avoid infinite deepening of the tree when particles are on the same position
       DEBUG("Max depth reached, ignoring particle count limit\n");
-      while(IN_BOUNDS(i) && i < particles.size()-1){
+      while(IN_BOUNDS(i)){
         fifo.push(++i);
         DEBUG(i<<"[Override] pushed into fifo: " << fifo.size() <<"\n");
       }  
@@ -160,7 +184,8 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     leaf.start = fifo.front(); // index of the first particle
     leaf.count = 0; // number of particles, since the particles are sorted, all particles up to start+count-1 are contained
     // Add all particles that are in bounds to the node
-    while(IN_BOUNDS(fifo.front()) && fifo.size() > 0){
+    // fifo.size() > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
+    while(fifo.size() > 0 && IN_BOUNDS(fifo.front())){
       DEBUG("popped "<<fifo.front()<<" ("<<particles.p.x[fifo.front()] << " " << particles.p.y[fifo.front()] << " " << particles.p.z[fifo.front()]<<")" << std::endl);
       fifo.pop();
       leaf.count++;
@@ -187,10 +212,11 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
 
       }
       stack[depth]++;
-      if(depth == 0){
-        // We have finished the tree
-        break;
-      }
+    }
+
+    if(depth <= 0){
+      // We have finished the tree
+      break;
     }
   }
 
@@ -214,35 +240,40 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   // COM and mass calculation
   for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
   {
-    DEBUG("Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl);
+    DEBUG_D("COM computation, Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl, d);
     for (size_t i = 0; i < tree[d].size(); i++)
     {
       auto& currentnode = tree[d][i];
       if(currentnode.isLeaf()){
-        //DEBUG("Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n");
+        DEBUG_D("COM computation for Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n", d);
         for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
         {
-          centers_of_massx[d][i] += particles.p.x[j] * particles.m[j];
-          centers_of_massy[d][i] += particles.p.y[j] * particles.m[j];
-          centers_of_massz[d][i] += particles.p.z[j] * particles.m[j];
-          masses[d][i] += particles.m[j];
+          auto mass_child = particles.m[j];
+          centers_of_massx[d][i] += particles.p.x[j] * mass_child;
+          centers_of_massy[d][i] += particles.p.y[j] * mass_child;
+          centers_of_massz[d][i] += particles.p.z[j] * mass_child;
+          masses[d][i] += mass_child;
         }
       }else{
         // TODO: SIMD this, test unrolling
-        DEBUG("Internal Node "<<i<<" with start "<<currentnode.start<<"\n");
+        DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
         for (int j = currentnode.start; j < currentnode.start + 8; j++)
         {
-          centers_of_massx[d][i] += centers_of_massx[d+1][j] * masses[d+1][j];
-          centers_of_massy[d][i] += centers_of_massy[d+1][j] * masses[d+1][j];
-          centers_of_massz[d][i] += centers_of_massz[d+1][j] * masses[d+1][j];
-          masses[d][i] += masses[d+1][j];
-
+          auto mass_child = masses[d+1][j];
+          centers_of_massx[d][i] += centers_of_massx[d+1][j] * mass_child;
+          centers_of_massy[d][i] += centers_of_massy[d+1][j] * mass_child;
+          centers_of_massz[d][i] += centers_of_massz[d+1][j] * mass_child;
+          masses[d][i] += mass_child;
         }
       }
       if(masses[d][i] != 0){
         centers_of_massx[d][i] /= masses[d][i];
         centers_of_massy[d][i] /= masses[d][i];
         centers_of_massz[d][i] /= masses[d][i];
+
+        DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(
+          centers_of_massx[d][i], centers_of_massy[d][i], centers_of_massz[d][i]
+        )<<" with mass "<<masses[d][i]<<"\n", d);
       }
     }
   }
@@ -257,12 +288,12 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   }
 
   time1 = std::chrono::high_resolution_clock::now();
-  #pragma omp parallel for
+  //#pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++)
   {
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2, 1, 0);
+    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2, 0, 0);
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
@@ -284,7 +315,7 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
-#pragma omp parallel for simd
+#pragma omp parallel for //simd
   for (size_t i = 0; i < particles.size(); i++) {
     // First update the positions
     particles.p.x[i] = particles.p.x[i] + particles.v.x[i] * dt + acc.x[i] * dt * dt / 2.;
