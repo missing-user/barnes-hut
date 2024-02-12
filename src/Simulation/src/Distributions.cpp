@@ -315,9 +315,9 @@ std::vector<Particle> make_universe(Distribution dist, size_t num_particles)
   case Distribution::DEBUG_CUBE:
   {
     std::vector<Particle> particles;
-    int numx = std::pow(static_cast<double>(num_particles), 0.33);
-    int numy = std::pow(static_cast<double>(num_particles), 0.33);
-    int numz = std::pow(static_cast<double>(num_particles), 0.33);
+    int numx = std::pow(static_cast<double>(num_particles), 0.34);
+    int numy = std::pow(static_cast<double>(num_particles), 0.34);
+    int numz = std::pow(static_cast<double>(num_particles), 0.34);
     particles.resize(numx*numy*numz);
     for (int x = 0; x < numx; x++)
     {

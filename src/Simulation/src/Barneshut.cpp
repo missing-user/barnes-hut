@@ -1,6 +1,7 @@
 #include "Barneshut.h"
 #include "Order.h"
 #include <queue>
+#include <bitset>
 #include <libmorton/morton.h>
 #include <chrono>
 
@@ -15,6 +16,29 @@
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
+const int depth_max = 6;
+const int leaf_max = 1; // maximum particles per node
+
+void PRINT_BITS_BY3(uint_fast64_t x, int separator){
+  for (size_t i = 1; i <= depth_max; i++)
+  {
+    auto prefix = std::bitset<3>(x>>(63-3*i));
+    DEBUG(prefix);
+    if(i == separator)
+      DEBUG(":");
+    else
+      DEBUG(" ");
+  }
+}
+
+void DEBUG_BITS(uint_fast64_t end,size_t depth){
+  DEBUG_D("",depth);
+  PRINT_BITS_BY3(end, depth);
+  DEBUG(std::endl);
+  auto extsuf = std::bitset<63-3*depth_max>(end);
+  assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
+  assert((end>>63) == 0); // Top bit must always be 0
+}
 
 // FIXME: accelFunc is a duplicate of the function in Forces.h, but for some reason the linker cant find it
 //#include "Forces.h"
@@ -32,10 +56,7 @@ void accelFunc(myfloat*  accx, myfloat*  accy, myfloat*  accz,
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
-#define IN_BOUNDS(i) ((i + 1 < particles.size()) &&\
-                      (particles.p.x[i] <= node_pos.x + node_dim.x) &&\
-                      (particles.p.y[i] <= node_pos.y + node_dim.y) &&\
-                      (particles.p.z[i] <= node_pos.z + node_dim.z))
+#define IN_BOUNDS(i) ((i + 1 < particles.size()) && (mortoncodes[i] <= current_cell_end))
 
 struct Node{
   // Check Figure 3. in https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf 
@@ -51,8 +72,6 @@ struct Node{
   }
 };
 
-const int depth_max = 16;
-const int leaf_max = 4; // maximum particles per node
 
 inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
 {
@@ -70,7 +89,7 @@ void recursive_force(
      myfloat* accx,  myfloat* accy,  myfloat* accz, 
     const std::array<myfloat, depth_max+1>& diagonal2,
     int depth, int start){
-  //DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
+  DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
   auto& node = tree[depth][start];
   if(node.isLeaf()){
     DEBUG_D("recursive_force leaf with "<<node.count<<" particles\n", depth);
@@ -102,30 +121,30 @@ void recursive_force(
     }
   }
 
-  //DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
+  DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
 
-void bh_superstep(Particles& particles, size_t count, Vectors& acc){
+std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vectors& acc){
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
   std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Bounding Box calculation took " << elapsed.count()<<"s "<< std::endl;
+  std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
   
   time1 = std::chrono::high_resolution_clock::now();
   computeAndOrder(particles, boundingbox);
+  auto mortoncodes = computeMortonCodes(particles, boundingbox);
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Index reordering took " << elapsed.count()<<"s"<< "\n";
+  std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
   time1 = std::chrono::high_resolution_clock::now();
 
 
   DEBUG("Particles: \n");
   for (size_t i = 0; i < count; i++)
   {
-    DEBUG("("<<particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] <<"),"<<"\n");
+    DEBUG("("<<particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] <<"), "<<std::bitset<63>(mortoncodes[i])<<"\n");
   }
   
   // Create the tree
-  std::vector<DrawableCuboid> drawcuboids;
   std::array<std::vector<Node>, depth_max+1> tree;
   // build_tree();
   /* Since we know the particles are sorted in Morton order, we can use out of core
@@ -136,53 +155,44 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   */
   size_t i = 0;
   int depth = 0; // 0 = root
-  myvec3 node_pos{boundingbox.min()}; // lower left corner
-  myvec3 node_dim{boundingbox.dimension}; // length of each dimension
+  const myvec3 node_dim{boundingbox.dimension/std::pow(2.,21.)}; // length of each dimension
+  uint_fast64_t current_cell_end = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // First morton code that is not in the current cell
   short stack[depth_max+1];
   std::memset(stack, 0, sizeof(stack));
 
   std::queue<size_t> fifo; // indices of the particles
   fifo.push(i);
+  std::vector<DrawableCuboid>  drawcuboids{};
+
   while(i<particles.size()){
     // Add the first leaf_max+1 particles to the queue
-    node_pos = boundingbox.min();
-    for (int d = 1; d <= depth; d++)
-    {
-      node_pos.x += (stack[d] & 1) * boundingbox.dimension.x/(1<<d);
-      node_pos.y += ((stack[d]>>1) & 1) * boundingbox.dimension.y/(1<<d);
-      node_pos.z += ((stack[d]>>2) & 1) * boundingbox.dimension.z/(1<<d);
-    }
     for (int j = fifo.size(); j <= leaf_max; j++)
     {
       if(i+1 >= particles.size()) [[unlikely]] { break; } // Early exit before we exceed the number of particles
       fifo.push(++i);
-      DEBUG(i<<" pushed into fifo: " << fifo.size() <<"\n");
+      DEBUG_D(i<<" pushed into fifo: " << fifo.size() <<"\n", depth);
     }
     // Find the first depth level that does not contain all particles
     // i.e. the last particle (morton order)
-    node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
     while (IN_BOUNDS(i) && depth < depth_max)
     { 
       depth++;
-      node_dim = boundingbox.dimension/static_cast<myfloat>(1<<depth);
-      DEBUG("subdivide, i="<<i<<" is still in range"<<node_dim<<(fifo.size())<<"\n");
-    }
-    if(depth >= depth_max) { 
-      // Max depth reached, ignore the particle count limit and fill the node 
-      // To avoid infinite deepening of the tree when particles are on the same position
-      DEBUG("Max depth reached, ignoring particle count limit\n");
-      while(IN_BOUNDS(i)){
-        fifo.push(++i);
-        DEBUG(i<<"[Override] pushed into fifo: " << fifo.size() <<"\n");
-      }  
-    }
+      stack[depth] = 0;
+      current_cell_end -= 7ul << (63-3*depth);
+      DEBUG_D("subdivide, i="<<i<<" is still in range"<<"\n", depth);
+      DEBUG_BITS(current_cell_end, depth);
 
-    DEBUG("pos "<<node_pos<<" node_dim "<<node_dim <<" and stack: ");
-    for (int d = 0; d <= depth; d++)
-    {
-      DEBUG((int)stack[d]<<" ");
+      if(depth >= depth_max){
+        // Max depth reached, ignore the particle count limit and fill the node 
+        // To avoid infinite deepening of the tree when particles are on the same position
+        DEBUG("Max depth reached, ignoring particle count limit\n");
+        while(IN_BOUNDS(i)){
+          fifo.push(++i);
+          DEBUG(i<<"[Override] pushed into fifo: " << fifo.size() <<"\n");
+          std::cerr<<"Overriding fifo size to"<<fifo.size()<<std::endl;
+        }
+      }
     }
-    DEBUG(std::endl);
 
     Node leaf;
     leaf.start = fifo.front(); // index of the first particle
@@ -190,32 +200,43 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     // Add all particles that are in bounds to the node
     // fifo.size() > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
     while(fifo.size() > 0 && IN_BOUNDS(fifo.front())){
-      DEBUG("popped "<<fifo.front()<<" ("<<particles.p.x[fifo.front()] << " " << particles.p.y[fifo.front()] << " " << particles.p.z[fifo.front()]<<")" << std::endl);
+      DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
       fifo.pop();
       leaf.count++;
     }
     tree[depth].push_back(leaf);
-    DEBUG("Finalizing Leaf at depth "<<depth<<" with num_planets="<<leaf.count<<std::endl);
-    drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos, node_pos+node_dim), depth));
+    DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
+    uint_fast32_t x,y,z;
+    libmorton::morton3D_64_decode(current_cell_end, x,y,z);
+    myvec3 localnode_dim = node_dim*(std::pow(2, 21-depth));
+    myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
+    DEBUG_D(node_pos<<localnode_dim, depth);
+    drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
       stack[depth]++;
+      // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_cell_end
+      current_cell_end += 1ul << (63-3*depth);
+      for (size_t dd = 0; dd <= depth; dd++)
+      {
+        DEBUG(stack[dd]<<" ");
+      }
+      
+      DEBUG_D("Incremented stack="<<stack[depth]<<std::endl, depth);
+      DEBUG_BITS(current_cell_end, depth);
+      DEBUG_D("Morton "<<std::bitset<3>(current_cell_end>> (3*(21-depth)))<<" and stack "<<std::bitset<3>(stack[depth])<<std::endl, depth);
+      assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
     }else{
       // Go to the next depth
       while(stack[depth] == 7){
-        stack[depth] = 0;
-
         Node node;
         node.setInternal(tree[depth].size()-8); // index of the first child (8 children per node)
-
         depth--;
         tree[depth].push_back(node);
-        DEBUG("Finalizing Node at depth "<<depth<<std::endl);
-        node_dim *= 2;
-
+        assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        DEBUG_D("Finalizing Node "<<std::endl, depth);
       }
-      stack[depth]++;
     }
 
     if(depth <= 0){
@@ -225,7 +246,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   }
 
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Tree building " << elapsed.count()<<"s\n";
+  std::cout << "Tree building " << elapsed.count()*1e3<<"ms\n";
 
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massx;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massy;
@@ -282,7 +303,7 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
     }
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "COM computation took " << elapsed.count()<<"s\n";
+  std::cout << "COM computation took " << elapsed.count()*1e3<<"ms\n";
 
   // Force calculation
   std::array<myfloat, depth_max+1> diagonal2;
@@ -297,23 +318,27 @@ void bh_superstep(Particles& particles, size_t count, Vectors& acc){
   #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++)
   {
+    myfloat accx=0, accy=0, accz=0;
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &acc.x[i],&acc.y[i],&acc.z[i], diagonal2, 0, 0);
+    &accx, &accy, &accz, diagonal2, 0, 0);
+    acc.x[i]= accx;
+    acc.y[i]= accy;
+    acc.z[i]= accz;
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()<<"s\n";
-  
+    return drawcuboids;
 }
 
-void stepSimulation(Particles& particles, myfloat dt, double theta) {
+std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, double theta) {
   // barnes hut optimized step
   // Buffer for the new state vector of particles
   Vectors acc{particles.size(), 0.0};
   Vectors p2{particles.size()};
 
-  bh_superstep(particles, particles.size(), acc);
+  auto drawcubes = bh_superstep(particles, particles.size(), acc);
   // We have constructed the tree, use it to efficiently compute the
   // accelerations. Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
@@ -336,4 +361,5 @@ void stepSimulation(Particles& particles, myfloat dt, double theta) {
     particles.v.y[i] += (acc.y[i] + acc.y[i]) * dt / 2.;
     particles.v.z[i] += (acc.z[i] + acc.z[i]) * dt / 2.;
   }
+  return drawcubes;
 }

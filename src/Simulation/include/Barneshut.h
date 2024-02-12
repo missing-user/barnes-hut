@@ -3,7 +3,6 @@
 
 #include "Cuboid.h"
 #include "Particle.h"
-
-void stepSimulation(Particles& particles, myfloat dt, double theta);
+std::vector<DrawableCuboid> stepSimulation(Particles& particles, myfloat dt, double theta);
 
 #endif
