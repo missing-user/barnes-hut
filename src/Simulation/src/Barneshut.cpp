@@ -16,7 +16,7 @@
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
-const int depth_max = 6;
+const int depth_max = 12;
 const int leaf_max = 1; // maximum particles per node
 
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
@@ -31,10 +31,9 @@ void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   }
 }
 
-void DEBUG_BITS(uint_fast64_t end,size_t depth){
+void DEBUG_BITS(uint_fast64_t end,int depth){
   DEBUG_D("",depth);
   PRINT_BITS_BY3(end, depth);
-  DEBUG(std::endl);
   auto extsuf = std::bitset<63-3*depth_max>(end);
   assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
   assert((end>>63) == 0); // Top bit must always be 0
@@ -96,6 +95,12 @@ void recursive_force(
     // Compute the force
     for (int i = node.start; i < node.start + node.count; i++)
     {
+      if(!(i<particles.size())){
+        std::cerr<<"At depth "<<depth<<" and start "<<start<<" with node "<<node.start<<" and count "<<node.count<<"\n";
+        std::cerr<<"i="<<i<<" is out of bounds, particles.size()="<<particles.size()<<std::endl;
+      }
+      assert(node.count>0);
+      assert(i < particles.size());
       accelFunc(accx, accy, accz,
                 particles.p.x[i] - *x,
                 particles.p.y[i] - *y,
@@ -103,7 +108,7 @@ void recursive_force(
     }
   }else{
 
-    myfloat dx = comx[depth][start] - *x;
+    myfloat dx = comx.at(depth).at(start) - *x;
     myfloat dy = comy[depth][start] - *y;
     myfloat dz = comz[depth][start] - *z;
     if(isApproximationValid(dx,dy,dz, 1.5, diagonal2[depth])){
@@ -170,7 +175,7 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
     {
       if(i+1 >= particles.size()) [[unlikely]] { break; } // Early exit before we exceed the number of particles
       fifo.push(++i);
-      DEBUG_D(i<<" pushed into fifo: " << fifo.size() <<"\n", depth);
+      //DEBUG_D(i<<" pushed into fifo: " << fifo.size() <<"\n", depth);
     }
     // Find the first depth level that does not contain all particles
     // i.e. the last particle (morton order)
@@ -179,8 +184,8 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
       depth++;
       stack[depth] = 0;
       current_cell_end -= 7ul << (63-3*depth);
-      DEBUG_D("subdivide, i="<<i<<" is still in range"<<"\n", depth);
       DEBUG_BITS(current_cell_end, depth);
+      DEBUG_D(" subdivide, i="<<i<<" is still in range"<<"\n", depth);
 
       if(depth >= depth_max){
         // Max depth reached, ignore the particle count limit and fill the node 
@@ -200,17 +205,19 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
     // Add all particles that are in bounds to the node
     // fifo.size() > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
     while(fifo.size() > 0 && IN_BOUNDS(fifo.front())){
-      DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
+      //DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
       fifo.pop();
       leaf.count++;
     }
-    tree[depth].push_back(leaf);
-    DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
+    // Add empty nodes when at the leaf level, but do not add empty nodes at the node level
+    //if(leaf.count>0)
+      tree[depth].push_back(leaf);
+    //DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
     uint_fast32_t x,y,z;
     libmorton::morton3D_64_decode(current_cell_end, x,y,z);
     myvec3 localnode_dim = node_dim*(std::pow(2, 21-depth));
     myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
-    DEBUG_D(node_pos<<localnode_dim, depth);
+    //DEBUG_D(node_pos<<localnode_dim, depth);
     drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
@@ -218,25 +225,23 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
       stack[depth]++;
       // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_cell_end
       current_cell_end += 1ul << (63-3*depth);
-      for (size_t dd = 0; dd <= depth; dd++)
-      {
-        DEBUG(stack[dd]<<" ");
-      }
-      
-      DEBUG_D("Incremented stack="<<stack[depth]<<std::endl, depth);
-      DEBUG_BITS(current_cell_end, depth);
-      DEBUG_D("Morton "<<std::bitset<3>(current_cell_end>> (3*(21-depth)))<<" and stack "<<std::bitset<3>(stack[depth])<<std::endl, depth);
+      //DEBUG_D("Incremented stack="<<stack[depth]<<std::endl, depth);
+      DEBUG_BITS(current_cell_end, depth);DEBUG("\n");
+      //DEBUG_D("Morton "<<std::bitset<3>(current_cell_end>> (3*(21-depth)))<<" and stack "<<std::bitset<3>(stack[depth])<<std::endl, depth);
       assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
     }else{
       // Go to the next depth
       while(stack[depth] == 7){
         Node node;
         node.setInternal(tree[depth].size()-8); // index of the first child (8 children per node)
+        assert(tree[depth].size()%8 == 0);
         depth--;
         tree[depth].push_back(node);
-        assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
-        DEBUG_D("Finalizing Node "<<std::endl, depth);
+        //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        DEBUG_BITS(current_cell_end, depth);DEBUG("Finalizing Node "<<std::endl);
       }
+      stack[depth]++;
+      current_cell_end += 1ul << (63-3*depth);
     }
 
     if(depth <= 0){
@@ -315,20 +320,17 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
   }
 
   time1 = std::chrono::high_resolution_clock::now();
-  #pragma omp parallel for
+  myfloat* accx = acc.x, *accy=acc.y, *accz=acc.z;
+  #pragma omp parallel for reduction(+:accx[:particles.size()],accy[:particles.size()],accz[:particles.size()])
   for (size_t i = 0; i < particles.size(); i++)
   {
-    myfloat accx=0, accy=0, accz=0;
     recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &accx, &accy, &accz, diagonal2, 0, 0);
-    acc.x[i]= accx;
-    acc.y[i]= accy;
-    acc.z[i]= accz;
+    &acc.x[i], &acc.y[i], &acc.z[i], diagonal2, 0, 0);
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
   elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Force calculation took " << elapsed.count()<<"s\n";
+  std::cout << "Force calculation took " << elapsed.count()*1e3<<"ms\n";
     return drawcuboids;
 }
 

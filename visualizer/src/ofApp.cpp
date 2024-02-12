@@ -3,13 +3,12 @@
 #include <chrono>
 
 std::vector<Particle> particles;
-Particles bodies{27};
+Particles bodies{64};
 
 void ofApp::initializeParticles() {
   for (size_t i = 0; i <bodies.size(); i++)
   {
     bodies.p[i] = particles[i].p;
-    
     bodies.v[i] = particles[i].v;
     bodies.m[i] = particles[i].m;
   }
@@ -42,7 +41,7 @@ void ofApp::setup() {
   gui.add(brute_force_toggle.set("brute force", true));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 27, 27, 5e4));
+  gui.add(num_particles_slider.set("num_particles", 64, 64, 5e4));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
@@ -65,15 +64,10 @@ void ofApp::update() {
   auto begin = std::chrono::steady_clock::now();
 
 
-  if (show_stats_toggle)
-  {
-
     if (brute_force_toggle)
       stepSimulation(bodies, timestep_slider);
     else
       drawcuboids = stepSimulation(bodies, timestep_slider, theta_slider);
-    show_stats_toggle = false;
-  }
 
   auto end = std::chrono::steady_clock::now();
   auto elapsed =
@@ -98,7 +92,7 @@ void ofApp::draw() {
   //auto boxes = mytree.GetBoundingBoxes();
   ofNoFill();
 
-  if(show_stats_toggle||drawcuboids.size() > 0)
+  if(show_stats_toggle)
   {
     for (const auto &b : drawcuboids) {
       if (b.level >= min_depth_slider)
