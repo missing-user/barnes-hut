@@ -17,7 +17,7 @@
 #define DEBUG(x) DEBUG_D(x, 0)
 
 const int depth_max = 12;
-const int leaf_max = 1; // maximum particles per node
+const int leaf_max = 8; // maximum particles per node
 
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   for (size_t i = 1; i <= depth_max; i++)
@@ -72,20 +72,22 @@ struct Node{
 };
 
 
+#pragma omp declare simd
 inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta, myfloat diagonal2)
 {
   return diagonal2 < theta * length2(dx,dy,dz);
 }
 
+#pragma omp declare simd linear(accx, accy, accz)
 void recursive_force(
   const Particles& particles,
   const std::array<std::vector<Node>, depth_max+1>& tree,
-  const myfloat* x, const myfloat* y, const myfloat* z, 
+  const myfloat* __restrict x, const myfloat* __restrict y, const myfloat* __restrict z, 
   const std::array<std::vector<myfloat>, depth_max+1>& commass, 
   const std::array<std::vector<myfloat>, depth_max+1>& comx,
   const std::array<std::vector<myfloat>, depth_max+1>& comy,
     const std::array<std::vector<myfloat>, depth_max+1>& comz,
-     myfloat* accx,  myfloat* accy,  myfloat* accz, 
+     myfloat* __restrict accx,  myfloat* __restrict accy,  myfloat* __restrict accz, 
     const std::array<myfloat, depth_max+1>& diagonal2,
     int depth, int start){
   DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
@@ -93,10 +95,11 @@ void recursive_force(
   if(node.isLeaf()){
     DEBUG_D("recursive_force leaf with "<<node.count<<" particles\n", depth);
     // Compute the force
+    
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      assert(node.count>0);
-      assert(i < particles.size());
+      //assert(node.count>0);
+      //assert(i < particles.size());
       accelFunc(accx, accy, accz,
                 particles.p.x[i] - *x,
                 particles.p.y[i] - *y,
@@ -104,7 +107,7 @@ void recursive_force(
     }
   }else{
 
-    myfloat dx = comx.at(depth).at(start) - *x;
+    myfloat dx = comx[depth][start] - *x;
     myfloat dy = comy[depth][start] - *y;
     myfloat dz = comz[depth][start] - *z;
     if(isApproximationValid(dx,dy,dz, 1.5, diagonal2[depth])){
@@ -114,6 +117,7 @@ void recursive_force(
       // Compute the COM force
       accelFunc(accx, accy, accz,dx,dy,dz,commass[depth][start]);
     }else{
+      #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
       {
         recursive_force(particles, tree, x,y,z, commass, comx, comy, comz,
@@ -128,17 +132,20 @@ void recursive_force(
 std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vectors& acc){
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
+  
+#ifdef DEBUG_BUILD
   std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
-  
   time1 = std::chrono::high_resolution_clock::now();
+#endif
   computeAndOrder(particles, boundingbox);
   auto mortoncodes = computeMortonCodes(particles, boundingbox);
-  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  
+#ifdef DEBUG_BUILD
+elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
   time1 = std::chrono::high_resolution_clock::now();
-
-
+#endif
   DEBUG("Particles: \n");
   for (size_t i = 0; i < count; i++)
   {
@@ -163,7 +170,7 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
 
   std::queue<size_t> fifo; // indices of the particles
   fifo.push(i);
-  std::vector<DrawableCuboid>  drawcuboids{};
+  //std::vector<DrawableCuboid>  drawcuboids{};
 
   while(i<particles.size()){
     // Add the first leaf_max+1 particles to the queue
@@ -214,7 +221,7 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
     myvec3 localnode_dim = node_dim*(std::pow(2, 21-depth));
     myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
     //DEBUG_D(node_pos<<localnode_dim, depth);
-    drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
+    //drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
@@ -246,9 +253,10 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
     }
   }
 
+#ifdef DEBUG_BUILD
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Tree building " << elapsed.count()*1e3<<"ms\n";
-
+#endif
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massx;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massy;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massz;
@@ -303,16 +311,16 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
       }
     }
   }
+
+#ifdef DEBUG_BUILD
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "COM computation took " << elapsed.count()*1e3<<"ms\n";
-
+#endif
   // Force calculation
   std::array<myfloat, depth_max+1> diagonal2;
   for (int d = 0; d <= depth_max; d++)
   {
-    diagonal2[d] = length2(boundingbox.dimension.x/(1<<d), 
-                           boundingbox.dimension.y/(1<<d), 
-                           boundingbox.dimension.z/(1<<d));
+    diagonal2[d] = boundingbox.diagonal2/(1<<d);
   }
 
   time1 = std::chrono::high_resolution_clock::now();
@@ -325,9 +333,12 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
     &acc.x[i], &acc.y[i], &acc.z[i], diagonal2, 0, 0);
     DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
   }
+
+#ifdef DEBUG_BUILD
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()*1e3<<"ms\n";
-    return drawcuboids;
+#endif
+    return {};
 }
 
 std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, double theta) {
