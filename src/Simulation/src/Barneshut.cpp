@@ -41,7 +41,7 @@ void DEBUG_BITS(uint_fast64_t end,int depth){
 
 // FIXME: accelFunc is a duplicate of the function in Forces.h, but for some reason the linker cant find it
 //#include "Forces.h"
-//#pragma omp declare simd linear(accx, accy, accz)
+#pragma omp declare simd linear(accx, accy, accz)
 void accelFunc(myfloat*  accx, myfloat*  accy, myfloat*  accz, 
   myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
   constexpr myfloat softening_param = 0.025;
@@ -95,10 +95,6 @@ void recursive_force(
     // Compute the force
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      if(!(i<particles.size())){
-        std::cerr<<"At depth "<<depth<<" and start "<<start<<" with node "<<node.start<<" and count "<<node.count<<"\n";
-        std::cerr<<"i="<<i<<" is out of bounds, particles.size()="<<particles.size()<<std::endl;
-      }
       assert(node.count>0);
       assert(i < particles.size());
       accelFunc(accx, accy, accz,
