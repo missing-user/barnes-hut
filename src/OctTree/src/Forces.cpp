@@ -5,8 +5,8 @@
 // Parameters for the lennard jones potential
 constexpr myfloat epsilon = 1e2; // depth
 constexpr myfloat delta = 0.5;   // optimal distance from 0
-constexpr myfloat A = 4 * epsilon * std::pow(delta, 12);
-constexpr myfloat B = 4 * epsilon * std::pow(delta, 6);
+const myfloat A = 4 * epsilon * std::pow(delta, 12);
+const myfloat B = 4 * epsilon * std::pow(delta, 6);
 
 const myfloat lj_softening_param = 0.05;
 
