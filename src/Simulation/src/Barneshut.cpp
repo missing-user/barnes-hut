@@ -17,7 +17,7 @@
 #define DEBUG(x) DEBUG_D(x, 0)
 
 const int depth_max = 12;
-const int leaf_max = 8; // maximum particles per node
+const int leaf_max = 32; // maximum particles per node
 
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   for (size_t i = 1; i <= depth_max; i++)
@@ -37,20 +37,6 @@ void DEBUG_BITS(uint_fast64_t end,int depth){
   auto extsuf = std::bitset<63-3*depth_max>(end);
   assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
   assert((end>>63) == 0); // Top bit must always be 0
-}
-
-// FIXME: accelFunc is a duplicate of the function in Forces.h, but for some reason the linker cant find it
-//#include "Forces.h"
-#pragma omp declare simd linear(accx, accy, accz)
-void accelFunc(myfloat*  accx, myfloat*  accy, myfloat*  accz, 
-  myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
-  constexpr myfloat softening_param = 0.025;
-  auto r2 = length2(diffx, diffy, diffz);
-  auto r = std::sqrt(r2);
-  
-  *accx += diffx * mass /(r2 * r + softening_param);
-  *accy += diffy * mass /(r2 * r + softening_param);
-  *accz += diffz * mass /(r2 * r + softening_param);
 }
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
@@ -78,11 +64,11 @@ inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta,
   return diagonal2 < theta * length2(dx,dy,dz);
 }
 
-#pragma omp declare simd linear(accx, accy, accz)
+#pragma omp declare simd linear(accx, accy, accz) uniform(depth, diagonal2, start,x,y,z)
 void recursive_force(
   const Particles& particles,
   const std::array<std::vector<Node>, depth_max+1>& tree,
-  const myfloat* __restrict x, const myfloat* __restrict y, const myfloat* __restrict z, 
+  const myfloat x, const myfloat y, const myfloat z, 
   const std::array<std::vector<myfloat>, depth_max+1>& commass, 
   const std::array<std::vector<myfloat>, depth_max+1>& comx,
   const std::array<std::vector<myfloat>, depth_max+1>& comy,
@@ -95,27 +81,46 @@ void recursive_force(
   if(node.isLeaf()){
     DEBUG_D("recursive_force leaf with "<<node.count<<" particles\n", depth);
     // Compute the force
-    
+    myfloat dvx = 0, dvy = 0, dvz = 0;
+    #pragma omp simd
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      //assert(node.count>0);
-      //assert(i < particles.size());
-      accelFunc(accx, accy, accz,
-                particles.p.x[i] - *x,
-                particles.p.y[i] - *y,
-                particles.p.z[i] - *z, particles.m[i]); // TODO replace 50 with the mass
-    }
-  }else{
+      myfloat diffx = particles.p.x[i] - x;
+      myfloat diffy = particles.p.y[i] - y;
+      myfloat diffz = particles.p.z[i] - z;
 
-    myfloat dx = comx[depth][start] - *x;
-    myfloat dy = comy[depth][start] - *y;
-    myfloat dz = comz[depth][start] - *z;
+      constexpr myfloat softening_param = 0.025;
+      myfloat r2 = length2(diffx, diffy, diffz)+softening_param;
+      myfloat mOverDist3 = particles.m[i] / (r2 * std::sqrt(r2));
+      
+      dvx += diffx * mOverDist3;
+      dvy += diffy * mOverDist3;
+      dvz += diffz * mOverDist3;
+    }
+
+    *accx += dvx;
+    *accy += dvy;
+    *accz += dvz;
+  }else{
+    myfloat dx = comx[depth][start] - x;
+    myfloat dy = comy[depth][start] - y;
+    myfloat dz = comz[depth][start] - z;
     if(isApproximationValid(dx,dy,dz, 1.5, diagonal2[depth])){
       DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(
         comx[depth][start], comy[depth][start], comz[depth][start]
       )<<"\n", depth);
       // Compute the COM force
-      accelFunc(accx, accy, accz,dx,dy,dz,commass[depth][start]);
+      myfloat diffx = comx[depth][start] - x;
+      myfloat diffy = comy[depth][start] - y;
+      myfloat diffz = comz[depth][start] - z;
+
+      constexpr myfloat softening_param = 0.025;
+      myfloat r2 = length2(diffx, diffy, diffz)+softening_param;
+      myfloat mOverDist3 = commass[depth][start] / (r2 * std::sqrt(r2));
+      
+      *accx += diffx * mOverDist3;
+      *accy += diffy * mOverDist3;
+      *accz += diffz * mOverDist3;
     }else{
       #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
@@ -129,7 +134,7 @@ void recursive_force(
   DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
 
-std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vectors& acc){
+std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt){
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
   
@@ -138,8 +143,8 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, Vec
   std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
   time1 = std::chrono::high_resolution_clock::now();
 #endif
-  computeAndOrder(particles, boundingbox);
   auto mortoncodes = computeMortonCodes(particles, boundingbox);
+  reorderByCodes(particles, mortoncodes);
   
 #ifdef DEBUG_BUILD
 elapsed = std::chrono::high_resolution_clock::now() - time1;
@@ -163,7 +168,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   */
   size_t i = 0;
   int depth = 0; // 0 = root
-  const myvec3 node_dim{boundingbox.dimension/std::pow(2.,21.)}; // length of each dimension
+  const myvec3 node_dim{boundingbox.dimension/static_cast<myfloat>(std::pow(2.,21.))}; // length of each dimension
   uint_fast64_t current_cell_end = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // First morton code that is not in the current cell
   short stack[depth_max+1];
   std::memset(stack, 0, sizeof(stack));
@@ -218,7 +223,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     //DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
     uint_fast32_t x,y,z;
     libmorton::morton3D_64_decode(current_cell_end, x,y,z);
-    myvec3 localnode_dim = node_dim*(std::pow(2, 21-depth));
+    myvec3 localnode_dim = node_dim*static_cast<myfloat>(std::pow(2, 21-depth));
     myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
     //DEBUG_D(node_pos<<localnode_dim, depth);
     //drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
@@ -264,10 +269,10 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   for (int d = 0; d <= depth_max; d++)
   {
     //centers_of_mass.emplace_back(std::move(Vectors{tree[d].size()+1, 0.0}));
-    centers_of_massx[d].resize(tree[d].size(), 0.0);
-    centers_of_massy[d].resize(tree[d].size(), 0.0);
-    centers_of_massz[d].resize(tree[d].size(), 0.0);
-    masses[d].resize(tree[d].size(), 0.0);
+    centers_of_massx[d].resize(tree[d].size());
+    centers_of_massy[d].resize(tree[d].size());
+    centers_of_massz[d].resize(tree[d].size());
+    masses[d].resize(tree[d].size());
   }
   time1 = std::chrono::high_resolution_clock::now();
   
@@ -278,6 +283,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     for (size_t i = 0; i < tree[d].size(); i++)
     {
       auto& currentnode = tree[d][i];
+      myfloat comx=0, comy=0, comz=0, comm=0;
       if(currentnode.isLeaf()){
         DEBUG_D("COM computation for Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n", d);
         for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
@@ -291,24 +297,27 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
       }else{
         // TODO: SIMD this, test unrolling
         DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
+        #pragma omp simd safelen(8)
         for (int j = currentnode.start; j < currentnode.start + 8; j++)
         {
           auto mass_child = masses[d+1][j];
-          centers_of_massx[d][i] += centers_of_massx[d+1][j] * mass_child;
-          centers_of_massy[d][i] += centers_of_massy[d+1][j] * mass_child;
-          centers_of_massz[d][i] += centers_of_massz[d+1][j] * mass_child;
-          masses[d][i] += mass_child;
+          comx += centers_of_massx[d+1][j] * mass_child;
+          comy += centers_of_massy[d+1][j] * mass_child;
+          comz += centers_of_massz[d+1][j] * mass_child;
+          comm += mass_child;
         }
       }
       if(masses[d][i] != 0){
-        centers_of_massx[d][i] /= masses[d][i];
-        centers_of_massy[d][i] /= masses[d][i];
-        centers_of_massz[d][i] /= masses[d][i];
+        comx /= comm;
+        comy /= comm;
+        comz /= comm;
 
-        DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(
-          centers_of_massx[d][i], centers_of_massy[d][i], centers_of_massz[d][i]
-        )<<" with mass "<<masses[d][i]<<"\n", d);
+        DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(comx, comy, comz)<<" with mass "<<comm<<"\n", d);
       }
+      centers_of_massx[d][i] = comx;
+      centers_of_massy[d][i] = comy;
+      centers_of_massz[d][i] = comz;
+      masses[d][i] = comm;
     }
   }
 
@@ -316,22 +325,24 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "COM computation took " << elapsed.count()*1e3<<"ms\n";
 #endif
-  // Force calculation
   std::array<myfloat, depth_max+1> diagonal2;
   for (int d = 0; d <= depth_max; d++)
   {
     diagonal2[d] = boundingbox.diagonal2/(1<<d);
   }
 
+  // Force calculation
   time1 = std::chrono::high_resolution_clock::now();
-  myfloat* accx = acc.x, *accy=acc.y, *accz=acc.z;
-  #pragma omp parallel for reduction(+:accx[:particles.size()],accy[:particles.size()],accz[:particles.size()])
-  for (size_t i = 0; i < particles.size(); i++)
+  #pragma omp parallel for schedule(dynamic,leaf_max) 
+  for (size_t i = 0; i < particles.size(); i++) 
   {
-    recursive_force(particles, tree, &particles.p.x[i], &particles.p.y[i], &particles.p.z[i], 
+    myfloat dvx = 0, dvy = 0, dvz = 0;
+    recursive_force(particles, tree, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &acc.x[i], &acc.y[i], &acc.z[i], diagonal2, 0, 0);
-    DEBUG("Particle "<<i<<" has force "<<acc.x[i]<<" "<<acc.y[i]<<" "<<acc.z[i]<<"\n");
+    &dvx, &dvy, &dvz, diagonal2, 0, 0);
+    particles.v.x[i] += dvx*dt;
+    particles.v.y[i] += dvy*dt;
+    particles.v.z[i] += dvz*dt;
   }
 
 #ifdef DEBUG_BUILD
@@ -343,11 +354,9 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
 
 std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, double theta) {
   // barnes hut optimized step
-  // Buffer for the new state vector of particles
-  Vectors acc{particles.size(), 0.0};
-  Vectors p2{particles.size()};
+  
 
-  auto drawcubes = bh_superstep(particles, particles.size(), acc);
+  auto drawcubes = bh_superstep(particles, particles.size(), dt);
   // We have constructed the tree, use it to efficiently compute the
   // accelerations. Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
@@ -355,20 +364,13 @@ std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, do
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
-#pragma omp parallel for //simd
-  for (size_t i = 0; i < particles.size(); i++) {
-    // First update the positions
-    particles.p.x[i] = particles.p.x[i] + particles.v.x[i] * dt + acc.x[i] * dt * dt / 2.;
-    particles.p.y[i] = particles.p.y[i] + particles.v.y[i] * dt + acc.y[i] * dt * dt / 2.;
-    particles.p.z[i] = particles.p.z[i] + particles.v.z[i] * dt + acc.z[i] * dt * dt / 2.;
+
+  for (size_t i = 0; i < particles.size(); i++)
+  {
+    particles.p.x[i] += particles.v.x[i] * dt;
+    particles.p.y[i] += particles.v.y[i] * dt;
+    particles.p.z[i] += particles.v.z[i] * dt;
   }
 
-#pragma omp parallel for
-  for (size_t i = 0; i < particles.size(); i++) {
-    // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
-    particles.v.x[i] += (acc.x[i] + acc.x[i]) * dt / 2.;
-    particles.v.y[i] += (acc.y[i] + acc.y[i]) * dt / 2.;
-    particles.v.z[i] += (acc.z[i] + acc.z[i]) * dt / 2.;
-  }
   return drawcubes;
 }
