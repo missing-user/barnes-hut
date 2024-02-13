@@ -17,19 +17,19 @@ int main(int argc, char *argv[]) {
   bool output_pcd = false;
   bool brute_force = false;
   int num_particles = 1000;
-  myfloat theta = 1.5;
+  double theta = 1.5;
   double duration = 10;
-  myfloat timestep = .1;
+  double timestep = .1;
 
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "produce this help message")(
       "num_particles,n", po::value<int>(&num_particles),
       "number of particles in the simulation. (default 1000)")(
-      "theta,T", po::value<myfloat>(&theta),
+      "theta,T", po::value<double>(&theta),
       "Multipole rejection threshold for barnes-hut. (default 1.5)")(
-      "duration,d", po::value<myfloat>(&duration),
+      "duration,d", po::value<double>(&duration),
       "Simulation duration. (default 10s)")(
-      "timestep,t", po::value<myfloat>(&timestep),
+      "timestep,t", po::value<double>(&timestep),
       "Simulation timestep. (default 0.1s)")(
       "csv", po::bool_switch(&output_csv),
       "output the results into a .csv file")(
