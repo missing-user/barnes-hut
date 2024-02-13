@@ -8,15 +8,15 @@ Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
 
 Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) // returns a cuboid with the given min and max coords
 {
-  return Cuboid(0.5 * (min + max), max - min);
+  return Cuboid(static_cast<myfloat>(0.5) * (min + max), max - min);
 }
 
 std::array<Cuboid, 8>
 Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, splitting the parent
                                      // cuboid in half along each dimension (i.e. Octant)
 {
-  myvec3 minP = center - dimension/2.0;
-  myvec3 maxP = center + dimension/2.0;
+  myvec3 minP = center - dimension/static_cast<myfloat>(2.0);
+  myvec3 maxP = center + dimension/static_cast<myfloat>(2.0);
   // Calculating the coordinates of the new cuboid divisions
   std::array<Cuboid, 8> subcuboids{
       minMaxCuboid(myvec3(minP.x, minP.y, minP.z), myvec3(P.x, P.y, P.z)),

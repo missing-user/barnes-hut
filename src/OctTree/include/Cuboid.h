@@ -20,8 +20,8 @@ public:
   std::array<Cuboid, 8> subdivideAtP(const myvec3& P) const; // returns an array of 8 cuboids, splitting the parent
                                                       // cuboid at the given vector P
   std::string print() const;
-  myvec3 min() const { return center - dimension*0.5; }
-  myvec3 max() const { return center + dimension*0.5; }
+  myvec3 min() const { return center - dimension*static_cast<myfloat>(0.5); }
+  myvec3 max() const { return center + dimension*static_cast<myfloat>(0.5); }
 };
 
 // A function to calculate the bounding box of a group of particles

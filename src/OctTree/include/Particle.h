@@ -93,15 +93,6 @@ struct Vectors{
     x = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
     y = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
     z = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
-  }  
-
-  Vectors(size_t size, myfloat value) {
-    x = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
-    memset(x, value, sizeof(x[0])*size);
-    y = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
-    memset(y, value, sizeof(x[0])*size);
-    z = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
-    memset(z, value, sizeof(x[0])*size);
   }
 
   ~Vectors() {

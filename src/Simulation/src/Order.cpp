@@ -53,7 +53,7 @@ void computeAndOrder(std::vector<Particle> &particles)
 std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, Cuboid bb)
 {
   std::vector<uint_fast64_t> mortonCodes(particles.size());
-  myvec3 invRange = (std::pow(2, 21)-1) / bb.dimension;
+  myvec3 invRange = static_cast<myfloat>(std::pow(2, 21)-1) / bb.dimension;
   #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++) {
     uint_fast32_t x = (particles.p.x[i] - bb.min().x) * invRange.x;
@@ -64,10 +64,7 @@ std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, Cuboid
   return mortonCodes;
 }
 
-void computeAndOrder(Particles &particles, Cuboid bb)
-{
-  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, bb);
-
+void reorderByCodes(Particles &particles, std::vector<uint_fast64_t>& mortonCodes){
   // morton order allows for 21 bits per dimension = 63 bits, scale all entries to this size
   // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
   // Sort using morton order. This is parallelized if _GLIBCXX_PARALLEL is defined
@@ -78,6 +75,7 @@ void computeAndOrder(Particles &particles, Cuboid bb)
   });
 
   // Reorder the particles
+  auto mortonCodes2 = mortonCodes;
   Particles reorderedParticles{particles.size()};
   #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++) {
@@ -88,6 +86,7 @@ void computeAndOrder(Particles &particles, Cuboid bb)
     reorderedParticles.v.y[i] = particles.v.y[indices[i]];
     reorderedParticles.v.z[i] = particles.v.z[indices[i]];
     reorderedParticles.m[i] = particles.m[indices[i]];
+    mortonCodes[i] = mortonCodes2[indices[i]];
   }
   std::swap(particles.p.x, reorderedParticles.p.x);
   std::swap(particles.p.y, reorderedParticles.p.y);
@@ -96,4 +95,10 @@ void computeAndOrder(Particles &particles, Cuboid bb)
   std::swap(particles.v.y, reorderedParticles.v.y);
   std::swap(particles.v.z, reorderedParticles.v.z);
   std::swap(particles.m, reorderedParticles.m);
+}
+
+void computeAndOrder(Particles &particles, Cuboid bb)
+{
+  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, bb);
+  reorderByCodes(particles, mortonCodes);
 }
