@@ -2,38 +2,7 @@
 #include <iostream>
 #include <omp.h>
 
-inline double length2(double x, double y, double z) {
-  return x * x + y * y + z * z;
-}
-
-void bruteForceAcc(double  *accx, double  *accy, double   *accz,
-                  const double  *xin, const double  *yin, const double  *zin,
-                  const double  x, const double  y, const double  z,
-                  const double  *m, const size_t n) {
-  /* Tried manual vectorization using simd accumulate here, no measurable
-   * difference at -Ofast -march=native. GLM already uses vectorized simd
-   * instructions for the accumulation.
-   */
-  double dvx = 0, dvy = 0, dvz = 0;
-  #pragma omp simd
-  for (size_t i = 0; i < n; i++)
-  {
-    double diffx = xin[i] - x;
-    double diffy = yin[i] - y;
-    double diffz = zin[i] - z;
-
-    constexpr double softening_param = 0.025;
-    auto r2 = length2(diffx, diffy, diffz)+softening_param;
-    double mOverDist3 = m[i] / (r2 * std::sqrt(r2));
-    
-    dvx += diffx * mOverDist3;
-    dvy += diffy * mOverDist3;
-    dvz += diffz * mOverDist3;
-  }
-  *accx = dvx;
-  *accy = dvy;
-  *accz = dvz;
-}
+#include "Forces.h"
 
 void stepSimulation(double *x, double *y, double *z, 
                     double *vx, double *vy, double *vz, 
@@ -44,16 +13,13 @@ void stepSimulation(double *x, double *y, double *z,
  * creating threads is too high.
  */
   
-#pragma omp parallel if (n > 1000)
-  {
-#pragma omp for
-    for (size_t i = 0; i < n; i++) {
-      double dvx = 0, dvy = 0, dvz = 0;
-      bruteForceAcc(&dvx, &dvy, &dvz, x, y, z, x[i], y[i], z[i], m, n);
-      vx[i] += dvx*dt;
-      vy[i] += dvy*dt; 
-      vz[i] += dvz*dt;
-    }
+#pragma omp parallel for if (n > 1000)
+  for (size_t i = 0; i < n; i++) {
+    double dvx = 0, dvy = 0, dvz = 0;
+    bruteForceAcc(&dvx, &dvy, &dvz, x, y, z, x[i], y[i], z[i], m, n);
+    vx[i] += dvx*dt;
+    vy[i] += dvy*dt; 
+    vz[i] += dvz*dt;
   }
 
   for (size_t i = 0; i < n; i++)
@@ -67,7 +33,7 @@ void stepSimulation(double *x, double *y, double *z,
 
 int main() {
   std::cout << "Running on "<<omp_get_max_threads()<<" threads\n";
-  size_t n = 200000;
+  size_t n = 10000;
   double dt = 0.1;
   
   double *x = new double[n];
@@ -90,7 +56,7 @@ int main() {
     m[i] = 1;
   }
 
-  for (size_t i = 0; i < 1; i++)
+  for (size_t i = 0; i < 100; i++)
   {
     stepSimulation(x, y, z, vx, vy, vz, m, n, dt);
     std::cout<<"."<<std::flush;
