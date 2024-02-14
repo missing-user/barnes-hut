@@ -1,0 +1,255 @@
+Global optimization report for : _Z13bruteForceAccPdS_S_PKdS1_S1_dddS1_m
+
+LOOP BEGIN at Bruteforce.cpp (17, 3)
+    remark #15301: SIMD LOOP WAS VECTORIZED
+    remark #15305: vectorization support: vector length 4
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (17, 3)
+<Remainder loop for vectorization>
+LOOP END
+=================================================================
+
+Global optimization report for : _Z14stepSimulationPdS_S_S_S_S_S_md
+=================================================================
+
+Global optimization report for : main
+
+LOOP BEGIN at Bruteforce.cpp (98, 3)
+    remark #15300: LOOP WAS VECTORIZED
+    remark #15305: vectorization support: vector length 16
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (109, 3)
+    remark #15527: Loop was not vectorized: function call to  cannot be vectorized
+    remark #25439: Loop unrolled with remainder by 8
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (109, 3)
+<Remainder loop>
+LOOP END
+=================================================================
+
+Global optimization report for : _Z14stepSimulationPdS_S_S_S_S_S_md.extracted
+
+LOOP BEGIN at Bruteforce.cpp (48, 1)
+    remark #25593: OpenMP: Worksharing loop
+    remark #15553: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+    LOOP BEGIN at Bruteforce.cpp (17, 3)
+        remark #15301: SIMD LOOP WAS VECTORIZED
+        remark #15305: vectorization support: vector length 4
+    LOOP END
+
+    LOOP BEGIN at Bruteforce.cpp (17, 3)
+    <Remainder loop for vectorization>
+    LOOP END
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (76, 5)
+<Multiversioned v2>
+    remark #15319: Loop was not vectorized: novector directive used
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (76, 5)
+<Multiversioned v1>
+    remark #25228: Loop multiversioned for Data Dependence
+    remark #15300: LOOP WAS VECTORIZED
+    remark #15305: vectorization support: vector length 4
+LOOP END
+
+LOOP BEGIN at Bruteforce.cpp (76, 5)
+<Remainder loop for vectorization>
+LOOP END
+=================================================================
+
+---- Begin Inlining Report ----
+Option Values:
+  inline-threshold: 225
+  inlinehint-threshold: 325
+  inlinecold-threshold: 45
+  inlineoptsize-threshold: 15
+
+DEAD STATIC FUNC: _Z7length2ddd
+
+DEAD STATIC FUNC: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv
+
+DEAD STATIC FUNC: _ZNSolsEPFRSoS_E
+
+DEAD STATIC FUNC: _ZNSolsEd
+
+DEAD STATIC FUNC: _ZNSt11char_traitsIcE6lengthEPKc
+
+DEAD STATIC FUNC: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate
+
+DEAD STATIC FUNC: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate
+
+DEAD STATIC FUNC: _ZSt5flushIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_
+
+DEAD STATIC FUNC: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+
+DEAD STATIC FUNC: _ZStorSt12_Ios_IostateS_
+
+DEAD STATIC FUNC: llvm.directive.region.entry
+
+DEAD STATIC FUNC: llvm.directive.region.exit
+
+DEAD STATIC FUNC: llvm.ssa.copy.f64
+
+DEAD STATIC FUNC: llvm.ssa.copy.i64
+
+DEAD STATIC FUNC: llvm.stackrestore
+
+DEAD STATIC FUNC: llvm.stacksave
+
+DEAD STATIC FUNC: strlen
+
+COMPILE FUNC: _Z13bruteForceAccPdS_S_PKdS1_S1_dddS1_m
+   -> DELETE: llvm.directive.region.entry Bruteforce.cpp (17,3)
+   -> INLINE: _Z7length2ddd Bruteforce.cpp (25,15)
+   -> DELETE: llvm.sqrt.f64 Bruteforce.cpp (26,38)
+   -> DELETE: llvm.directive.region.exit Bruteforce.cpp (17,3)
+   -> DELETE: llvm.sqrt.v4f64 Bruteforce.cpp (26,38)
+   -> llvm.sqrt.v4f64 Bruteforce.cpp (26,38)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (28,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (28,9)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (29,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (29,9)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (30,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (30,9)
+   -> llvm.sqrt.f64 Bruteforce.cpp (26,38)
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (18,3)
+
+COMPILE FUNC: _Z14stepSimulationPdS_S_S_S_S_S_md
+   -> DELETE: llvm.directive.region.entry Bruteforce.cpp (48,1)
+   -> DELETE: llvm.directive.region.exit Bruteforce.cpp (48,1)
+   -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+   -> _Z14stepSimulationPdS_S_S_S_S_S_md.extracted Bruteforce.cpp (46,1)
+
+COMPILE FUNC: main
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,13)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,21)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,27)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,36)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,42)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,51)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,57)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,67)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,74)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,84)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,91)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,101)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,108)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _ZNSolsEd Bruteforce.cpp (114,117)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (114,123)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+   -> INLINE: _Z14stepSimulationPdS_S_S_S_S_S_md Bruteforce.cpp (111,5)
+      -> DELETE: __kmpc_fork_call Bruteforce.cpp (46,1)
+      -> DELETE: _Z14stepSimulationPdS_S_S_S_S_S_md.extracted Bruteforce.cpp (46,1)
+      -> DELETE: __kmpc_global_thread_num Bruteforce.cpp
+      -> DELETE: __kmpc_serialized_parallel Bruteforce.cpp (46,1)
+      -> DELETE: __kmpc_end_serialized_parallel Bruteforce.cpp (46,1)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+      -> BROKER: __kmpc_fork_call Bruteforce.cpp (46,1)(_Z14stepSimulationPdS_S_S_S_S_S_md.extracted)
+   -> INLINE: _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc Bruteforce.cpp (112,14)
+      -> INLINE: _ZNSt9basic_iosIcSt11char_traitsIcEE8setstateESt12_Ios_Iostate Bruteforce.cpp (665,8)
+         -> INLINE: _ZNKSt9basic_iosIcSt11char_traitsIcEE7rdstateEv Bruteforce.cpp (158,27)
+         -> INLINE: _ZStorSt12_Ios_IostateS_ Bruteforce.cpp (158,37)
+         -> DELETE: _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate Bruteforce.cpp (158,15)
+      -> INLINE: _ZNSt11char_traitsIcE6lengthEPKc Bruteforce.cpp (668,29)
+         -> DELETE: strlen Bruteforce.cpp (409,9)
+      -> DELETE: _ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l Bruteforce.cpp (667,2)
+   -> INLINE: _ZNSolsEPFRSoS_E Bruteforce.cpp (112,19)
+      -> INLINE: _ZSt5flushIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_ Bruteforce.cpp (115,9)
+         -> DELETE: _ZNSo5flushEv Bruteforce.cpp (758,19)
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (98,30)
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (109,32)
+
+COMPILE FUNC: _Z14stepSimulationPdS_S_S_S_S_S_md.extracted
+   -> DELETE: llvm.directive.region.entry Bruteforce.cpp (46,1)
+   -> INLINE: _Z13bruteForceAccPdS_S_PKdS1_S1_dddS1_m Bruteforce.cpp (51,7)
+      -> DELETE: llvm.directive.region.entry Bruteforce.cpp (17,3)
+      -> INLINE: _Z7length2ddd Bruteforce.cpp (25,15)
+      -> DELETE: llvm.sqrt.f64 Bruteforce.cpp (26,38)
+      -> DELETE: llvm.directive.region.exit Bruteforce.cpp (17,3)
+      -> llvm.sqrt.f64 Bruteforce.cpp (26,38)
+   -> DELETE: llvm.directive.region.exit Bruteforce.cpp (46,1)
+   -> DELETE: llvm.stacksave Bruteforce.cpp
+   -> DELETE: llvm.stacksave Bruteforce.cpp
+   -> DELETE: llvm.sqrt.v4f64 Bruteforce.cpp (26,38)
+   -> llvm.sqrt.v4f64 Bruteforce.cpp (26,38)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (28,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (28,9)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (29,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (29,9)
+   -> DELETE: llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (30,9)
+   -> llvm.vector.reduce.fadd.v4f64 Bruteforce.cpp (30,9)
+   -> DELETE: llvm.stackrestore Bruteforce.cpp (35,1)
+   -> DELETE: llvm.stackrestore Bruteforce.cpp (35,1)
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.f64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (18,3)
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (49,5)
+   -> DELETE: llvm.ssa.copy.i64 Bruteforce.cpp (76,32)
+
+---- End Inlining Report ------
