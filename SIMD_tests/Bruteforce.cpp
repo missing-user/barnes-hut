@@ -8,12 +8,8 @@ void stepSimulation(double *x, double *y, double *z,
                     double *vx, double *vy, double *vz, 
                     double *m, size_t n, double dt)
 {
-/*Multithreading the outer loop instead of the inner loop is more than 10x
- * faster. This is because the inner loop is very short and the overhead of
- * creating threads is too high.
- */
-  
-#pragma omp parallel for if (n > 1000)
+// Dynamic schedule in only beneficial because my laptop has E and P cores with different speeds
+#pragma omp parallel for schedule(dynamic, 64) if (n > 1000)
   for (size_t i = 0; i < n; i++) {
     double dvx = 0, dvy = 0, dvz = 0;
     bruteForceAcc(&dvx, &dvy, &dvz, x, y, z, x[i], y[i], z[i], m, n);
