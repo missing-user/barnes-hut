@@ -183,22 +183,14 @@ In this sprint, we will analyze and optimize the performance and computation tim
 Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
 After some further investigations, we found that the static scheduling of the OpenMP parallel for loop was the problem. The load was not balanced between the threads, so the slowest thread would always be the bottleneck, while the other would be sitting idle. By switching to dynamic scheduling, the speedup per core became similiar to the brute force version.
 ![multicore runtime speedup dynamic scheduling](images/coresSpeedupDynamic.png)
-Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well. This indicates, that there are still serial portions of the code that we could optimize. Copying the particles  
+Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well.
 
-## Algorithmic Improvements
-
-We added another type of tree that can be enabled with `#define USE_CENTER_OF_MASS_FOR_SPLITTING` and creates shallower, but irregular trees than the default OctTree splitting. Instead of dividing each cell into 8 equal parts, the center of mass of the particles in the cell is calculated and the cell is split into 8 cells at that point.
-
-## Gallery
-
-![Pretty image](images/flatIrregularTree.png)
-
-![Big Bang](images/bigbang_clustering.png)
-
-![Visualization of the tree structure](images/tree_100_particles.png)
-
-And a few videos:
-
-
-[![Watch the video](https://img.youtube.com/vi/SRe4MOF6JOs/maxresdefault.jpg)](https://youtu.be/SRe4MOF6JOs)
-[![Watch the video](https://img.youtube.com/vi/K-4VUi-bIeo/maxresdefault.jpg)](https://youtu.be/K-4VUi-bIeo)
+## Known Issues
+The SoA implementation is very much WIP, and not on par with SoA yet. 
+- [] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???)
+- [] Make sure the last particle is also being added to the tree
+- [x] Confirm that the tree construction is correct (Looks good according to the visualizer)
+- [] Tree construction using OpenMP tasks
+- [] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [x] Vectorization of the innermost particle loop (leaf/near field)
+- [x] Vectorization of the far field loop using the centers of mass
