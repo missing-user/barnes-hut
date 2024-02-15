@@ -3,6 +3,8 @@
 
 #include "Cuboid.h"
 #include "Particle.h"
-std::vector<DrawableCuboid> stepSimulation(Particles& particles, myfloat dt, double theta);
+#include <atomic>
+std::vector<DrawableCuboid> stepSimulation(Particles& particles, myfloat dt, myfloat theta);
+extern std::atomic<int> force_count;
 
 #endif

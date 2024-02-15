@@ -17,8 +17,8 @@
 #define DEBUG(x) DEBUG_D(x, 0)
 
 const int depth_max = 12;
-const int leaf_max = 32; // maximum particles per node
-
+const int leaf_max = 1; // maximum particles per node
+std::atomic<int> force_count=0;
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   for (size_t i = 1; i <= depth_max; i++)
   {
@@ -75,7 +75,7 @@ void recursive_force(
     const std::array<std::vector<myfloat>, depth_max+1>& comz,
      myfloat* __restrict accx,  myfloat* __restrict accy,  myfloat* __restrict accz, 
     const std::array<myfloat, depth_max+1>& diagonal2,
-    int depth, int start){
+    int depth, int start, myfloat theta){
   DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
   auto& node = tree[depth][start];
   if(node.isLeaf()){
@@ -85,6 +85,7 @@ void recursive_force(
     #pragma omp simd
     for (int i = node.start; i < node.start + node.count; i++)
     {
+      force_count++;
       myfloat diffx = particles.p.x[i] - x;
       myfloat diffy = particles.p.y[i] - y;
       myfloat diffz = particles.p.z[i] - z;
@@ -105,7 +106,7 @@ void recursive_force(
     myfloat dx = comx[depth][start] - x;
     myfloat dy = comy[depth][start] - y;
     myfloat dz = comz[depth][start] - z;
-    if(isApproximationValid(dx,dy,dz, 1.5, diagonal2[depth])){
+    if(isApproximationValid(dx,dy,dz, theta, diagonal2[depth])){
       DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(
         comx[depth][start], comy[depth][start], comz[depth][start]
       )<<"\n", depth);
@@ -121,12 +122,13 @@ void recursive_force(
       *accx += diffx * mOverDist3;
       *accy += diffy * mOverDist3;
       *accz += diffz * mOverDist3;
+      force_count++;
     }else{
       #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
       {
         recursive_force(particles, tree, x,y,z, commass, comx, comy, comz,
-        accx, accy, accz, diagonal2, depth+1, it);
+        accx, accy, accz, diagonal2, depth+1, it, theta);
       }
     }
   }
@@ -134,7 +136,7 @@ void recursive_force(
   DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
 
-std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt){
+std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt, myfloat theta){
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
   
@@ -175,7 +177,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
 
   std::queue<size_t> fifo; // indices of the particles
   fifo.push(i);
-  //std::vector<DrawableCuboid>  drawcuboids{};
+  std::vector<DrawableCuboid>  drawcuboids{};
 
   while(i<particles.size()){
     // Add the first leaf_max+1 particles to the queue
@@ -226,7 +228,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     myvec3 localnode_dim = node_dim*static_cast<myfloat>(std::pow(2, 21-depth));
     myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
     //DEBUG_D(node_pos<<localnode_dim, depth);
-    //drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
+    drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
@@ -295,7 +297,6 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
           masses[d][i] += mass_child;
         }
       }else{
-        // TODO: SIMD this, test unrolling
         DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
         #pragma omp simd safelen(8)
         for (int j = currentnode.start; j < currentnode.start + 8; j++)
@@ -314,6 +315,8 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
 
         DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(comx, comy, comz)<<" with mass "<<comm<<"\n", d);
       }
+      // Accumulating into temporary variables and then doing 
+      // a single array access is much faster. Cache contention?
       centers_of_massx[d][i] = comx;
       centers_of_massy[d][i] = comy;
       centers_of_massz[d][i] = comz;
@@ -339,7 +342,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     myfloat dvx = 0, dvy = 0, dvz = 0;
     recursive_force(particles, tree, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
     masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &dvx, &dvy, &dvz, diagonal2, 0, 0);
+    &dvx, &dvy, &dvz, diagonal2, 0, 0, theta);
     particles.v.x[i] += dvx*dt;
     particles.v.y[i] += dvy*dt;
     particles.v.z[i] += dvz*dt;
@@ -349,14 +352,14 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()*1e3<<"ms\n";
 #endif
-    return {};
+    return drawcuboids;
 }
 
-std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, double theta) {
+std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, myfloat theta) {
   // barnes hut optimized step
   
 
-  auto drawcubes = bh_superstep(particles, particles.size(), dt);
+  auto drawcubes = bh_superstep(particles, particles.size(), dt, theta);
   // We have constructed the tree, use it to efficiently compute the
   // accelerations. Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
