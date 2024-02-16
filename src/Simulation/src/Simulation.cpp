@@ -9,7 +9,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
               myfloat theta, std::function<void(const Particles&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
-  
+  auto theta2 = theta * theta;
 
   std::cout << "Starting " << duration << "s simulation with " << duration / dt
             << " steps at dt=" << dt << "\nwith the "<< (brute_force ? "brute force" : "Barnes Hut") 
@@ -37,7 +37,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
     if (brute_force) // Brute force step
       stepSimulation(bodies, dt);
     else // Barnes Hut step
-      stepSimulation(bodies, dt, theta);
+      stepSimulation(bodies, dt, theta2);
 
     if (writeCallback){
       writeCallback(bodies, timestep);
@@ -51,6 +51,6 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
     if (brute_force)
       stepSimulation(bodies, residualTimestep);
     else
-      stepSimulation(bodies, residualTimestep, theta);
+      stepSimulation(bodies, residualTimestep, theta2);
   }
 }
