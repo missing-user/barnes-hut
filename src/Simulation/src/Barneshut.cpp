@@ -5,6 +5,7 @@
 #include <libmorton/morton.h>
 #include <chrono>
 
+#define LOG_TIME
 //#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG_D(x, d) do { \
@@ -136,7 +137,7 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myf
   auto time1 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
   
-#ifdef DEBUG_BUILD
+#ifdef LOG_TIME
   std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
   time1 = std::chrono::high_resolution_clock::now();
@@ -144,7 +145,7 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myf
   auto mortoncodes = computeMortonCodes(particles, boundingbox);
   reorderByCodes(particles, mortoncodes);
   
-#ifdef DEBUG_BUILD
+#ifdef LOG_TIME
 elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
   time1 = std::chrono::high_resolution_clock::now();
@@ -256,7 +257,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     }
   }
 
-#ifdef DEBUG_BUILD
+#ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Tree building " << elapsed.count()*1e3<<"ms\n";
 #endif
@@ -320,7 +321,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     }
   }
 
-#ifdef DEBUG_BUILD
+#ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "COM computation took " << elapsed.count()*1e3<<"ms\n";
 #endif
@@ -344,7 +345,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     particles.v.z[i] += dvz*dt;
   }
 
-#ifdef DEBUG_BUILD
+#ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()*1e3<<"ms\n";
 #endif
