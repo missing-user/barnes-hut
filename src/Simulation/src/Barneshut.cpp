@@ -16,7 +16,7 @@
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
-const int depth_max = 12;
+const int depth_max = 16;
 const int leaf_max = 1; // maximum particles per node
 std::atomic<int> force_count=0;
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
@@ -85,7 +85,7 @@ void recursive_force(
     #pragma omp simd
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      force_count++;
+      //force_count++;
       myfloat diffx = particles.p.x[i] - x;
       myfloat diffy = particles.p.y[i] - y;
       myfloat diffz = particles.p.z[i] - z;
@@ -111,18 +111,14 @@ void recursive_force(
         comx[depth][start], comy[depth][start], comz[depth][start]
       )<<"\n", depth);
       // Compute the COM force
-      myfloat diffx = comx[depth][start] - x;
-      myfloat diffy = comy[depth][start] - y;
-      myfloat diffz = comz[depth][start] - z;
-
       constexpr myfloat softening_param = 0.025;
-      myfloat r2 = length2(diffx, diffy, diffz)+softening_param;
+      myfloat r2 = length2(dx, dy, dz)+softening_param;
       myfloat mOverDist3 = commass[depth][start] / (r2 * std::sqrt(r2));
       
-      *accx += diffx * mOverDist3;
-      *accy += diffy * mOverDist3;
-      *accz += diffz * mOverDist3;
-      force_count++;
+      *accx += dx * mOverDist3;
+      *accy += dy * mOverDist3;
+      *accz += dz * mOverDist3;
+      //force_count++;
     }else{
       #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
@@ -291,10 +287,10 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
         for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
         {
           auto mass_child = particles.m[j];
-          centers_of_massx[d][i] += particles.p.x[j] * mass_child;
-          centers_of_massy[d][i] += particles.p.y[j] * mass_child;
-          centers_of_massz[d][i] += particles.p.z[j] * mass_child;
-          masses[d][i] += mass_child;
+          comx += particles.p.x[j] * mass_child;
+          comy += particles.p.y[j] * mass_child;
+          comz += particles.p.z[j] * mass_child;
+          comm += mass_child;
         }
       }else{
         DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
@@ -308,7 +304,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
           comm += mass_child;
         }
       }
-      if(masses[d][i] != 0){
+      if(comm != 0){
         comx /= comm;
         comy /= comm;
         comz /= comm;
@@ -336,7 +332,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
 
   // Force calculation
   time1 = std::chrono::high_resolution_clock::now();
-  #pragma omp parallel for schedule(dynamic,leaf_max) 
+#pragma omp parallel for schedule(dynamic,64) 
   for (size_t i = 0; i < particles.size(); i++) 
   {
     myfloat dvx = 0, dvy = 0, dvz = 0;
