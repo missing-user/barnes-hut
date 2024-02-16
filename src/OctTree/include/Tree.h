@@ -19,7 +19,7 @@ protected:
   Cuboid cuboid;
   int level;  
 
-  bool lessThanTheta(const myvec3 &pos, double theta) const;
+  bool lessThanTheta(const myvec3 &pos, double theta2) const;
   void createBranches();
   void createBranches(const myvec3 &pos);
   int selectOctant(const myvec3 &pos) const;
@@ -43,7 +43,7 @@ public:
   std::pair<int, int> MaxDepthAndParticles() const;
   std::vector<DrawableCuboid> GetBoundingBoxes() const;
 
-  myvec3 computeAccFromPos(const myvec3 &pos, myfloat theta) const;
-  myvec3 computeAcc(const Particle &p1, myfloat theta) const;
+  myvec3 computeAccFromPos(const myvec3 &pos, myfloat theta2) const;
+  myvec3 computeAcc(const Particle &p1, myfloat theta2) const;
 };
 #endif

@@ -4,7 +4,7 @@
 #include <string>
 
 std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
-                                     myfloat dt, double theta) {
+                                     myfloat dt, double theta2) {
   // barnes hut optimized step
   // Buffer for the new state vector of particles
   std::vector<Particle> particles_next{particles};
@@ -24,7 +24,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
     const auto &p1 = particles[i];
     auto &p2 = particles_next[i];
 
-    const auto acc = mytree.computeAcc(p1, theta);
+    const auto acc = mytree.computeAcc(p1, theta2);
     p2.p = p1.p + p1.v * dt + acc * dt * dt / 2.;
     accelerations[i] = acc;
   }
@@ -41,7 +41,7 @@ std::vector<Particle> stepSimulation(const std::vector<Particle>& particles,
     // Then update the velocities using v(t+1) = dt*(a(t) + a(t+dt))/2
     auto &p2 = particles_next[i];
 
-    const auto acc2 = mytree2.computeAcc(p2, theta);
+    const auto acc2 = mytree2.computeAcc(p2, theta2);
     p2.v += (acc2 + accelerations[i]) * dt / 2.;
   }
 
@@ -52,7 +52,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
               myfloat theta, std::function<void(const std::vector<Particle>&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
-  
+  auto theta2 = theta*theta; // theta is squared in the algorithm
 
   std::cout << "Starting " << duration << "s simulation with " << duration / dt
             << " steps at dt=" << dt << "\nwith the "<< (brute_force ? "brute force" : "Barnes Hut") 
@@ -67,7 +67,7 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
     if (brute_force) // Brute force step
       particles = stepSimulation(particles, dt);
     else // Barnes Hut step
-      particles = stepSimulation(particles, dt, theta);
+      particles = stepSimulation(particles, dt, theta2);
 
     if (writeCallback){
       writeCallback(particles, timestep);
@@ -81,6 +81,6 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
     if (brute_force)
       particles = stepSimulation(particles, residualTimestep);
     else
-      particles = stepSimulation(particles, residualTimestep, theta);
+      particles = stepSimulation(particles, residualTimestep, theta2);
   }
 }

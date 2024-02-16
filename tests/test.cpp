@@ -157,7 +157,7 @@ TEST(BarnesHut, CompareApproximation) {
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, false, 1.2, writeToCsvFile);
+  simulate(particlesTree, simDuration, timestep, false, 1.1, writeToCsvFile);
 
   for (int i = 0; i < particles.size(); i++) {
     // The approximate values should not be identical to the real ones

@@ -100,16 +100,16 @@ CenterOfMass Tree::computeCOM()
 }
 
 myvec3 Tree::computeAcc(const Particle &p1,
-                        myfloat theta)
+                        myfloat theta2)
     const
 { // compute the accelartion applied on a particle by this node
   const auto pos = p1.p;
-  return computeAccFromPos(pos, theta);
+  return computeAccFromPos(pos, theta2);
 }
 
 myvec3 Tree::computeAccFromPos(
     const myvec3 &pos,
-    myfloat theta) const
+    myfloat theta2) const
 { // compute the total acceleration at this position
   // due to all particles in this Tree
   myvec3 acc{0, 0, 0};
@@ -126,7 +126,7 @@ myvec3 Tree::computeAccFromPos(
   }
   else
   {
-    if (lessThanTheta(pos, theta))
+    if (lessThanTheta(pos, theta2))
     { // Barnes-Hut threshold
       // if the threshold is met, approximate the acceleration using the center
       // of mass instead of summing the individual particle contributions
@@ -137,7 +137,7 @@ myvec3 Tree::computeAccFromPos(
       // branches inside this node
       for (int i = 0; i < 8; i++)
       {
-        acc += branches[i].computeAccFromPos(pos, theta);
+        acc += branches[i].computeAccFromPos(pos, theta2);
       }
     }
   }
@@ -145,9 +145,10 @@ myvec3 Tree::computeAccFromPos(
   return acc;
 }
 
-bool Tree::lessThanTheta(const myvec3 &pos, double theta) const
+// Multipole acceptance criteria, uses theta^2 to avoid a sqrt() operation
+bool Tree::lessThanTheta(const myvec3 &pos, double theta2) const
 {
-  return cuboid.diagonal2 < theta * glm::length2(pos - COM.p);
+  return cuboid.diagonal2 < theta2 * glm::length2(pos - COM.p);
 }
 
 /***********************************************************************/
