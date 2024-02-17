@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   }else{
     simulate(particles, duration, timestep, brute_force, theta);
   }
+  std::cout << "Force count: " << force_count << "\n";
 
   // Check for nan and inf, throw if encountered
   for (const auto &p : particles) {
