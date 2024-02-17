@@ -5,7 +5,7 @@
 #include <libmorton/morton.h>
 #include <chrono>
 
-#define LOG_TIME
+//#define LOG_TIME
 //#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG_D(x, d) do { \
@@ -42,7 +42,8 @@ void DEBUG_BITS(uint_fast64_t end,int depth){
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
-#define IN_BOUNDS(i) ((i + 1 < particles.size()) && (mortoncodes[i] <= current_cell_end))
+#define IN_BOUNDS(i) ((i < particles.size()) && (mortoncodes[i] <= current_cell_end))
+#define LAST_ITERATION (i==particles.size()-1 && fifo.size() <= 1)
 
 struct Node{
   // Check Figure 3. in https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf 
@@ -86,7 +87,7 @@ void recursive_force(
     #pragma omp simd
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      //force_count++;
+      force_count++;
       myfloat diffx = particles.p.x[i] - x;
       myfloat diffy = particles.p.y[i] - y;
       myfloat diffz = particles.p.z[i] - z;
@@ -119,7 +120,8 @@ void recursive_force(
       *accx += dx * mOverDist3;
       *accy += dy * mOverDist3;
       *accz += dz * mOverDist3;
-      //force_count++;
+      //if(commass[depth][start] != 0)
+        force_count++;
     }else{
       #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
@@ -184,15 +186,16 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
       fifo.push(++i);
       //DEBUG_D(i<<" pushed into fifo: " << fifo.size() <<"\n", depth);
     }
-    // Find the first depth level that does not contain all particles
-    // i.e. the last particle (morton order)
-    while (IN_BOUNDS(i) && depth < depth_max)
-    { 
+    // Find the first depth level that does not contain all particles in the fifo
+    // due to morton order we know that the last particle (i) will be the first to be out of range
+    // We have to handle the special case when only one particle is left, to avoid infinite deepening of the tree 
+    while (IN_BOUNDS(i) && depth < depth_max && !LAST_ITERATION)
+    {
       depth++;
       stack[depth] = 0;
       current_cell_end -= 7ul << (63-3*depth);
       DEBUG_BITS(current_cell_end, depth);
-      DEBUG_D(" subdivide, i="<<i<<" is still in range"<<"\n", depth);
+      DEBUG_D(" Subdivide, i="<<i<<" is still in range"<<"\n", depth);
 
       if(depth >= depth_max){
         // Max depth reached, ignore the particle count limit and fill the node 
@@ -205,6 +208,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
         }
       }
     }
+    //DEBUG("Finally settled on depth "<<depth<<"for node i"<<i<<std::endl);
 
     Node leaf;
     leaf.start = fifo.front(); // index of the first particle
@@ -212,13 +216,11 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     // Add all particles that are in bounds to the node
     // fifo.size() > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
     while(fifo.size() > 0 && IN_BOUNDS(fifo.front())){
-      //DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
+      DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
       fifo.pop();
       leaf.count++;
     }
-    // Add empty nodes when at the leaf level, but do not add empty nodes at the node level
-    //if(leaf.count>0)
-      tree[depth].push_back(leaf);
+    tree[depth].push_back(leaf);
     //DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
     uint_fast32_t x,y,z;
     libmorton::morton3D_64_decode(current_cell_end, x,y,z);
@@ -232,9 +234,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
       stack[depth]++;
       // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_cell_end
       current_cell_end += 1ul << (63-3*depth);
-      //DEBUG_D("Incremented stack="<<stack[depth]<<std::endl, depth);
       DEBUG_BITS(current_cell_end, depth);DEBUG("\n");
-      //DEBUG_D("Morton "<<std::bitset<3>(current_cell_end>> (3*(21-depth)))<<" and stack "<<std::bitset<3>(stack[depth])<<std::endl, depth);
       assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
     }else{
       // Go to the next depth
@@ -244,7 +244,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
         assert(tree[depth].size()%8 == 0);
         depth--;
         tree[depth].push_back(node);
-        //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
         DEBUG_BITS(current_cell_end, depth);DEBUG("Finalizing Node "<<std::endl);
       }
       stack[depth]++;
