@@ -58,7 +58,68 @@ struct Node{
   }
 };
 
+void compute_centers_of_mass(const Particles& particles, const std::array<std::vector<Node>, depth_max+1>& tree, 
+                             std::array<std::vector<myfloat>, depth_max+1>& centers_of_massx, 
+                             std::array<std::vector<myfloat>, depth_max+1>& centers_of_massy, 
+                             std::array<std::vector<myfloat>, depth_max+1>& centers_of_massz, 
+                             std::array<std::vector<myfloat>, depth_max+1>& cumulative_mass)
+{
+  // Initialize the arrays
+  for (int d = 0; d <= depth_max; d++)
+  {
+    //centers_of_mass.emplace_back(std::move(Vectors{tree[d].size()+1, 0.0}));
+    centers_of_massx[d].resize(tree[d].size());
+    centers_of_massy[d].resize(tree[d].size());
+    centers_of_massz[d].resize(tree[d].size());
+    cumulative_mass[d].resize(tree[d].size());
+  }
 
+  // No gain from parallelization
+  for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
+  {
+    DEBUG_D("COM computation, Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl, d);
+    for (size_t i = 0; i < tree[d].size(); i++)
+    {
+      auto& currentnode = tree[d][i];
+      myfloat comx=0, comy=0, comz=0, comm=0;
+      if(currentnode.isLeaf()){
+        DEBUG_D("COM computation for Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n", d);
+        for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
+        {
+          auto mass_child = particles.m[j];
+          comx += particles.p.x[j] * mass_child;
+          comy += particles.p.y[j] * mass_child;
+          comz += particles.p.z[j] * mass_child;
+          comm += mass_child;
+        }
+      }else{
+        DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
+        #pragma omp simd safelen(8)
+        for (int j = currentnode.start; j < currentnode.start + 8; j++)
+        {
+          auto mass_child = cumulative_mass[d+1][j];
+          comx += centers_of_massx[d+1][j] * mass_child;
+          comy += centers_of_massy[d+1][j] * mass_child;
+          comz += centers_of_massz[d+1][j] * mass_child;
+          comm += mass_child;
+        }
+      }
+      if(comm != 0){
+        comx /= comm;
+        comy /= comm;
+        comz /= comm;
+
+        DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(comx, comy, comz)<<" with mass "<<comm<<"\n", d);
+      }
+      // Accumulating into temporary variables and then doing 
+      // a single array access is much faster. Cache contention?
+      centers_of_massx[d][i] = comx;
+      centers_of_massy[d][i] = comy;
+      centers_of_massz[d][i] = comz;
+      cumulative_mass[d][i] = comm;
+    }
+  }
+}
 #pragma omp declare simd
 inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, myfloat theta2, myfloat diagonal2)
 {
@@ -131,38 +192,38 @@ void recursive_force(
   DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
 
-std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt, myfloat theta2){
-  auto time1 = std::chrono::high_resolution_clock::now();
-  auto boundingbox = bounding_box(particles.p, count);
-  
-#ifdef LOG_TIME
-  std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
-  time1 = std::chrono::high_resolution_clock::now();
-#endif
-  computeAndOrder(particles, boundingbox);
-#ifdef LOG_TIME
-elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
-  time1 = std::chrono::high_resolution_clock::now();
-#endif
-  auto mortoncodes = computeMortonCodes(particles, boundingbox);
-#ifdef LOG_TIME
-  elapsed = std::chrono::high_resolution_clock::now() - time1;
-  std::cout << "Recomputing morton codes took " << elapsed.count()*1e3<<"ms "<< std::endl;
-  time1 = std::chrono::high_resolution_clock::now();
-#endif
-  //assert(std::is_sorted(mortoncodes.begin(), mortoncodes.end()));
-  
-  DEBUG("Particles: \n");
-  for (size_t i = 0; i < count; i++)
+void compute_accelerations(const Particles& particles, std::array<std::vector<Node>, depth_max+1> tree,
+                          std::array<std::vector<myfloat>, depth_max+1>& centers_of_massx, 
+                          std::array<std::vector<myfloat>, depth_max+1>& centers_of_massy, 
+                          std::array<std::vector<myfloat>, depth_max+1>& centers_of_massz, 
+                          std::array<std::vector<myfloat>, depth_max+1>& cumulative_mass,
+                          myfloat dt, myfloat theta2, const Cuboid& boundingbox){
+  std::array<myfloat, depth_max+1> diagonal2;
+  for (int d = 0; d <= depth_max; d++)
   {
-    DEBUG("("<<particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] <<"), "<<std::bitset<63>(mortoncodes[i])<<"\n");
+    // The diagonal the bounding boxes at a given depth are half of the previous level.
+    // Since we are using the squared distance, we need to divide by 4!s
+    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
   }
-  
-  // Create the tree
+
+  // Force calculation
+#pragma omp parallel for schedule(dynamic,64) 
+  for (size_t i = 0; i < particles.size(); i++) 
+  {
+    myfloat dvx = 0, dvy = 0, dvz = 0;
+    recursive_force(particles, tree, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
+    cumulative_mass, centers_of_massx, centers_of_massy, centers_of_massz, 
+    &dvx, &dvy, &dvz, diagonal2, 0, 0, theta2);
+    particles.v.x[i] += dvx*dt;
+    particles.v.y[i] += dvy*dt;
+    particles.v.z[i] += dvz*dt;
+  }
+}
+
+std::array<std::vector<Node>, depth_max+1> build_tree(Particles& particles, const Cuboid& boundingbox){
+  auto mortoncodes = computeMortonCodes(particles, boundingbox);
+  assert(std::is_sorted(mortoncodes.begin(), mortoncodes.end()));
   std::array<std::vector<Node>, depth_max+1> tree;
-  // build_tree();
   /* Since we know the particles are sorted in Morton order, we can use out of core
   * Tree construction as described in http://www.thesalmons.org/john/pubs/siam97/salmon.pdf
   * by only keeping track of the group currently being constructed and finalizing it 
@@ -171,7 +232,6 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   */
   size_t i = 0;
   int depth = 0; // 0 = root
-  const myvec3 node_dim{boundingbox.dimension/static_cast<myfloat>(std::pow(2.,21.))}; // length of each dimension
   uint_fast64_t current_cell_end = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // First morton code that is not in the current cell
   short stack[depth_max+1];
   std::memset(stack, 0, sizeof(stack));
@@ -223,9 +283,6 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     //DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
     uint_fast32_t x,y,z;
     libmorton::morton3D_64_decode(current_cell_end, x,y,z);
-    myvec3 localnode_dim = node_dim*static_cast<myfloat>(std::pow(2, 21-depth));
-    myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
-    //drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
@@ -254,103 +311,65 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
       break;
     }
   }
+  return tree;
+}
+
+std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt, myfloat theta2){
+  auto time1 = std::chrono::high_resolution_clock::now();
+  auto boundingbox = bounding_box(particles.p, count);
+  
+#ifdef LOG_TIME
+  std::chrono::duration<double> elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
+  time1 = std::chrono::high_resolution_clock::now();
+#endif
+  computeAndOrder(particles, boundingbox);
+#ifdef LOG_TIME
+elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
+  time1 = std::chrono::high_resolution_clock::now();
+#endif
+#ifdef LOG_TIME
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Recomputing morton codes took " << elapsed.count()*1e3<<"ms "<< std::endl;
+  time1 = std::chrono::high_resolution_clock::now();
+#endif
+  
+  DEBUG("Particles: \n");
+  for (size_t i = 0; i < count; i++)
+  {
+    DEBUG("("<<particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] <<"), "<<std::bitset<63>(mortoncodes[i])<<"\n");
+  }
+  
+  // Create the tree
+  auto tree = build_tree(particles, boundingbox);
+  
 
 #ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Tree building " << elapsed.count()*1e3<<"ms\n";
+  time1 = std::chrono::high_resolution_clock::now();
 #endif
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massx;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massy;
   std::array<std::vector<myfloat>, depth_max+1> centers_of_massz;
   std::array<std::vector<myfloat>, depth_max+1> masses;
-  for (int d = 0; d <= depth_max; d++)
-  {
-    //centers_of_mass.emplace_back(std::move(Vectors{tree[d].size()+1, 0.0}));
-    centers_of_massx[d].resize(tree[d].size());
-    centers_of_massy[d].resize(tree[d].size());
-    centers_of_massz[d].resize(tree[d].size());
-    masses[d].resize(tree[d].size());
-  }
-  time1 = std::chrono::high_resolution_clock::now();
   
   // COM and mass calculation
-  // No gain from parallelization
-  for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
-  {
-    DEBUG_D("COM computation, Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl, d);
-    for (size_t i = 0; i < tree[d].size(); i++)
-    {
-      auto& currentnode = tree[d][i];
-      myfloat comx=0, comy=0, comz=0, comm=0;
-      if(currentnode.isLeaf()){
-        DEBUG_D("COM computation for Leaf "<<i<<" at depth "<<d<<" has "<<currentnode.count<<" particles\n", d);
-        for (int j = currentnode.start; j < currentnode.start+currentnode.count; j++)
-        {
-          auto mass_child = particles.m[j];
-          comx += particles.p.x[j] * mass_child;
-          comy += particles.p.y[j] * mass_child;
-          comz += particles.p.z[j] * mass_child;
-          comm += mass_child;
-        }
-      }else{
-        DEBUG_D("COM computation for Internal Node "<<i<<" with start "<<currentnode.start<<"\n", d);
-        #pragma omp simd safelen(8)
-        for (int j = currentnode.start; j < currentnode.start + 8; j++)
-        {
-          auto mass_child = masses[d+1][j];
-          comx += centers_of_massx[d+1][j] * mass_child;
-          comy += centers_of_massy[d+1][j] * mass_child;
-          comz += centers_of_massz[d+1][j] * mass_child;
-          comm += mass_child;
-        }
-      }
-      if(comm != 0){
-        comx /= comm;
-        comy /= comm;
-        comz /= comm;
-
-        DEBUG_D("COM for node "<<i<<" at depth "<<d<<" is "<<myvec3(comx, comy, comz)<<" with mass "<<comm<<"\n", d);
-      }
-      // Accumulating into temporary variables and then doing 
-      // a single array access is much faster. Cache contention?
-      centers_of_massx[d][i] = comx;
-      centers_of_massy[d][i] = comy;
-      centers_of_massz[d][i] = comz;
-      masses[d][i] = comm;
-    }
-  }
-
+  compute_centers_of_mass(particles, tree, centers_of_massx, centers_of_massy, centers_of_massz, masses);
 #ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "COM computation took " << elapsed.count()*1e3<<"ms\n";
-#endif
-  std::array<myfloat, depth_max+1> diagonal2;
-  for (int d = 0; d <= depth_max; d++)
-  {
-    // The diagonal the bounding boxes at a given depth are half of the previous level.
-    // Since we are using the squared distance, we need to divide by 4!s
-    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
-  }
-
-  // Force calculation
   time1 = std::chrono::high_resolution_clock::now();
-#pragma omp parallel for schedule(dynamic,64) 
-  for (size_t i = 0; i < particles.size(); i++) 
-  {
-    myfloat dvx = 0, dvy = 0, dvz = 0;
-    recursive_force(particles, tree, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
-    masses, centers_of_massx, centers_of_massy, centers_of_massz, 
-    &dvx, &dvy, &dvz, diagonal2, 0, 0, theta2);
-    particles.v.x[i] += dvx*dt;
-    particles.v.y[i] += dvy*dt;
-    particles.v.z[i] += dvz*dt;
-  }
+#endif
+  compute_accelerations(particles, tree, centers_of_massx, centers_of_massy, centers_of_massz, masses, 
+                        dt, theta2, boundingbox);
 
 #ifdef LOG_TIME
   elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Force calculation took " << elapsed.count()*1e3<<"ms\n";
 #endif
-    return drawcuboids;
+  return {};
 }
 
 std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, myfloat theta2) {
