@@ -31,15 +31,15 @@ myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
 }
 
 #pragma omp declare simd
-void gravityForce(myfloat*  accx, myfloat*  accy, myfloat*  accz, 
+void gravityForce(myfloat* accx, myfloat* accy, myfloat* accz, 
   myfloat diffx, myfloat diffy, myfloat diffz, myfloat mass) {
   constexpr myfloat softening_param = 0.025;
-  auto r2 = length2(diffx, diffy, diffz);
-  auto r = std::sqrt(r2);
+  auto r2 = length2(diffx, diffy, diffz) + softening_param;
+  auto mOverDist3 = mass / (r2 * std::sqrt(r2));
   
-  *accx += diffx * mass /(r2 * r + softening_param);
-  *accy += diffy * mass /(r2 * r + softening_param);
-  *accz += diffz * mass /(r2 * r + softening_param);
+  *accx += diffx * mOverDist3;
+  *accy += diffy * mOverDist3;
+  *accz += diffz * mOverDist3;
   // about 5% slower than the above. same using glm::fastNormalize
   // This function would also fail at r=0, due to glm::normalize()
   // return glm::normalize(diff) * mass / (glm::length2(diff) +
@@ -63,6 +63,25 @@ void accelFunc(myfloat* accx, myfloat* accy, myfloat* accz,
     return gravityForce(diff, mass) + lennardJonesForce(diff, mass);
   #endif
 
+}
+
+void bruteForceAcc(double  *accx, double  *accy, double   *accz,
+                  const double  *xin, const double  *yin, const double  *zin,
+                  const double  x, const double  y, const double  z,
+                  const double  *m, const size_t n) {
+  /* Tried manual vectorization using simd accumulate here, no measurable
+   * difference at -Ofast -march=native. GLM already uses vectorized simd
+   * instructions for the accumulation.
+   */
+  double dvx = 0, dvy = 0, dvz = 0;
+  #pragma omp simd
+  for (size_t i = 0; i < n; i++)
+  {
+    accelFunc(&dvx, &dvy, &dvz, xin[i] - x, yin[i] - y, zin[i] - z, m[i]);
+  }
+  *accx += dvx;
+  *accy += dvy;
+  *accz += dvz;
 }
 
 /* Potential energy
