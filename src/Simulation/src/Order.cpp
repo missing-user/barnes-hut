@@ -39,6 +39,8 @@ uint_fast64_t positionToCode(const myfloat& x, const myfloat& y, const myfloat& 
 std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const Cuboid &bb)
 {
   std::vector<uint_fast64_t> mortonCodes(particles.size());
+  // morton order allows for 21 bits per dimension = 63 bits, scale all entries to this size
+  // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
   const myvec3 invRange = static_cast<myfloat>(std::pow(2, 21)-1) / bb.dimension;
   #pragma omp parallel for
   for (size_t i = 0; i < particles.size(); i++) {
@@ -48,8 +50,6 @@ std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const 
 }
 
 void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mortonCodes){
-  // morton order allows for 21 bits per dimension = 63 bits, scale all entries to this size
-  // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
   // Sort using morton order. This is parallelized if _GLIBCXX_PARALLEL is defined
   std::vector<int> indices(particles.size());
   std::iota(indices.begin(), indices.end(), 0);
