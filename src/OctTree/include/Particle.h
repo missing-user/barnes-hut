@@ -14,80 +14,19 @@ typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to
                            // float precision by adjusting these two variables
 typedef double myfloat;
 
-/*
-template <typename T>
-concept HasPosition = requires(T t) {
-  { t.p } -> std::convertible_to<myvec3>;
-};
-
-template <typename T>
-concept HasMassAndPosition = requires(T t) {
-  { t.m } -> std::convertible_to<myfloat>;
-}
-&&HasPosition<T>;
-*/
-
-struct CenterOfMass {
-  myvec3 p;
-  myfloat m;
-
-  template <typename T>
-  // Adding two centers of mass creates the center of mass between the two
-  CenterOfMass &operator+=(const T &rhs) {
-    const auto total_m = this->m + rhs.m;
-    if (total_m == 0)
-      return *this; // If the mass is zero, skip division, return original
-
-    this->p = (this->p * this->m + rhs.p * rhs.m) / total_m;
-    this->m = total_m;
-    return *this;
-  }
-};
-
 struct Particle { // A particle with position, velocity and unique id
   myvec3 p;
   myvec3 v;
   myfloat m;
 };
 
-struct GlmView{
-  myfloat *x, *y, *z;
-
-  GlmView& operator=(const myvec3& vec){
-    *x = vec.x;
-    *y = vec.y;
-    *z = vec.z;
-    return *this;
-  }
-
-  bool operator==(const GlmView& vec){
-    return x == vec.x;
-  }
-};
-
 inline myfloat length2(myfloat x, myfloat y, myfloat z) {
   return x * x + y * y + z * z;
 }
 
-struct ParticleView{
-  GlmView p, v;
-  myfloat *m;
-
-  ParticleView& operator=(Particle& particle){
-    p = particle.p;
-    v = particle.v;
-    *m = particle.m;
-    return *this;
-  }
-};
-
 //template <typename T>
 struct Vectors{
   myfloat *x, *y, *z;
-
-  GlmView operator[](size_t i) const {
-    return {x+i, y+i, z+i};
-  }
 
   Vectors(size_t size) {
     x = (myfloat*)aligned_alloc(64, sizeof(myfloat)*size);
@@ -110,12 +49,6 @@ public:
 private:
   size_t count;
 public:
-
-  ParticleView operator[](size_t i) const {
-    return {p.x+i,p.y+i,p.z+i, 
-            v.x+i,v.y+i,v.z+i, m+i};
-  }
-
   size_t size() const {
     return count;
   }
@@ -128,22 +61,4 @@ public:
     free(m);
   }
 };
-
-
-// Helper function for the particle class, so we can print and debug it easily
-inline std::ostream &operator<<(std::ostream &out, const CenterOfMass &p) {
-  return out << p.p << "\tm=" << p.m;
-}
-inline std::ostream &operator<<(std::ostream &out, const Particle &p) {
-  return out << p.p << "\tv=" << p.v << "\tm=" << p.m;
-}
-
-// Print the resulting values of all particles in a .csv format
-inline std::ostream &operator<<(std::ostream &out,
-                                const std::vector<Particle> &particles) {
-  for (auto &p : particles) {
-    out << p.p[0] << "," << p.p[1] << "," << p.p[2] << ","<< p.m<< "\n";
-  }
-  return out;
-}
 #endif

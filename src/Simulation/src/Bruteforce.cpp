@@ -1,21 +1,21 @@
 #include "Bruteforce.h"
 #include "Forces.h"
 
-void bruteForceAcc(double  *accx, double  *accy, double   *accz,
-                  const double  *xin, const double  *yin, const double  *zin,
-                  const double  x, const double  y, const double  z,
-                  const double  *m, const size_t n) {
-  double dvx = 0, dvy = 0, dvz = 0;
+void bruteForceAcc(myfloat  *accx, myfloat  *accy, myfloat   *accz,
+                  const myfloat  *xin, const myfloat  *yin, const myfloat  *zin,
+                  const myfloat  x, const myfloat  y, const myfloat  z,
+                  const myfloat  *m, const size_t n) {
+  myfloat dvx = 0, dvy = 0, dvz = 0;
   #pragma omp simd
   for (size_t i = 0; i < n; i++)
   {
-    double diffx = xin[i] - x;
-    double diffy = yin[i] - y;
-    double diffz = zin[i] - z;
+    auto diffx = xin[i] - x;
+    auto diffy = yin[i] - y;
+    auto diffz = zin[i] - z;
 
-    constexpr double softening_param = 0.025;
+    constexpr myfloat softening_param = 0.025;
     auto r2 = length2(diffx, diffy, diffz)+softening_param;
-    double mOverDist3 = m[i] / (r2 * std::sqrt(r2));
+    myfloat mOverDist3 = m[i] / (r2 * std::sqrt(r2));
     
     dvx += diffx * mOverDist3;
     dvy += diffy * mOverDist3;
@@ -35,7 +35,7 @@ void stepSimulation(Particles &particles, myfloat dt) {
   {
     #pragma omp for
     for (size_t i = 0; i < particles.size(); i++) {
-      double dvx = 0, dvy = 0, dvz = 0;
+      myfloat dvx = 0, dvy = 0, dvz = 0;
       bruteForceAcc(&dvx, &dvy, &dvz, 
                     particles.p.x, particles.p.y, particles.p.z, 
                     particles.p.x[i], particles.p.y[i], particles.p.z[i], 

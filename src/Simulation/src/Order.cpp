@@ -4,29 +4,6 @@
 #include <algorithm>
 #include <numeric>
 
-void computeAndOrder(std::vector<Particle> &particles)
-{ 
-  Particles bodies{particles.size()};
-
-  for (size_t i = 0; i < bodies.size(); i++) {
-    bodies.p[i] = particles[i].p;
-    bodies.v[i] = particles[i].v;
-    bodies.m[i] = particles[i].m;
-  }
-
-  computeAndOrder(bodies, bounding_box(bodies.p, bodies.size()));
-
-  for (size_t i = 0; i < bodies.size(); i++) {
-    particles[i].p.x = bodies.p.x[i];
-    particles[i].p.y = bodies.p.y[i];
-    particles[i].p.z = bodies.p.z[i];
-    particles[i].v.x = bodies.v.x[i];
-    particles[i].v.y = bodies.v.y[i];
-    particles[i].v.z = bodies.v.z[i];
-    particles[i].m = bodies.m[i];
-  }
-}
-
 uint_fast64_t positionToCode(const myfloat& x, const myfloat& y, const myfloat& z, 
                             const myvec3 &min, const myvec3 &invdimension)
 {

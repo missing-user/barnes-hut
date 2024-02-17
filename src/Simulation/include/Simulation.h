@@ -5,7 +5,7 @@
 #include "Bruteforce.h"
 #include "Barneshut.h"
 
-void simulate(std::vector<Particle> &particles, double duration, myfloat dt,
+void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt,
               bool brute_force = true, myfloat theta = 0, 
               std::function<void(const Particles&, size_t)> writeCallback = nullptr);
 #endif

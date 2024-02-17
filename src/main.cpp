@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   bool brute_force = false;
   int num_particles = 1000;
   double theta = 1.5;
-  double duration = 10;
-  double timestep = .1;
+  myfloat duration = 10;
+  myfloat timestep = .1;
 
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "produce this help message")(
@@ -57,15 +57,5 @@ int main(int argc, char *argv[]) {
     simulate(particles, duration, timestep, brute_force, theta, writeToBinaryFile);
   }else{
     simulate(particles, duration, timestep, brute_force, theta);
-  }
-
-  // Check for nan and inf, throw if encountered
-  for (const auto &p : particles) {
-    if (std::isnan(p.p.x) || std::isnan(p.p.y) || std::isnan(p.p.z)) {
-      throw std::runtime_error("Nan encountered");
-    }
-    if (std::isinf(p.p.x) || std::isinf(p.p.y) || std::isinf(p.p.z)) {
-      throw std::runtime_error("Inf encountered");
-    }
   }
 }

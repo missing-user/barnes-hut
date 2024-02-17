@@ -5,7 +5,7 @@
 #include <string>
 #include "Order.h"
 
-void simulate(std::vector<Particle> &particles, double duration, myfloat dt, bool brute_force, 
+void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt, bool brute_force, 
               myfloat theta, std::function<void(const Particles&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
@@ -23,8 +23,12 @@ void simulate(std::vector<Particle> &particles, double duration, myfloat dt, boo
   Particles bodies{particles.size()};
 #pragma omp parallel for // First touch initialization
   for (size_t i = 0; i < bodies.size(); i++) {
-    bodies.p[i] = particles[i].p;
-    bodies.v[i] = particles[i].v;
+    bodies.p.x[i] = particles[i].p.x;
+    bodies.p.y[i] = particles[i].p.y;
+    bodies.p.z[i] = particles[i].p.z;
+    bodies.v.x[i] = particles[i].v.x;
+    bodies.v.y[i] = particles[i].v.y;
+    bodies.v.z[i] = particles[i].v.z;
     bodies.m[i] = particles[i].m;
   }
 

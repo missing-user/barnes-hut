@@ -52,7 +52,7 @@ void accelFunc(myfloat* accx, myfloat* accy, myfloat* accz,
   /*
    * This function is used to compute the acceleration of a particle
    * given the difference vector between the particle attracting particles mass.
-   * It must be able to evaluate at a distance of zero for the brute force
+   * It must be able to evaluate at a myfloat of zero for the brute force
    * method to work, since we are not checking for divide by zero (performance
    * reasons).
    */

@@ -60,7 +60,7 @@ struct Node{
 
 
 #pragma omp declare simd
-inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, double theta2, myfloat diagonal2)
+inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, myfloat theta2, myfloat diagonal2)
 {
   return diagonal2 < theta2 * length2(dx,dy,dz);
 }
