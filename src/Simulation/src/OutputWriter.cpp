@@ -36,7 +36,7 @@ void writeToBinaryFile(const Particles &particles,
     output.push_back(particles.p.x[i]);
     output.push_back(particles.p.y[i]);
     output.push_back(particles.p.z[i]);
-    output.push_back(particles.m[i]);
+    output.push_back(std::sqrt(length2(particles.v.x[i], particles.v.y[i], particles.v.z[i])));
   }
 
   vtkfile.write(reinterpret_cast<const char *>(output.data()), sizeof(float)*output.size());

@@ -5,7 +5,6 @@
 #include <libmorton/morton.h>
 #include <chrono>
 
-//#define LOG_TIME
 //#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG_D(x, d) do { \
@@ -17,7 +16,7 @@
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
-const int depth_max = 14;
+const int depth_max = 18;
 const int leaf_max = 8; // maximum particles per node
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   for (size_t i = 1; i <= depth_max; i++)
@@ -41,7 +40,7 @@ void DEBUG_BITS(uint_fast64_t end,int depth){
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
-#define IN_BOUNDS(i) ((i < particles.size()) && (mortoncodes[i] <= current_cell_end))
+#define IN_BOUNDS(i) ((i < particles.size()) && (mortoncodes[i] <= current_max_morton))
 #define LAST_ITERATION (i==particles.size()-1 && current_node_count<= 1)
 
 struct Node{
@@ -134,56 +133,33 @@ inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, myfloat theta
   return diagonal2 < theta2 * length2(dx,dy,dz);
 }
 
-#pragma omp declare simd linear(accx, accy, accz) uniform(depth, diagonal2, start,x,y,z)
+#pragma omp declare simd
 void recursive_force(
-  myfloat* accx,  myfloat* accy,  myfloat* accz, 
+  myfloat *__restrict  accx,  myfloat *__restrict  accy,  myfloat *__restrict  accz, 
   const myfloat x, const myfloat y, const myfloat z, 
-  const Particles& particles,
-  const Tree& tree,
-  const CentersOfMass &com,
+  const Particles& __restrict particles,
+  const Tree& __restrict tree,
+  const CentersOfMass& __restrict com,
     const std::array<myfloat, depth_max+1>& diagonal2,
     int depth, int start, myfloat theta2){
   DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
   auto& node = tree[depth][start];
   if(node.isLeaf()){
     DEBUG_D("recursive_force leaf with "<<node.count<<" particles\n", depth);
-    // Compute the force
-    myfloat dvx = 0, dvy = 0, dvz = 0;
-    #pragma omp simd
-    for (int i = node.start; i < node.start + node.count; i++)
-    {
-      myfloat diffx = particles.p.x[i] - x;
-      myfloat diffy = particles.p.y[i] - y;
-      myfloat diffz = particles.p.z[i] - z;
-
-      constexpr myfloat softening_param = 0.025;
-      myfloat r2 = length2(diffx, diffy, diffz)+softening_param;
-      myfloat mOverDist3 = particles.m[i] / (r2 * std::sqrt(r2));
-      
-      dvx += diffx * mOverDist3;
-      dvy += diffy * mOverDist3;
-      dvz += diffz * mOverDist3;
-    }
-
-    *accx += dvx;
-    *accy += dvy;
-    *accz += dvz;
+    bruteForceAcc(accx, accy, accz,
+                  particles.p.x+node.start, particles.p.y+node.start, particles.p.z+node.start,
+                  x, y, z, particles.m, node.count);
   }else{
     myfloat dx = com.x[depth][start] - x;
     myfloat dy = com.y[depth][start] - y;
     myfloat dz = com.z[depth][start] - z;
     if(isApproximationValid(dx,dy,dz, theta2, diagonal2[depth])){
       // Compute the COM force
-      constexpr myfloat softening_param = 0.025;
-      myfloat r2 = length2(dx, dy, dz)+softening_param;
-      myfloat mOverDist3 = com.m[depth][start] / (r2 * std::sqrt(r2));
-      
-      *accx += dx * mOverDist3;
-      *accy += dy * mOverDist3;
-      *accz += dz * mOverDist3;
+      accelFunc(accx, accy, accz, dx, dy, dz, com.m[depth][start]);
+      DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(com.x[depth][start], com.y[depth][start], com.z[depth][start])<<"\n", depth);
     }else{
       #pragma omp simd
-      for (auto it = node.start; it < node.start+8; it++)
+      for (int it = node.start; it < node.start+8; it++)
       {
         recursive_force(accx, accy, accz, x,y,z, 
         particles, tree, com,
@@ -231,7 +207,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
   */
   size_t i = 0;
   int depth = 0; // 0 = root
-  uint_fast64_t current_cell_end = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // First morton code that is not in the current cell
+  uint_fast64_t current_max_morton = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // Last morton code that is still in the current cell
   short stack[depth_max+1];
   std::memset(stack, 0, sizeof(stack));
   // FIFO queue: all particle indices between start and start+count are designated for the current node
@@ -251,8 +227,8 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
     {
       depth++;
       stack[depth] = 0;
-      current_cell_end -= 7ul << (63-3*depth);
-      DEBUG_BITS(current_cell_end, depth);
+      current_max_morton -= 7ul << (63-3*depth);
+      DEBUG_BITS(current_max_morton, depth);
       DEBUG_D(" Subdivide, i="<<i<<" is still in range"<<"\n", depth);
 
       if(depth >= depth_max){
@@ -263,7 +239,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
           i++;
           current_node_count++;
           DEBUG(i<<"[Override] pushed into fifo: " << current_node_count <<"\n");
-          std::cerr<<"Overriding fifo size to"<<current_node_count<<std::endl;
+          //std::cerr<<"Overriding fifo size to"<<current_node_count<<std::endl;
         }
       }
     }
@@ -281,15 +257,15 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
     tree[depth].push_back(leaf);
     //DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
     uint_fast32_t x,y,z;
-    libmorton::morton3D_64_decode(current_cell_end, x,y,z);
+    libmorton::morton3D_64_decode(current_max_morton, x,y,z);
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
       stack[depth]++;
-      // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_cell_end
-      current_cell_end += 1ul << (63-3*depth);
-      DEBUG_BITS(current_cell_end, depth);DEBUG("\n");
-      //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+      // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_max_morton
+      current_max_morton += 1ul << (63-3*depth);
+      DEBUG_BITS(current_max_morton, depth);DEBUG("\n");
+      //assert(std::bitset<3>(current_max_morton >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
     }else{
       // Go to the next depth
       while(stack[depth] == 7){
@@ -298,11 +274,11 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
         //assert(tree[depth].size()%8 == 0);
         depth--;
         tree[depth].push_back(node);
-        //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
-        DEBUG_BITS(current_cell_end, depth);DEBUG("Finalizing Node "<<std::endl);
+        //assert(std::bitset<3>(current_max_morton >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        DEBUG_BITS(current_max_morton, depth);DEBUG("Finalizing Node "<<std::endl);
       }
       stack[depth]++;
-      current_cell_end += 1ul << (63-3*depth);
+      current_max_morton += 1ul << (63-3*depth);
     }
 
     if(depth <= 0){
