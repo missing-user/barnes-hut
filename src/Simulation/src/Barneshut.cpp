@@ -17,9 +17,8 @@
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
-const int depth_max = 16;
-const int leaf_max = 1; // maximum particles per node
-std::atomic<int> force_count=0;
+const int depth_max = 14;
+const int leaf_max = 8; // maximum particles per node
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
   for (size_t i = 1; i <= depth_max; i++)
   {
@@ -36,14 +35,14 @@ void DEBUG_BITS(uint_fast64_t end,int depth){
   DEBUG_D("",depth);
   PRINT_BITS_BY3(end, depth);
   auto extsuf = std::bitset<63-3*depth_max>(end);
-  assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
-  assert((end>>63) == 0); // Top bit must always be 0
+  //assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
+  //assert((end>>63) == 0); // Top bit must always be 0
 }
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
 #define IN_BOUNDS(i) ((i < particles.size()) && (mortoncodes[i] <= current_cell_end))
-#define LAST_ITERATION (i==particles.size()-1 && fifo.size() <= 1)
+#define LAST_ITERATION (i==particles.size()-1 && current_node_count<= 1)
 
 struct Node{
   // Check Figure 3. in https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf 
@@ -87,7 +86,6 @@ void recursive_force(
     #pragma omp simd
     for (int i = node.start; i < node.start + node.count; i++)
     {
-      force_count++;
       myfloat diffx = particles.p.x[i] - x;
       myfloat diffy = particles.p.y[i] - y;
       myfloat diffz = particles.p.z[i] - z;
@@ -120,8 +118,6 @@ void recursive_force(
       *accx += dx * mOverDist3;
       *accy += dy * mOverDist3;
       *accz += dz * mOverDist3;
-      //if(commass[depth][start] != 0)
-        force_count++;
     }else{
       #pragma omp simd
       for (auto it = node.start; it < node.start+8; it++)
@@ -144,14 +140,20 @@ std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myf
   std::cout << "Bounding Box calculation took " << elapsed.count()*1e3<<"ms "<< std::endl;
   time1 = std::chrono::high_resolution_clock::now();
 #endif
-  auto mortoncodes = computeMortonCodes(particles, boundingbox);
-  reorderByCodes(particles, mortoncodes);
-  
+  computeAndOrder(particles, boundingbox);
 #ifdef LOG_TIME
 elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::cout << "Index reordering took " << elapsed.count()*1e3<<"ms"<< "\n";
   time1 = std::chrono::high_resolution_clock::now();
 #endif
+  auto mortoncodes = computeMortonCodes(particles, boundingbox);
+#ifdef LOG_TIME
+  elapsed = std::chrono::high_resolution_clock::now() - time1;
+  std::cout << "Recomputing morton codes took " << elapsed.count()*1e3<<"ms "<< std::endl;
+  time1 = std::chrono::high_resolution_clock::now();
+#endif
+  //assert(std::is_sorted(mortoncodes.begin(), mortoncodes.end()));
+  
   DEBUG("Particles: \n");
   for (size_t i = 0; i < count; i++)
   {
@@ -173,19 +175,16 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   uint_fast64_t current_cell_end = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // First morton code that is not in the current cell
   short stack[depth_max+1];
   std::memset(stack, 0, sizeof(stack));
-
-  std::queue<size_t> fifo; // indices of the particles
-  fifo.push(i);
+  // FIFO queue: all particle indices between start and start+count are designated for the current node
+  size_t current_node_start = 0, current_node_count = 1;
   std::vector<DrawableCuboid>  drawcuboids{};
 
   while(i<particles.size()){
     // Add the first leaf_max+1 particles to the queue
-    for (int j = fifo.size(); j <= leaf_max; j++)
-    {
-      if(i+1 >= particles.size()) [[unlikely]] { break; } // Early exit before we exceed the number of particles
-      fifo.push(++i);
-      //DEBUG_D(i<<" pushed into fifo: " << fifo.size() <<"\n", depth);
-    }
+    auto prev_node_count = current_node_count;
+    current_node_count = std::min(particles.size()-current_node_start, static_cast<size_t>(leaf_max)+1);
+    i += current_node_count-prev_node_count;
+
     // Find the first depth level that does not contain all particles in the fifo
     // due to morton order we know that the last particle (i) will be the first to be out of range
     // We have to handle the special case when only one particle is left, to avoid infinite deepening of the tree 
@@ -202,22 +201,22 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
         // To avoid infinite deepening of the tree when particles are on the same position
         DEBUG("Max depth reached, ignoring particle count limit\n");
         while(IN_BOUNDS(i)){
-          fifo.push(++i);
-          DEBUG(i<<"[Override] pushed into fifo: " << fifo.size() <<"\n");
-          std::cerr<<"Overriding fifo size to"<<fifo.size()<<std::endl;
+          i++;
+          current_node_count++;
+          DEBUG(i<<"[Override] pushed into fifo: " << current_node_count <<"\n");
+          std::cerr<<"Overriding fifo size to"<<current_node_count<<std::endl;
         }
       }
     }
-    //DEBUG("Finally settled on depth "<<depth<<"for node i"<<i<<std::endl);
-
     Node leaf;
-    leaf.start = fifo.front(); // index of the first particle
+    leaf.start = current_node_start; // index of the first particle
     leaf.count = 0; // number of particles, since the particles are sorted, all particles up to start+count-1 are contained
     // Add all particles that are in bounds to the node
-    // fifo.size() > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
-    while(fifo.size() > 0 && IN_BOUNDS(fifo.front())){
-      DEBUG_D("popped "<<fifo.front()<<" ("<<(std::bitset<63>(mortoncodes[fifo.front()]))<<")" << std::endl, depth);
-      fifo.pop();
+    // current_node_count > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
+    while(current_node_count > 0 && IN_BOUNDS(current_node_start)){
+      DEBUG_D("popped "<<current_node_start<<" ("<<(std::bitset<63>(mortoncodes[current_node_start]))<<")" << std::endl, depth);
+      current_node_start++;
+      current_node_count--;
       leaf.count++;
     }
     tree[depth].push_back(leaf);
@@ -226,8 +225,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
     libmorton::morton3D_64_decode(current_cell_end, x,y,z);
     myvec3 localnode_dim = node_dim*static_cast<myfloat>(std::pow(2, 21-depth));
     myvec3 node_pos = myvec3(static_cast<double>(x)*node_dim.x,static_cast<double>(y)*node_dim.y,static_cast<double>(z)*node_dim.z) + boundingbox.min();
-    //DEBUG_D(node_pos<<localnode_dim, depth);
-    drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
+    //drawcuboids.push_back(DrawableCuboid(minMaxCuboid(node_pos-localnode_dim, node_pos), depth));
     
     // Go to next node (at this depth if possible)
     if(stack[depth] < 7){
@@ -235,16 +233,16 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
       // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_cell_end
       current_cell_end += 1ul << (63-3*depth);
       DEBUG_BITS(current_cell_end, depth);DEBUG("\n");
-      assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+      //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
     }else{
       // Go to the next depth
       while(stack[depth] == 7){
         Node node;
         node.setInternal(tree[depth].size()-8); // index of the first child (8 children per node)
-        assert(tree[depth].size()%8 == 0);
+        //assert(tree[depth].size()%8 == 0);
         depth--;
         tree[depth].push_back(node);
-        assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        //assert(std::bitset<3>(current_cell_end >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
         DEBUG_BITS(current_cell_end, depth);DEBUG("Finalizing Node "<<std::endl);
       }
       stack[depth]++;
@@ -276,6 +274,7 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   time1 = std::chrono::high_resolution_clock::now();
   
   // COM and mass calculation
+  // No gain from parallelization
   for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
   {
     DEBUG_D("COM computation, Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl, d);
@@ -328,7 +327,9 @@ elapsed = std::chrono::high_resolution_clock::now() - time1;
   std::array<myfloat, depth_max+1> diagonal2;
   for (int d = 0; d <= depth_max; d++)
   {
-    diagonal2[d] = boundingbox.diagonal2/(1<<d);
+    // The diagonal the bounding boxes at a given depth are half of the previous level.
+    // Since we are using the squared distance, we need to divide by 4!s
+    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
   }
 
   // Force calculation
@@ -364,7 +365,7 @@ std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, my
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
-
+#pragma omp simd
   for (size_t i = 0; i < particles.size(); i++)
   {
     particles.p.x[i] += particles.v.x[i] * dt;

@@ -186,16 +186,15 @@ After some further investigations, we found that the static scheduling of the Op
 Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well.
 
 ## Known Issues
-The SoA implementation is very much WIP, and not on par with SoA yet. 
-- [] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???)
-  - Reference tree: 10 steps 10k particles: 171240040 1k particles: 5677370
-  - Mortonsorted:   10 steps 10k particles: 839388633 1k particles: 9180783
-                                           (839381535 so 7k less if we don't count empty nodes)
-  - Force count with Theta = 0 (brute force): is correct and matches the brute force version.
-  - Force count on the reference implementation does not match with Theta=0???
-- [] Make sure the last particle is also being added to the tree
-- [x] Confirm that the tree construction is correct (Looks good according to the visualizer)
+
+The SoA implementation is very much WIP, and not on par with SoA yet.
+
 - [] Tree construction using OpenMP tasks
 - [] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [x] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???) -> the theta comparison had a bug
+- [x] Make sure the last particle is also being added to the tree
+- [x] Confirm that the tree construction is correct (Looks good according to the visualizer)
+- [x] Try custom quicksort implementation for the particle array (Same performance as std::sort)
+- [x] Parallel center of mass computations (decreased performance for systems >10k particles)
 - [x] Vectorization of the innermost particle loop (leaf/near field)
 - [x] Vectorization of the far field loop using the centers of mass
