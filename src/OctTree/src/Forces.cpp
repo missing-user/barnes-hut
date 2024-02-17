@@ -12,7 +12,7 @@ const myfloat lj_softening_param = 0.05;
 
 // #define LENNARD_JONES
 
-static myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
+myvec3 lennardJonesForce(const myvec3 &diff, myfloat mass) {
   const myfloat r = glm::length2(diff) + lj_softening_param;
 
   /* !!! diff is not normalized (|diff| is r) !!!
