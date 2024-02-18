@@ -214,7 +214,7 @@ std::array<myfloat, depth_max> precompute_diagonals(const myfloat top_level_diag
   return diagonal2;
 }
 
-void compute_accelerations(const Particles &particles, const Tree &tree, const CentersOfMass &com,
+void compute_accelerations(Vectors &acc, const Particles &particles, const Tree &tree, const CentersOfMass &com,
                            myfloat dt, myfloat theta2, const Cuboid &boundingbox)
 {
   // Precompute the squared diagonals
@@ -222,8 +222,6 @@ void compute_accelerations(const Particles &particles, const Tree &tree, const C
 
   // Force calculation
   auto vectorized_size = particles.size() - particles.size() % b_type::size;
-
-  auto dt_wide = b_type::broadcast(dt);
 #pragma omp parallel
   {
 #pragma omp for schedule(dynamic, 64) nowait
@@ -234,15 +232,9 @@ void compute_accelerations(const Particles &particles, const Tree &tree, const C
       auto y = b_type::load_unaligned(&particles.p.y[i]);
       auto z = b_type::load_unaligned(&particles.p.z[i]);
       recursive_force(&dvx, &dvy, &dvz, x, y, z, particles, tree, com, diagonal2, 0, 0, theta2);
-      auto vx = b_type::load_unaligned(&particles.v.x[i]);
-      auto vy = b_type::load_unaligned(&particles.v.y[i]);
-      auto vz = b_type::load_unaligned(&particles.v.z[i]);
-      vx = xs::fma(dvx, dt_wide, vx);
-      vy = xs::fma(dvy, dt_wide, vy);
-      vz = xs::fma(dvz, dt_wide, vz);
-      vx.store_unaligned(&particles.v.x[i]);
-      vy.store_unaligned(&particles.v.y[i]);
-      vz.store_unaligned(&particles.v.z[i]);
+      dvx.store_unaligned(&acc.x[i]);
+      dvy.store_unaligned(&acc.y[i]);
+      dvz.store_unaligned(&acc.z[i]);
     }
 
 // Scalar remainder loop
@@ -252,9 +244,9 @@ void compute_accelerations(const Particles &particles, const Tree &tree, const C
       myfloat dvx = 0, dvy = 0, dvz = 0;
       recursive_force(&dvx, &dvy, &dvz, particles.p.x[i], particles.p.y[i], particles.p.z[i],
                       particles, tree, com, diagonal2, 0, 0, theta2);
-      particles.v.x[i] += dvx * dt;
-      particles.v.y[i] += dvy * dt;
-      particles.v.z[i] += dvz * dt;
+      acc.x[i] = dvx;
+      acc.y[i] = dvy;
+      acc.z[i] = dvz;
     }
   }
 }
@@ -368,14 +360,26 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
   return tree;
 }
 
-void bh_superstep(Particles &particles, size_t count, myfloat dt, myfloat theta2)
+void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, myfloat theta2)
 {
+  auto time0 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
+  auto time1 = std::chrono::high_resolution_clock::now();
   computeAndOrder(particles, boundingbox);
+  auto time2 = std::chrono::high_resolution_clock::now();
 
   auto tree = build_tree(particles, boundingbox);
+  auto time3 = std::chrono::high_resolution_clock::now();
   auto com = compute_centers_of_mass(particles, tree);
-  compute_accelerations(particles, tree, com, dt, theta2, boundingbox);
+  auto time4 = std::chrono::high_resolution_clock::now();
+  compute_accelerations(acc, particles, tree, com, dt, theta2, boundingbox);
+  auto time5 = std::chrono::high_resolution_clock::now();
+  std::cout<< "Times: "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count()<<"ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count()<<"ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count()<<"ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count()<<"ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count()<<"ms\n";
 }
 
 std::vector<DrawableCuboid> draw_approximations(
@@ -449,7 +453,8 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
 {
   // Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
-  bh_superstep(particles, particles.size(), dt, theta2);
+  Vectors acc{particles.size()};
+  bh_superstep(acc, particles, particles.size(), dt, theta2);
 
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
@@ -457,6 +462,10 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
 #pragma omp simd
   for (size_t i = 0; i < particles.size(); i++)
   {
+    particles.v.x[i] += acc.x[i] * dt;
+    particles.v.y[i] += acc.y[i] * dt;
+    particles.v.z[i] += acc.z[i] * dt;
+
     particles.p.x[i] += particles.v.x[i] * dt;
     particles.p.y[i] += particles.v.y[i] * dt;
     particles.p.z[i] += particles.v.z[i] * dt;
