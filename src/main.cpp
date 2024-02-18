@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
   bool brute_force = false;
   int num_particles = 1000;
   double theta = 1.5;
-  myfloat duration = 10;
-  myfloat timestep = .1;
+  double duration = 10;
+  double timestep = .1;
 
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "produce this help message")(
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   set_seed(42);
   std::vector<Particle> particles =
-      make_universe(Distribution::UNIVERSE4, num_particles);
+      make_universe(Distribution::BIGBANG, num_particles);
   
   if (output_csv)
   {

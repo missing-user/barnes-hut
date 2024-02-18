@@ -20,7 +20,8 @@ struct Particle { // A particle with position, velocity and unique id
   myfloat m;
 };
 
-inline myfloat length2(myfloat x, myfloat y, myfloat z) {
+template <typename T>
+inline T length2(T x, T y, T z) {
   return x * x + y * y + z * z;
 }
 
