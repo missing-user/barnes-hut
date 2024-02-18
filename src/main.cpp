@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   set_seed(42);
   std::vector<Particle> particles =
-      make_universe(Distribution::BIGBANG, num_particles);
+      make_universe(Distribution::UNIVERSE4, num_particles);
   
   if (output_csv)
   {
