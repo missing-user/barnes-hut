@@ -289,25 +289,84 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
   return tree;
 }
 
-std::vector<DrawableCuboid> bh_superstep(Particles& particles, size_t count, myfloat dt, myfloat theta2){
+void bh_superstep(Particles& particles, size_t count, myfloat dt, myfloat theta2){
   auto boundingbox = bounding_box(particles.p, count);
   computeAndOrder(particles, boundingbox);
 
   auto tree = build_tree(particles, boundingbox);
   auto com = compute_centers_of_mass(particles, tree);
   compute_accelerations(particles, tree, com, dt, theta2, boundingbox);
-  return {};
 }
 
-std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, myfloat theta2) {
-  // barnes hut optimized step
+std::vector<DrawableCuboid> draw_approximations(
+  const myfloat x, const myfloat y, const myfloat z, 
+  const Particles& __restrict particles,
+  const Tree& __restrict tree,
+  const CentersOfMass& __restrict com,
+  const std::array<myfloat, depth_max+1>& diagonal2,
+  const Cuboid &boundingbox,
+  int depth, int start, myfloat theta2){
+  std::vector<DrawableCuboid> draw;
+  auto& node = tree[depth][start];
+  if(!node.isLeaf()){
+    myfloat dx = com.x[depth][start] - x;
+    myfloat dy = com.y[depth][start] - y;
+    myfloat dz = com.z[depth][start] - z;
+    if(isApproximationValid(dx,dy,dz, theta2, diagonal2[depth])){
+        // Compute the COM force
+        draw.push_back(DrawableCuboid{{
+          myvec3(com.x[depth][start], com.y[depth][start], com.z[depth][start]), 
+          boundingbox.dimension/static_cast<myfloat>(1<<depth)}, 
+          depth});
+    }else{
+      #pragma omp simd
+      for (int it = node.start; it < node.start+8; it++)
+      {
+        auto tmp = draw_approximations(x,y,z,
+          particles, tree, com, diagonal2, boundingbox, depth+1, it, theta2);
+        draw.insert(draw.end(), tmp.begin(), tmp.end());
+      }
+    }
+  }
+}
+
+debug_information bh_superstep_debug(Particles& particles, size_t count, myfloat theta2, myvec3 position){
+  debug_information info;
+  auto boundingbox = bounding_box(particles.p, count);
+  computeAndOrder(particles, boundingbox);
+  auto tree = build_tree(particles, boundingbox);
+
+  info.depth = 0;
+  for(auto &depth : tree){
+    if(depth.size() > 0){
+      info.depth++;
+    }
+    for(auto &node : depth){
+      if(node.isLeaf()){
+        info.max_particles_in_leaf = std::max(info.max_particles_in_leaf, node.count);
+      }
+    }
+  }
   
+  auto com = compute_centers_of_mass(particles, tree);
+  std::array<myfloat, depth_max+1> diagonal2;
+  for (int d = 0; d <= depth_max; d++)
+  {
+    // The diagonal the bounding boxes at a given depth are half of the previous level.
+    // Since we are using the squared distance, we need to divide by 4
+    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
+  }
 
-  auto drawcubes = bh_superstep(particles, particles.size(), dt, theta2);
-  // We have constructed the tree, use it to efficiently compute the
-  // accelerations. Far away particles get grouped and their contribution is
+  info.debug_boxes = draw_approximations(position.x, position.y, position.z, particles, tree, com, diagonal2, boundingbox, 0, 0, theta2);
+  //compute_accelerations(particles, tree, com, dt, theta2, boundingbox);
+  return info;
+}
+
+void stepSimulation(Particles& particles, myfloat dt, myfloat theta2) {
+  // Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
-
+  bh_superstep(particles, particles.size(), dt, theta2);
+  
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
@@ -318,6 +377,4 @@ std::vector<DrawableCuboid>  stepSimulation(Particles& particles, myfloat dt, my
     particles.p.y[i] += particles.v.y[i] * dt;
     particles.p.z[i] += particles.v.z[i] * dt;
   }
-
-  return drawcubes;
 }
