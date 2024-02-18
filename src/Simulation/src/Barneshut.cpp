@@ -3,7 +3,13 @@
 #include <queue>
 #include <bitset>
 #include <libmorton/morton.h>
+#include "xsimd/xsimd.hpp"
 #include <chrono>
+
+namespace xs = xsimd;
+using vector_type = std::vector<myfloat, xsimd::aligned_allocator<myfloat>>;
+using b_type = xs::batch<myfloat>;
+using b_bool_type = xs::batch_bool<myfloat>;
 
 //#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
@@ -60,10 +66,10 @@ struct Node{
 typedef std::array<std::vector<Node>, depth_max> Tree;
 
 struct CentersOfMass{
-  std::array<std::vector<myfloat>, depth_max> x;
-  std::array<std::vector<myfloat>, depth_max> y;
-  std::array<std::vector<myfloat>, depth_max> z;
-  std::array<std::vector<myfloat>, depth_max> m;
+  std::array<vector_type, depth_max> x;
+  std::array<vector_type, depth_max> y;
+  std::array<vector_type, depth_max> z;
+  std::array<vector_type, depth_max> m;
 };
 
 CentersOfMass compute_centers_of_mass(const Particles& particles, const Tree& tree)
@@ -133,6 +139,15 @@ inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, myfloat theta
   return diagonal2 < theta2 * length2(dx,dy,dz);
 }
 
+inline b_type length2(b_type dx, b_type dy, b_type dz){
+  return dx*dx + dy*dy + dz*dz;
+}
+
+inline b_bool_type isApproximationValid(b_type dx,b_type dy,b_type dz, myfloat theta2, myfloat diagonal2)
+{
+  return b_type::broadcast(diagonal2) < theta2 * length2(dx,dy,dz);
+}
+
 #pragma omp declare simd inbranch
 void recursive_force(
   myfloat *__restrict  accx,  myfloat *__restrict  accy,  myfloat *__restrict  accz, 
@@ -158,18 +173,86 @@ void recursive_force(
       accelFunc(accx, accy, accz, dx, dy, dz, com.m[depth][start]);
       DEBUG_D("recursive_force approximated with COM "<<start<<" = "<<myvec3(com.x[depth][start], com.y[depth][start], com.z[depth][start])<<"\n", depth);
     }else{
-      #pragma omp simd
+      
+      myfloat dvx = 0, dvy = 0, dvz = 0;
+      #pragma omp simd safelen(8)
       for (int it = node.start; it < node.start+8; it++)
       {
-        recursive_force(accx, accy, accz, x,y,z, 
+        recursive_force(&dvx,&dvy,&dvz, x,y,z, 
         particles, tree, com,
         diagonal2, depth+1, it, theta2);
       }
+      *accx += dvx;
+      *accy += dvy;
+      *accz += dvz;
     }
   }
 
   DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
+
+void batch_recursive_force(
+  b_type *__restrict  accx,  b_type *__restrict  accy,  b_type *__restrict  accz, 
+  const b_type x, const b_type y, const b_type z, 
+  const Particles& __restrict particles,
+  const Tree& __restrict tree,
+  const CentersOfMass& __restrict com,
+  const std::array<myfloat, depth_max>& diagonal2,
+  int depth, int start, myfloat theta2){
+  auto& node = tree[depth][start];
+  if(node.isLeaf()){
+    b_type dvx = 0, dvy = 0, dvz = 0;
+    for (int i = node.start; i < node.start+node.count; i++)
+    {
+      auto dx = xs::broadcast(particles.p.x[i]) - x;
+      auto dy = xs::broadcast(particles.p.y[i]) - y;
+      auto dz = xs::broadcast(particles.p.z[i]) - z;
+      
+      const b_type softening_param = 0.025;
+      auto r2 = length2(dx, dy, dz) + softening_param;
+      auto mOverDist3 = particles.m[i] / (r2 * xs::sqrt(r2));
+      //auto invr = xs::rsqrt(r2);
+      //auto mOverDist3 = com.m[depth][start] * invr * invr * invr;
+      
+      dvx += dx * mOverDist3;
+      dvy += dy * mOverDist3;
+      dvz += dz * mOverDist3;
+    }
+    *accx += dvx;
+    *accy += dvy;
+    *accz += dvz;
+    
+  }else{
+    auto dx = com.x[depth][start] - x;
+    auto dy = com.y[depth][start] - y;
+    auto dz = com.z[depth][start] - z;
+    auto mask = isApproximationValid(dx,dy,dz, theta2, diagonal2[depth]);
+    if(xs::all(mask)){
+      // Compute the COM force
+      const b_type softening_param = 0.025;
+      auto r2 = length2(dx, dy, dz) + softening_param;
+      auto invr = xs::rsqrt(r2);
+      //auto mOverDist3 = com.m[depth][start] * invr * invr * invr;
+      auto mOverDist3 = com.m[depth][start] / (r2 * xs::sqrt(r2));
+      
+      *accx += dx * mOverDist3;
+      *accy += dy * mOverDist3;
+      *accz += dz * mOverDist3;
+    }else{
+      b_type dvx = 0, dvy = 0, dvz = 0;
+      for (int it = node.start; it < node.start+8; it++)
+      {
+        batch_recursive_force(&dvx,&dvy,&dvz, x,y,z, 
+        particles, tree, com,
+        diagonal2, depth+1, it, theta2);
+      }
+      *accx += dvx;
+      *accy += dvy;
+      *accz += dvz;
+    }
+  }
+}
+
 std::array<myfloat, depth_max> precompute_diagonals(const myfloat top_level_diagonal2){
   std::array<myfloat, depth_max> diagonal2;
   for (int d = 0; d < depth_max; d++)
@@ -187,15 +270,42 @@ void compute_accelerations(const Particles& particles, const Tree& tree, const C
   auto diagonal2 = precompute_diagonals(boundingbox.diagonal2);
 
   // Force calculation
-#pragma omp parallel for schedule(dynamic,64) 
-  for (size_t i = 0; i < particles.size(); i++) 
+  auto vectorized_size = particles.size() - particles.size()%b_type::size;
+
+  auto dtvec = b_type::broadcast(dt); 
+  #pragma omp parallel 
   {
-    myfloat dvx = 0, dvy = 0, dvz = 0;
-    recursive_force(&dvx, &dvy, &dvz, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
-    particles, tree, com,  diagonal2, 0, 0, theta2);
-    particles.v.x[i] += dvx*dt;
-    particles.v.y[i] += dvy*dt;
-    particles.v.z[i] += dvz*dt;
+  #pragma omp for schedule(dynamic,64) nowait
+    for (size_t i = 0; i < vectorized_size; i+=b_type::size) 
+    {
+      b_type dvx = 0, dvy = 0, dvz = 0;
+      auto x = b_type::load_unaligned(&particles.p.x[i]);
+      auto y = b_type::load_unaligned(&particles.p.y[i]);
+      auto z = b_type::load_unaligned(&particles.p.z[i]);
+      batch_recursive_force(&dvx, &dvy, &dvz, x, y, z, 
+        particles, tree, com,  diagonal2, 0, 0, theta2);
+      auto vx = b_type::load_unaligned(&particles.v.x[i]);
+      auto vy = b_type::load_unaligned(&particles.v.y[i]);
+      auto vz = b_type::load_unaligned(&particles.v.z[i]);
+      vx = xs::fma(dvx, dtvec, vx);
+      vy = xs::fma(dvy, dtvec, vy);
+      vz = xs::fma(dvz, dtvec, vz);
+      vx.store_unaligned(&particles.v.x[i]);
+      vy.store_unaligned(&particles.v.y[i]);
+      vz.store_unaligned(&particles.v.z[i]);
+    }
+
+    // Scalar remainder loop
+    #pragma omp single
+    for (size_t i = vectorized_size; i < particles.size(); i++) 
+    {
+      myfloat dvx = 0, dvy = 0, dvz = 0;
+      recursive_force(&dvx, &dvy, &dvz, particles.p.x[i], particles.p.y[i], particles.p.z[i], 
+      particles, tree, com,  diagonal2, 0, 0, theta2);
+      particles.v.x[i] += dvx*dt;
+      particles.v.y[i] += dvy*dt;
+      particles.v.z[i] += dvz*dt;
+    }
   }
 }
 
@@ -244,7 +354,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
           i++;
           current_node_count++;
           DEBUG(i<<"[Override] pushed into fifo: " << current_node_count <<"\n");
-          //std::cerr<<"Overriding fifo size to"<<current_node_count<<std::endl;
+          std::cerr<<"Overriding fifo size to"<<current_node_count<<"\n";
         }
       }
     }

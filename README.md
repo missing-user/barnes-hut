@@ -190,7 +190,8 @@ Nonetheless, both algorithms perform far below the theoretical limit, eventhough
 The SoA implementation is very much WIP, and not on par with SoA yet.
 
 - [] Tree construction using OpenMP tasks
-- [] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [x] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [] VTune profiling for further optimization, it's still saying that there are many scalar instructions.
 - [x] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???) -> the theta comparison had a bug
 - [x] Make sure the last particle is also being added to the tree
 - [x] Confirm that the tree construction is correct (Looks good according to the visualizer)
