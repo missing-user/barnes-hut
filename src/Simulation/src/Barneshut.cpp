@@ -19,7 +19,7 @@
 const int depth_max = 18;
 const int leaf_max = 8; // maximum particles per node
 void PRINT_BITS_BY3(uint_fast64_t x, int separator){
-  for (size_t i = 1; i <= depth_max; i++)
+  for (size_t i = 1; i <= depth_max-1; i++)
   {
     auto prefix = std::bitset<3>(x>>(63-3*i));
     DEBUG(prefix);
@@ -33,7 +33,7 @@ void PRINT_BITS_BY3(uint_fast64_t x, int separator){
 void DEBUG_BITS(uint_fast64_t end,int depth){
   DEBUG_D("",depth);
   PRINT_BITS_BY3(end, depth);
-  auto extsuf = std::bitset<63-3*depth_max>(end);
+  auto extsuf = std::bitset<63-3*depth_max-1>(end);
   //assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
   //assert((end>>63) == 0); // Top bit must always be 0
 }
@@ -57,20 +57,20 @@ struct Node{
   }
 };
 
-typedef std::array<std::vector<Node>, depth_max+1> Tree;
+typedef std::array<std::vector<Node>, depth_max> Tree;
 
 struct CentersOfMass{
-  std::array<std::vector<myfloat>, depth_max+1> x;
-  std::array<std::vector<myfloat>, depth_max+1> y;
-  std::array<std::vector<myfloat>, depth_max+1> z;
-  std::array<std::vector<myfloat>, depth_max+1> m;
+  std::array<std::vector<myfloat>, depth_max> x;
+  std::array<std::vector<myfloat>, depth_max> y;
+  std::array<std::vector<myfloat>, depth_max> z;
+  std::array<std::vector<myfloat>, depth_max> m;
 };
 
 CentersOfMass compute_centers_of_mass(const Particles& particles, const Tree& tree)
 {
   CentersOfMass com;
   // Initialize the arrays
-  for (int d = 0; d <= depth_max; d++)
+  for (int d = 0; d < depth_max; d++)
   {
     //centers_of_mass.emplace_back(std::move(Vectors{tree[d].size()+1, 0.0}));
     com.x[d].resize(tree[d].size());
@@ -80,7 +80,7 @@ CentersOfMass compute_centers_of_mass(const Particles& particles, const Tree& tr
   }
 
   // No gain from parallelization
-  for (int d = depth_max-1; d >= 0; d--) // unsigned int underflows to max value
+  for (int d = depth_max-2; d >= 0; d--) // unsigned int underflows to max value
   {
     DEBUG_D("COM computation, Depth "<<d<<" has "<<tree[d].size()<<" nodes"<<std::endl, d);
     for (size_t i = 0; i < tree[d].size(); i++)
@@ -133,14 +133,14 @@ inline bool isApproximationValid(myfloat dx,myfloat dy,myfloat dz, myfloat theta
   return diagonal2 < theta2 * length2(dx,dy,dz);
 }
 
-#pragma omp declare simd
+#pragma omp declare simd inbranch
 void recursive_force(
   myfloat *__restrict  accx,  myfloat *__restrict  accy,  myfloat *__restrict  accz, 
   const myfloat x, const myfloat y, const myfloat z, 
   const Particles& __restrict particles,
   const Tree& __restrict tree,
   const CentersOfMass& __restrict com,
-    const std::array<myfloat, depth_max+1>& diagonal2,
+    const std::array<myfloat, depth_max>& diagonal2,
     int depth, int start, myfloat theta2){
   DEBUG_D("recursive_force enter with start "<<start<<"\n", depth);
   auto& node = tree[depth][start];
@@ -170,17 +170,21 @@ void recursive_force(
 
   DEBUG_D("recursive_force exit depth "<<depth<<"\n", depth);
 }
+std::array<myfloat, depth_max> precompute_diagonals(const myfloat top_level_diagonal2){
+  std::array<myfloat, depth_max> diagonal2;
+  for (int d = 0; d < depth_max; d++)
+  {
+    // The diagonal the bounding boxes at a given depth are half of the previous level.
+    // Since we are using the squared distance, we need to divide by 4
+    diagonal2[d] = top_level_diagonal2/(1<<(d*2));
+  }
+  return diagonal2;
+}
 
 void compute_accelerations(const Particles& particles, const Tree& tree, const CentersOfMass &com,
                           myfloat dt, myfloat theta2, const Cuboid& boundingbox){
   // Precompute the squared diagonals
-  std::array<myfloat, depth_max+1> diagonal2;
-  for (int d = 0; d <= depth_max; d++)
-  {
-    // The diagonal the bounding boxes at a given depth are half of the previous level.
-    // Since we are using the squared distance, we need to divide by 4
-    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
-  }
+  auto diagonal2 = precompute_diagonals(boundingbox.diagonal2);
 
   // Force calculation
 #pragma omp parallel for schedule(dynamic,64) 
@@ -199,6 +203,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
   auto mortoncodes = computeMortonCodes(particles, boundingbox);
   assert(std::is_sorted(mortoncodes.begin(), mortoncodes.end()));
   Tree tree;
+  const int internal_depth_max = depth_max-1;
   /* Since we know the particles are sorted in Morton order, we can use out of core
   * Tree construction as described in http://www.thesalmons.org/john/pubs/siam97/salmon.pdf
   * by only keeping track of the group currently being constructed and finalizing it 
@@ -208,7 +213,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
   size_t i = 0;
   int depth = 0; // 0 = root
   uint_fast64_t current_max_morton = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // Last morton code that is still in the current cell
-  short stack[depth_max+1];
+  short stack[depth_max];
   std::memset(stack, 0, sizeof(stack));
   // FIFO queue: all particle indices between start and start+count are designated for the current node
   size_t current_node_start = 0, current_node_count = 1;
@@ -223,7 +228,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
     // Find the first depth level that does not contain all particles in the fifo
     // due to morton order we know that the last particle (i) will be the first to be out of range
     // We have to handle the special case when only one particle is left, to avoid infinite deepening of the tree 
-    while (IN_BOUNDS(i) && depth < depth_max && !LAST_ITERATION)
+    while (IN_BOUNDS(i) && depth < internal_depth_max && !LAST_ITERATION)
     {
       depth++;
       stack[depth] = 0;
@@ -231,7 +236,7 @@ Tree build_tree(Particles& particles, const Cuboid& boundingbox){
       DEBUG_BITS(current_max_morton, depth);
       DEBUG_D(" Subdivide, i="<<i<<" is still in range"<<"\n", depth);
 
-      if(depth >= depth_max){
+      if(depth >= internal_depth_max){
         // Max depth reached, ignore the particle count limit and fill the node 
         // To avoid infinite deepening of the tree when particles are on the same position
         DEBUG("Max depth reached, ignoring particle count limit\n");
@@ -303,7 +308,7 @@ std::vector<DrawableCuboid> draw_approximations(
   const Particles& __restrict particles,
   const Tree& __restrict tree,
   const CentersOfMass& __restrict com,
-  const std::array<myfloat, depth_max+1>& diagonal2,
+  const std::array<myfloat, depth_max>& diagonal2,
   const Cuboid &boundingbox,
   int depth, int start, myfloat theta2){
   std::vector<DrawableCuboid> draw;
@@ -319,7 +324,6 @@ std::vector<DrawableCuboid> draw_approximations(
           boundingbox.dimension/static_cast<myfloat>(1<<depth)}, 
           depth});
     }else{
-      #pragma omp simd
       for (int it = node.start; it < node.start+8; it++)
       {
         auto tmp = draw_approximations(x,y,z,
@@ -349,13 +353,7 @@ debug_information bh_superstep_debug(Particles& particles, size_t count, myfloat
   }
   
   auto com = compute_centers_of_mass(particles, tree);
-  std::array<myfloat, depth_max+1> diagonal2;
-  for (int d = 0; d <= depth_max; d++)
-  {
-    // The diagonal the bounding boxes at a given depth are half of the previous level.
-    // Since we are using the squared distance, we need to divide by 4
-    diagonal2[d] = boundingbox.diagonal2/(1<<(d*2));
-  }
+  auto diagonal2 = precompute_diagonals(boundingbox.diagonal2);
 
   info.debug_boxes = draw_approximations(position.x, position.y, position.z, particles, tree, com, diagonal2, boundingbox, 0, 0, theta2);
   //compute_accelerations(particles, tree, com, dt, theta2, boundingbox);
