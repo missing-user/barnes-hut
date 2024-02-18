@@ -1,6 +1,6 @@
 #include "Distributions.h"
-#include "Tree.h"
 #include "Simulation.h"
+#include "Barneshut.h"
 #include "OutputWriter.h"
 #include <gtest/gtest.h>
 
@@ -71,14 +71,20 @@ TEST(QuadTree, DepthCalculation) {
   std::vector<Particle> particles =
       make_universe(Distribution::UNIVERSE4, 100);
 
-  Tree tree{particles};
-  EXPECT_EQ(tree.MaxDepthAndParticles().first, 6);
+  Particles partts{particles.size()};
+  for (size_t i = 0; i < particles.size(); i++) {
+    partts.p.x[i] = particles[i].p.x;
+    partts.p.y[i] = particles[i].p.y;
+    partts.p.z[i] = particles[i].p.z;
+    partts.v.x[i] = particles[i].v.x;
+    partts.v.y[i] = particles[i].v.y;
+    partts.v.z[i] = particles[i].v.z;
+    partts.m[i] = particles[i].m;
+  }
 
-  Tree::maxDepth = 64;
-  Tree::maxParticles = 1;
-  particles = make_universe(Distribution::UNIVERSE4, 1000);
-  Tree deeptree = Tree(particles);
-  EXPECT_EQ(deeptree.MaxDepthAndParticles().first, 9);
+  auto info = bh_superstep_debug(partts, partts.size(), 1.5*1.5);
+  EXPECT_EQ(info.depth, 6);
+  EXPECT_EQ(info.max_particles_in_leaf, 9);
 }
 
 TEST(FileWriting, IsValidCsv) {

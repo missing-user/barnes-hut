@@ -11,10 +11,10 @@ void stepSimulation(Particles &particles, myfloat dt) {
     #pragma omp for
     for (size_t i = 0; i < particles.size(); i++) {
       myfloat dvx = 0, dvy = 0, dvz = 0;
-      bruteForceAcc(&dvx, &dvy, &dvz, 
-                    particles.p.x, particles.p.y, particles.p.z, 
+      bruteForceAcc<myfloat>(&dvx, &dvy, &dvz, 
+                    particles.p.x.data(), particles.p.y.data(), particles.p.z.data(), 
                     particles.p.x[i], particles.p.y[i], particles.p.z[i], 
-                    particles.m, particles.size());
+                    particles.m.data(), particles.size());
       particles.v.x[i] += dvx*dt;
       particles.v.y[i] += dvy*dt; 
       particles.v.z[i] += dvz*dt;

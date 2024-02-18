@@ -7,7 +7,6 @@
 #include <chrono>
 
 namespace xs = xsimd;
-using vector_type = std::vector<myfloat, xsimd::aligned_allocator<myfloat>>;
 using b_type = xs::batch<myfloat>;
 using b_bool_type = xs::batch_bool<myfloat>;
 
@@ -167,8 +166,10 @@ void recursive_force(
   if (node.isLeaf())
   {
     bruteForceAcc(&dvx, &dvy, &dvz,
-                  particles.p.x + node.start, particles.p.y + node.start, particles.p.z + node.start,
-                  x, y, z, particles.m + node.start, node.count);
+                  particles.p.x.data() + node.start, 
+                  particles.p.y.data() + node.start, 
+                  particles.p.z.data() + node.start,
+                  x, y, z, particles.m.data() + node.start, node.count);
   }
   else
   {
@@ -362,24 +363,23 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
 
 void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, myfloat theta2)
 {
-  auto time0 = std::chrono::high_resolution_clock::now();
+    auto time0 = std::chrono::high_resolution_clock::now();
   auto boundingbox = bounding_box(particles.p, count);
-  auto time1 = std::chrono::high_resolution_clock::now();
+    auto time1 = std::chrono::high_resolution_clock::now();
   computeAndOrder(particles, boundingbox);
-  auto time2 = std::chrono::high_resolution_clock::now();
-
+    auto time2 = std::chrono::high_resolution_clock::now();
   auto tree = build_tree(particles, boundingbox);
-  auto time3 = std::chrono::high_resolution_clock::now();
+    auto time3 = std::chrono::high_resolution_clock::now();
   auto com = compute_centers_of_mass(particles, tree);
-  auto time4 = std::chrono::high_resolution_clock::now();
+    auto time4 = std::chrono::high_resolution_clock::now();
   compute_accelerations(acc, particles, tree, com, dt, theta2, boundingbox);
-  auto time5 = std::chrono::high_resolution_clock::now();
+    auto time5 = std::chrono::high_resolution_clock::now();
   std::cout<< "Times: "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count()<<"ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count()<<"ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count()<<"ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count()<<"ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count()<<"ms\n";
+  std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count()<<" ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count()<<" ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count()<<" ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count()<<" ms, "<<
+  std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count()<<" ms\n";
 }
 
 std::vector<DrawableCuboid> draw_approximations(
@@ -445,7 +445,6 @@ debug_information bh_superstep_debug(Particles &particles, size_t count, myfloat
   auto diagonal2 = precompute_diagonals(boundingbox.diagonal2);
 
   info.debug_boxes = draw_approximations(position.x, position.y, position.z, particles, tree, com, diagonal2, boundingbox, 0, 0, theta2);
-  // compute_accelerations(particles, tree, com, dt, theta2, boundingbox);
   return info;
 }
 
