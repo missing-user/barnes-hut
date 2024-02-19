@@ -211,3 +211,24 @@ The SoA implementation is very much WIP, and not on par with SoA yet.
 - [x] Parallel center of mass computations (decreased performance for systems >10k particles)
 - [x] Vectorization of the innermost particle loop (leaf/near field)
 - [x] Vectorization of the far field loop using the centers of mass
+
+## Citations
+This project uses out-of-core construction as described in [Coherent Out-of-Core Point-Based Global Illumination](https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf), and by the Blog post articles of [Jeroen Baert](https://www.forceflow.be/2012/07/24/out-of-core-construction-of-sparse-voxel-octrees/). The used libraries are [libmorton library](https://github.com/Forceflow/libmorton) for vectorized generation of morton codes and [XSIMD](https://github.com/xtensor-stack/xsimd/) to implement vectorized traversal of batches of particles.
+
+```
+@article {10.1111:j.1467-8659.2011.01995.x,
+journal = {Computer Graphics Forum},
+title = {{Coherent Out-of-Core Point-Based Global Illumination}},
+author = {Kontkanen, Janne and Tabellion, Eric and Overbeck, Ryan S.},
+year = {2011},
+publisher = {The Eurographics Association and Blackwell Publishing Ltd.},
+ISSN = {1467-8659},
+DOI = {10.1111/j.1467-8659.2011.01995.x}
+}
+
+@Misc{libmorton18,
+author = "Jeroen Baert",
+title = "Libmorton: C++ Morton Encoding/Decoding Library",
+howpublished = "\url{https://github.com/Forceflow/libmorton}",
+year = "2018"}
+```
