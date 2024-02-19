@@ -20,7 +20,7 @@ std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const 
   // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
   const myvec3 invRange = static_cast<myfloat>(std::pow(2, 21)-1) / bb.dimension;
   #pragma omp parallel for
-  for (size_t i = 0; i < particles.size(); i++) {
+  for (int i = 0; i < particles.size(); i++) {
     mortonCodes[i] = positionToCode(particles.p.x[i],particles.p.y[i],particles.p.z[i], bb.min(), invRange);
   }
   return mortonCodes;
@@ -51,7 +51,7 @@ void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mort
   for (int member_var = 0; member_var < 7; member_var++)
   {
     #pragma omp parallel for
-    for (size_t i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < particles.size(); i++) {
       reorderedComponent[i] = particles.get(member_var)[indices[i]];
     }
     // Swap pointers of the reordered particles with the original particles for the next iteration

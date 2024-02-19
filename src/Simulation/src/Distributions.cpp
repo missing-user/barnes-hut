@@ -13,7 +13,7 @@ std::vector<Particle> normal_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
 #pragma omp parallel for
-  for (size_t i = 0; i < num_particles; i++)
+  for (int i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
     particles[i].p.y = normal_dist(mt);
@@ -26,7 +26,7 @@ std::vector<Particle> ball_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
-  for (size_t i = 0; i < num_particles; i++)
+  for (int i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::ballRand(1.0);
   }
@@ -37,7 +37,7 @@ std::vector<Particle> sphere_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
-  for (size_t i = 0; i < num_particles; i++)
+  for (int i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::sphericalRand(1.0);
   }
@@ -48,7 +48,7 @@ std::vector<Particle> box_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
   #pragma omp parallel for
-  for (size_t i = 0; i < num_particles; i++)
+  for (int i = 0; i < num_particles; i++)
   {
     particles[i].p.x = uniform_dist(mt);
     particles[i].p.y = uniform_dist(mt);
@@ -68,7 +68,7 @@ std::vector<Particle> exponential_disk_distribution(size_t num_particles)
   // Since we use this distribution for testing and benchmarks, it has to be deterministic. 
   // thread_local random numbers DO NOT GUARANTEE DETERMINISM ACROSS DIFFERENT RUNS! 
   //#pragma omp parallel for
-  for (size_t i = 0; i < num_particles; i++)
+  for (int i = 0; i < num_particles; i++)
   {
     auto r = radial_dist(mt);
     auto phi = angle_dist(mt);
@@ -145,7 +145,6 @@ std::vector<Particle> &set_maxwell_v_dist(std::vector<Particle> &particles,
   // setup the Maxwell distribution, i.e. gamma distribution with alpha = 3/2
   std::gamma_distribution<myfloat> maxwell(3. / 2., k_T);
 
-  #pragma omp parallel for
   for (auto &p : particles)
   {
     myfloat x, y, z;

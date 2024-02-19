@@ -6,10 +6,8 @@ void stepSimulation(Particles &particles, myfloat dt) {
  * faster. This is because the inner loop is very short and the overhead of
  * creating threads is too high.
  */
-#pragma omp parallel if (particles.size() > 1000)
-  {
-    #pragma omp for
-    for (size_t i = 0; i < particles.size(); i++) {
+#pragma omp parallel for if (particles.size() > 1000)
+    for (int i = 0; i < particles.size(); i++) {
       myfloat dvx = 0, dvy = 0, dvz = 0;
       bruteForceAcc<myfloat>(&dvx, &dvy, &dvz, 
                     particles.p.x.data(), particles.p.y.data(), particles.p.z.data(), 
@@ -26,5 +24,4 @@ void stepSimulation(Particles &particles, myfloat dt) {
       particles.p.y[i] += particles.v.y[i] * dt;
       particles.p.z[i] += particles.v.z[i] * dt;
     }
-  }
 }

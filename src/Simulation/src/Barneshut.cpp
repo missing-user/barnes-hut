@@ -3,7 +3,7 @@
 #include <queue>
 #include <bitset>
 #include <libmorton/morton.h>
-#include "xsimd/xsimd.hpp"
+#include <xsimd/xsimd.hpp>
 #include <chrono>
 
 namespace xs = xsimd;
@@ -222,11 +222,11 @@ void compute_accelerations(Vectors &acc, const Particles &particles, const Tree 
   auto diagonal2 = precompute_diagonals(boundingbox.diagonal2);
 
   // Force calculation
-  auto vectorized_size = particles.size() - particles.size() % b_type::size;
+  auto vectorized_size = particles.size() - (particles.size() % b_type::size);
 #pragma omp parallel
   {
 #pragma omp for schedule(dynamic, 64) nowait
-    for (size_t i = 0; i < vectorized_size; i += b_type::size)
+    for (int i = 0; i < vectorized_size; i += b_type::size)
     {
       b_type dvx = 0, dvy = 0, dvz = 0;
       auto x = b_type::load_unaligned(&particles.p.x[i]);
@@ -266,18 +266,18 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
    */
   size_t i = 0;
   int depth = 0;                                                                              // 0 = root
-  uint_fast64_t current_max_morton = std::numeric_limits<uint_fast64_t>::max() - (1ul << 63); // Last morton code that is still in the current cell
+  uint64_t current_max_morton = 0x7FFFFFFFFFFFFFFF; // Last morton code that is still in the current cell
   short stack[depth_max];
   std::memset(stack, 0, sizeof(stack));
   // FIFO queue: all particle indices between start and start+count are designated for the current node
-  size_t current_node_start = 0, current_node_count = 1;
+  int current_node_start = 0, current_node_count = 1;
   std::vector<DrawableCuboid> drawcuboids{};
 
   while (i < particles.size())
   {
     // Add the first leaf_max+1 particles to the queue
     auto prev_node_count = current_node_count;
-    current_node_count = std::min(particles.size() - current_node_start, static_cast<size_t>(leaf_max) + 1);
+    current_node_count = std::min(static_cast<int>(particles.size()) - current_node_start, leaf_max + 1);
     i += current_node_count - prev_node_count;
 
     // Find the first depth level that does not contain all particles in the fifo
@@ -287,7 +287,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
     {
       depth++;
       stack[depth] = 0;
-      current_max_morton -= 7ul << (63 - 3 * depth);
+      current_max_morton -= static_cast<uint64_t>(7) << static_cast<uint64_t>(63 - 3 * depth);
       DEBUG_BITS(current_max_morton, depth);
       DEBUG_D(" Subdivide, i=" << i << " is still in range"
                                << "\n",
@@ -329,7 +329,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
     {
       stack[depth]++;
       // Set the bits in position (3*(21-depth-1)) to stack[depth] in current_max_morton
-      current_max_morton += 1ul << (63 - 3 * depth);
+      current_max_morton += static_cast<uint64_t>(1) << static_cast<uint64_t>(63 - 3 * depth);
       DEBUG_BITS(current_max_morton, depth);
       DEBUG("\n");
       // assert(std::bitset<3>(current_max_morton >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
@@ -349,7 +349,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
         DEBUG("Finalizing Node " << std::endl);
       }
       stack[depth]++;
-      current_max_morton += 1ul << (63 - 3 * depth);
+      current_max_morton += static_cast<uint64_t>(1) << static_cast<uint64_t>(63 - 3 * depth);
     }
 
     if (depth <= 0)

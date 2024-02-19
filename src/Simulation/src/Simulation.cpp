@@ -22,7 +22,7 @@ void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt, bo
 
   Particles bodies{particles.size()};
 #pragma omp parallel for // First touch initialization
-  for (size_t i = 0; i < bodies.size(); i++) {
+  for (int i = 0; i < bodies.size(); i++) {
     bodies.p.x[i] = particles[i].p.x;
     bodies.p.y[i] = particles[i].p.y;
     bodies.p.z[i] = particles[i].p.z;
