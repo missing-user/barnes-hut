@@ -204,7 +204,7 @@ std::vector<Particle> universe4(int n)
   const myfloat diameter = 100;
 
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
-  set_mass(initial_dist, 50);
+  set_mass(initial_dist, 50e4/n);
 
   add_angular_momentum(initial_dist, myvec3(0, .0, 50));
   return initial_dist;
