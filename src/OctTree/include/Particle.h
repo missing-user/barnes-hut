@@ -50,6 +50,12 @@ public:
     return p.size();
   }
 
+// Allow for iteration over all member variables
+  vector_type &get(int i) noexcept {
+    vector_type* components[] = {&p.x, &p.y, &p.z, &v.x, &v.y, &v.z, &m};
+    return *components[i];
+  }
+
   Particles(size_t size) : p(size), v(size), m(vector_type(size)) {}
   Particles() = default;
 };

@@ -458,6 +458,7 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
   // Use velocity verlet algorithm to update the particle positions and
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
+  // Completely memory bound, no use in parallelizing
 #pragma omp simd
   for (size_t i = 0; i < particles.size(); i++)
   {

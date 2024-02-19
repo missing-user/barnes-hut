@@ -28,32 +28,39 @@ std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const 
 
 void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mortonCodes){
   // Sort using morton order. This is parallelized if _GLIBCXX_PARALLEL is defined
+  auto start = std::chrono::high_resolution_clock::now();
   std::vector<int> indices(particles.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::sort(indices.begin(), indices.end(), [&mortonCodes](const int a, const int b) {
     return mortonCodes[a] < mortonCodes[b];
   });
 
-  // Reorder the particles
-  Particles reorderedParticles{particles.size()};
-  #pragma omp parallel for
-  for (size_t i = 0; i < particles.size(); i++) {
-    reorderedParticles.p.x[i] = particles.p.x[indices[i]];
-    reorderedParticles.p.y[i] = particles.p.y[indices[i]];
-    reorderedParticles.p.z[i] = particles.p.z[indices[i]];
-    reorderedParticles.v.x[i] = particles.v.x[indices[i]];
-    reorderedParticles.v.y[i] = particles.v.y[indices[i]];
-    reorderedParticles.v.z[i] = particles.v.z[indices[i]];
-    reorderedParticles.m[i] = particles.m[indices[i]];
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time to sort: " << elapsed.count() << "ms\n";
+  start = std::chrono::high_resolution_clock::now();
+
+  /* Reordering the particles component by component is faster than having a merged loop
+  *  in which we copy all 7 components of the particles struct at once. Especially for 
+  *  large particle counts, only allocating the temporary vector for a single component,
+  *  and copying the reordered entries, is significantly more efficient than allocating 
+  *  a temporary Particles struct (7 vectors), copying all components, then swapping all pointers.
+  */
+  vector_type reorderedComponent(particles.size());
+  // Iterate over all member variables of the Particles struct (x, y, z, vx, vy, vz, m)
+  for (int member_var = 0; member_var < 7; member_var++)
+  {
+    #pragma omp parallel for
+    for (size_t i = 0; i < particles.size(); i++) {
+      reorderedComponent[i] = particles.get(member_var)[indices[i]];
+    }
+    // Swap pointers of the reordered particles with the original particles for the next iteration
+    std::swap(particles.get(member_var), reorderedComponent);
   }
-  // Swap pointers of the reordered particles with the original particles
-  std::swap(particles.p.x, reorderedParticles.p.x);
-  std::swap(particles.p.y, reorderedParticles.p.y);
-  std::swap(particles.p.z, reorderedParticles.p.z);
-  std::swap(particles.v.x, reorderedParticles.v.x);
-  std::swap(particles.v.y, reorderedParticles.v.y);
-  std::swap(particles.v.z, reorderedParticles.v.z);
-  std::swap(particles.m, reorderedParticles.m);
+  
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time to reorder: " << elapsed.count() << " ms\n";
 }
 
 void computeAndOrder(Particles &particles, const Cuboid &bb)

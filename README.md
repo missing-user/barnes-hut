@@ -192,14 +192,17 @@ The SoA implementation is very much WIP, and not on par with SoA yet.
 - [] Tree construction using OpenMP tasks
 - [x] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
 - [x] Merge Center of Mass computation with the tree building: difference within measurement uncertainty, and the implementation becomes even less readable. Not worth it.
+- [x] Improved particle sorting/reordering by reducing memory allocations and copying
 - [] VTune profiling for further optimization, it's still saying that there are many scalar instructions. (Improved using XSIMD for batched traversal)
 
   | Operation   | Time      |
   |-------------|-----------|
-  | Sorting     | 52 ms      |
-  | Construction| 13 ms      |
-  | Centers of mass| 9 ms      |
-  | Force Traversal| 342 ms     |
+  | Bounding box| 2 ms      |
+  | Sorting indices| 10 ms  |
+  | Reordering particles| 13 ms|
+  | Tree construction| 16 ms   |
+  | Centers of mass| 13 ms     |
+  | Force Traversal| 267 ms    |
 
 - [x] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???) -> the theta comparison had a bug
 - [x] Make sure the last particle is also being added to the tree
