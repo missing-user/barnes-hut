@@ -191,6 +191,7 @@ The SoA implementation is very much WIP, and not on par with SoA yet.
 
 - [] Tree construction using OpenMP tasks
 - [x] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [x] Merge Center of Mass computation with the tree building: difference within measurement uncertainty, and the implementation becomes even less readable. Not worth it.
 - [] VTune profiling for further optimization, it's still saying that there are many scalar instructions. (Improved using XSIMD for batched traversal)
 
   | Operation   | Time      |
