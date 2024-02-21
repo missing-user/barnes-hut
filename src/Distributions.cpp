@@ -127,11 +127,11 @@ std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
   return particles;
 }
 
-std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m)
+Particles &set_mass(Particles &particles, myfloat m)
 {
-  for (auto &p : particles)
+  for (auto &mass : particles.m)
   {
-    p.m = m;
+    mass = m;
   }
   return particles;
 }
@@ -176,7 +176,6 @@ std::vector<Particle> universe2()
 {
   auto initial_dist = ball_dist(100);
   scale(initial_dist, 100, 100, 100);
-  set_mass(initial_dist, 10);
 
   add_angular_momentum(initial_dist, myvec3(0, .1, 0));
   initial_dist.push_back(Particle{{0, 0, 0}, {0, 0, 0}, 1e4});
@@ -190,7 +189,6 @@ std::vector<Particle> universe1()
   const myfloat diameter = 100;
 
   scale(initial_dist, diameter, diameter, 10); // flat disk
-  set_mass(initial_dist, 200);
 
   return initial_dist;
 }
@@ -203,7 +201,6 @@ std::vector<Particle> universe4(int n)
   const myfloat diameter = 100;
 
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
-  set_mass(initial_dist, 50e4/n);
 
   add_angular_momentum(initial_dist, myvec3(0, .0, 50));
   return initial_dist;
@@ -216,8 +213,6 @@ std::vector<Particle> bigbang(int n)
   const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
   add_radial_velocity(initial_dist, 100);
-
-  set_mass(initial_dist, 30);
 
   return initial_dist;
 }
@@ -279,41 +274,46 @@ std::vector<Particle> plummer(int n){
   return particles;
 }
 
-std::vector<Particle> make_universe(Distribution dist, size_t num_particles)
+Particles make_universe(Distribution dist, size_t num_particles)
 {
+  std::vector<Particle> particles;
   switch (dist)
   {
   case Distribution::UNIVERSE1:
-    return universe1();
+    particles = universe1();
+  break;
   case Distribution::UNIVERSE2:
-    return universe2();
+    particles = universe2();
+  break;
   case Distribution::COLLISION:
-    return collision(num_particles);
+    particles = collision(num_particles);
+  break;
   case Distribution::UNIVERSE4:
-    return universe4(num_particles);
+    particles = universe4(num_particles);
+  break;
   case Distribution::PLUMMER:
-    return plummer(num_particles);
+    particles = plummer(num_particles);
+  break;
   case Distribution::BIGBANG:
-    return bigbang(num_particles);
+    particles = bigbang(num_particles);
+  break;
   case Distribution::STABLE_ORBIT:
-    return stable_orbit();
+    particles = stable_orbit();
+  break;
   case Distribution::SPHERE:
   {
-    auto particles = sphere_dist(num_particles);
+    particles = sphere_dist(num_particles);
     scale(particles, 100, 100, 100);
-    set_mass(particles, 10);
-    return particles;
   }
+  break;
   case Distribution::CRYSTALLINE:
   {
-    auto particles = ball_dist(num_particles);
+    particles = ball_dist(num_particles);
     scale(particles, 100, 100, 100);
-    set_mass(particles, 10);
-    return particles;
   }
+  break;
   case Distribution::DEBUG_CUBE:
   {
-    std::vector<Particle> particles;
     int numx = std::pow(static_cast<double>(num_particles), 0.34);
     int numy = std::pow(static_cast<double>(num_particles), 0.34);
     int numz = std::pow(static_cast<double>(num_particles), 0.34);
@@ -328,11 +328,25 @@ std::vector<Particle> make_universe(Distribution dist, size_t num_particles)
         }
       }
     }
-    
-    set_mass(particles, 10);
-    return particles;
   }
+  break;
   default:
-    return {};
+    throw std::runtime_error("Unknown distribution");
+    return {num_particles};
   }
+
+  Particles bodies{particles.size()};
+#pragma omp parallel for // First touch initialization
+  for (int i = 0; i < bodies.size(); i++) {
+    bodies.p.x[i] = particles[i].p.x;
+    bodies.p.y[i] = particles[i].p.y;
+    bodies.p.z[i] = particles[i].p.z;
+    bodies.v.x[i] = particles[i].v.x;
+    bodies.v.y[i] = particles[i].v.y;
+    bodies.v.z[i] = particles[i].v.z;
+    bodies.m[i] = particles[i].m;
+  }
+  set_mass(bodies, 50e4/num_particles);
+
+  return bodies;
 }

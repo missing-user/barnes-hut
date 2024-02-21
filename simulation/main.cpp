@@ -1,8 +1,5 @@
 #include <boost/program_options.hpp>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <vector>
 
 #include "Distributions.h"
 #include "Simulation.h"
@@ -45,9 +42,8 @@ int main(int argc, char *argv[]) {
   }
 
   set_seed(42);
-  std::vector<Particle> particles =
-      make_universe(Distribution::UNIVERSE4, num_particles);
-  
+  auto particles = make_universe(Distribution::UNIVERSE4, num_particles);
+
   if (output_csv)
   {
     simulate(particles, duration, timestep, brute_force, theta, writeToCsvFile);

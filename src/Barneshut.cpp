@@ -220,7 +220,7 @@ void compute_accelerations(Vectors &acc, const Particles &particles, const Tree 
 
   // Force calculation
   auto vectorized_size = particles.size() - (particles.size() % b_type::size);
-#pragma omp parallel
+#pragma omp parallel 
   {
 #pragma omp for schedule(dynamic, 64) nowait
     for (int i = 0; i < vectorized_size; i += b_type::size)
@@ -357,23 +357,42 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
 
 void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, myfloat theta2)
 {
-    auto time0 = std::chrono::high_resolution_clock::now();
+  
+  
+  #ifdef MEASURE_TIME
+  auto time0 = std::chrono::high_resolution_clock::now();
+  #endif
   auto boundingbox = bounding_box(particles.p, count);
-    auto time1 = std::chrono::high_resolution_clock::now();
+  
+  #ifdef MEASURE_TIME
+  auto time1 = std::chrono::high_resolution_clock::now();
+  #endif
   computeAndOrder(particles, boundingbox);
-    auto time2 = std::chrono::high_resolution_clock::now();
+  
+  #ifdef MEASURE_TIME
+  auto time2 = std::chrono::high_resolution_clock::now();
+  #endif
   auto tree = build_tree(particles, boundingbox);
-    auto time3 = std::chrono::high_resolution_clock::now();
+  
+  #ifdef MEASURE_TIME
+  auto time3 = std::chrono::high_resolution_clock::now();
+  #endif
   auto com = compute_centers_of_mass(particles, tree);
-    auto time4 = std::chrono::high_resolution_clock::now();
+  
+  #ifdef MEASURE_TIME
+  auto time4 = std::chrono::high_resolution_clock::now();
+  #endif
   compute_accelerations(acc, particles, tree, com, dt, theta2, boundingbox);
-    auto time5 = std::chrono::high_resolution_clock::now();
+  
+  #ifdef MEASURE_TIME
+  auto time5 = std::chrono::high_resolution_clock::now();
   std::cout<< "Times: "<<
   std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count()<<" ms, "<<
   std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count()<<" ms, "<<
   std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count()<<" ms, "<<
   std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count()<<" ms, "<<
   std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count()<<" ms\n";
+  #endif
 }
 
 std::vector<DrawableCuboid> draw_approximations(
@@ -412,7 +431,7 @@ std::vector<DrawableCuboid> draw_approximations(
   return draw;
 }
 
-debug_information bh_superstep_debug(Particles &particles, size_t count, myfloat theta2, myvec3 position)
+debug_information bh_superstep_debug(myvec3 position, Particles& particles, size_t count, myfloat theta2)
 {
   debug_information info;
   auto boundingbox = bounding_box(particles.p, count);
@@ -446,6 +465,7 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
 {
   // Far away particles get grouped and their contribution is
   // approximated using their center of mass (Barnes Hut algorithm)
+  myfloat half_dt = 0.5 * dt;
   Vectors acc{particles.size()};
   bh_superstep(acc, particles, particles.size(), dt, theta2);
 
@@ -453,15 +473,29 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
   // Completely memory bound, no use in parallelizing
+    // v_i+1/2 Velocity half-step
 #pragma omp simd
-  for (size_t i = 0; i < particles.size(); i++)
-  {
-    particles.v.x[i] += acc.x[i] * dt;
-    particles.v.y[i] += acc.y[i] * dt;
-    particles.v.z[i] += acc.z[i] * dt;
+    for (int i = 0; i < particles.size(); i++) {
+      particles.v.x[i] += acc.x[i]*half_dt;
+      particles.v.y[i] += acc.y[i]*half_dt; 
+      particles.v.z[i] += acc.z[i]*half_dt;
+    }
 
-    particles.p.x[i] += particles.v.x[i] * dt;
-    particles.p.y[i] += particles.v.y[i] * dt;
-    particles.p.z[i] += particles.v.z[i] * dt;
-  }
+    // x_i+1 Update positions
+#pragma omp simd
+    for (size_t i = 0; i < particles.size(); i++)
+    {
+      particles.p.x[i] += particles.v.x[i] * dt;
+      particles.p.y[i] += particles.v.y[i] * dt;
+      particles.p.z[i] += particles.v.z[i] * dt;
+    }
+
+  bh_superstep(acc, particles, particles.size(), dt, theta2);
+    //  v_i+1 Velocity full-step
+#pragma omp simd
+    for (size_t i = 0; i < particles.v.x.size(); ++i) {
+      particles.v.x[i] += acc.x[i]*half_dt;
+      particles.v.y[i] += acc.y[i]*half_dt;
+      particles.v.z[i] += acc.z[i]*half_dt;
+    }
 }

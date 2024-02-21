@@ -1,8 +1,10 @@
 #include "Order.h"
 #include <libmorton/morton.h>
-#include <chrono>
 #include <algorithm>
 #include <numeric>
+#ifdef MEASURE_TIME
+#include <chrono>
+#endif
 
 uint_fast64_t positionToCode(const myfloat& x, const myfloat& y, const myfloat& z, 
                             const myvec3 &min, const myvec3 &invdimension)
@@ -28,18 +30,22 @@ std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const 
 
 void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mortonCodes){
   // Sort using morton order. This is parallelized if _GLIBCXX_PARALLEL is defined
+  
+  #ifdef MEASURE_TIME
   auto start = std::chrono::high_resolution_clock::now();
+  #endif
   std::vector<int> indices(particles.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::sort(indices.begin(), indices.end(), [&mortonCodes](const int a, const int b) {
     return mortonCodes[a] < mortonCodes[b];
   });
 
+  #ifdef MEASURE_TIME
   auto end = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::cout << "Time to sort: " << elapsed.count() << "ms\n";
   start = std::chrono::high_resolution_clock::now();
-
+  #endif
   /* Reordering the particles component by component is faster than having a merged loop
   *  in which we copy all 7 components of the particles struct at once. Especially for 
   *  large particle counts, only allocating the temporary vector for a single component,
@@ -58,9 +64,11 @@ void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mort
     std::swap(particles.get(member_var), reorderedComponent);
   }
   
+  #ifdef MEASURE_TIME
   end = std::chrono::high_resolution_clock::now();
   elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::cout << "Time to reorder: " << elapsed.count() << " ms\n";
+  #endif
 }
 
 void computeAndOrder(Particles &particles, const Cuboid &bb)

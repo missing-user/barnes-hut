@@ -5,7 +5,7 @@
 #include <string>
 #include "Order.h"
 
-void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt, bool brute_force, 
+void simulate(Particles &particles, myfloat duration, myfloat dt, bool brute_force, 
               myfloat theta, std::function<void(const Particles&, size_t)> writeCallback) {
   // The pointer to the outputwriter is optional and will receive the
   // positions of all particles at each timestep if passes
@@ -17,34 +17,20 @@ void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt, bo
 
   boost::timer::progress_display show_progress(duration / dt);
 
+  if (writeCallback){
+    writeCallback(particles, 0); // Write initial state
+  }
   // The timestep must start at 1 or we will simulate one timestep more than
   // necessary
-
-  Particles bodies{particles.size()};
-#pragma omp parallel for // First touch initialization
-  for (int i = 0; i < bodies.size(); i++) {
-    bodies.p.x[i] = particles[i].p.x;
-    bodies.p.y[i] = particles[i].p.y;
-    bodies.p.z[i] = particles[i].p.z;
-    bodies.v.x[i] = particles[i].v.x;
-    bodies.v.y[i] = particles[i].v.y;
-    bodies.v.z[i] = particles[i].v.z;
-    bodies.m[i] = particles[i].m;
-  }
-
-
-  if (writeCallback){
-    writeCallback(bodies, 0); // Write initial state
-  }
   for (size_t timestep = 1; timestep <= duration / dt; timestep++) {
 
     if (brute_force) // Brute force step
-      stepSimulation(bodies, dt);
+      stepSimulation(particles, dt);
     else // Barnes Hut step
-      stepSimulation(bodies, dt, theta2);
+      stepSimulation(particles, dt, theta2);
 
     if (writeCallback){
-      writeCallback(bodies, timestep);
+      writeCallback(particles, timestep);
     }
 
     ++show_progress;
@@ -53,8 +39,8 @@ void simulate(std::vector<Particle> &particles, myfloat duration, myfloat dt, bo
   myfloat residualTimestep = duration - dt * static_cast<size_t>(duration / dt);
   if (residualTimestep != 0.0) {
     if (brute_force)
-      stepSimulation(bodies, residualTimestep);
+      stepSimulation(particles, residualTimestep);
     else
-      stepSimulation(bodies, residualTimestep, theta2);
+      stepSimulation(particles, residualTimestep, theta2);
   }
 }

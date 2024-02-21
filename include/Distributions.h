@@ -20,10 +20,10 @@ enum class Distribution {
 
 void set_seed(unsigned int seed);
 
-std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m);
+Particles &set_mass(Particles &particles, myfloat m);
 
 /*******************************************************************/
 
-std::vector<Particle> make_universe(Distribution dist, size_t num_particles);
+Particles make_universe(Distribution dist, size_t num_particles);
 
 #endif

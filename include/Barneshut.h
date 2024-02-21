@@ -12,6 +12,6 @@ struct debug_information
   int max_particles_in_leaf;
   std::vector<DrawableCuboid> debug_boxes;
 };
-debug_information bh_superstep_debug(Particles& particles, size_t count, myfloat theta2);
+debug_information bh_superstep_debug(myvec3 position, Particles& particles, size_t count, myfloat theta2);
 
 #endif
