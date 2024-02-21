@@ -17,8 +17,13 @@ message(STATUS "libmorton included at ${libmorton_DIR}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 add_compile_definitions(_GLIBCXX_PARALLEL)
 
+# Set Release by default
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -Wall")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -qopt-report-phase=vec -qopt-report=3 -fast -Wall")
     add_link_options("-v")
@@ -30,6 +35,7 @@ endif()
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Barnes-hut Library code
 add_subdirectory(src)
