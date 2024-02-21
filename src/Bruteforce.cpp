@@ -21,7 +21,7 @@ void stepSimulation(Particles &particles, myfloat dt) {
     }
 
     // x_i+1 Update positions
-#pragma omp parallel for simd if (particles.size() > 1000)
+#pragma omp simd
     for (size_t i = 0; i < particles.size(); i++)
     {
       particles.p.x[i] += particles.v.x[i] * dt;

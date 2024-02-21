@@ -163,8 +163,8 @@ void recursive_force(
   if (node.isLeaf())
   {
     bruteForceAcc(&dvx, &dvy, &dvz,
-                  particles.p.x.data() + node.start, 
-                  particles.p.y.data() + node.start, 
+                  particles.p.x.data() + node.start,
+                  particles.p.y.data() + node.start,
                   particles.p.z.data() + node.start,
                   x, y, z, particles.m.data() + node.start, node.count);
   }
@@ -220,19 +220,19 @@ void compute_accelerations(Vectors &acc, const Particles &particles, const Tree 
 
   // Force calculation
   auto vectorized_size = particles.size() - (particles.size() % b_type::size);
-#pragma omp parallel 
+#pragma omp parallel
   {
 #pragma omp for schedule(dynamic, 64) nowait
     for (int i = 0; i < vectorized_size; i += b_type::size)
     {
       b_type dvx = 0, dvy = 0, dvz = 0;
-      auto x = b_type::load_unaligned(&particles.p.x[i]);
-      auto y = b_type::load_unaligned(&particles.p.y[i]);
-      auto z = b_type::load_unaligned(&particles.p.z[i]);
+      auto y = b_type::load_aligned(&particles.p.y[i]);
+      auto x = b_type::load_aligned(&particles.p.x[i]);
+      auto z = b_type::load_aligned(&particles.p.z[i]);
       recursive_force(&dvx, &dvy, &dvz, x, y, z, particles, tree, com, diagonal2, 0, 0, theta2);
-      dvx.store_unaligned(&acc.x[i]);
-      dvy.store_unaligned(&acc.y[i]);
-      dvz.store_unaligned(&acc.z[i]);
+      dvx.store_aligned(&acc.x[i]);
+      dvy.store_aligned(&acc.y[i]);
+      dvz.store_aligned(&acc.z[i]);
     }
 
 // Scalar remainder loop
@@ -262,13 +262,12 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
    * no subsequent particles in the group)
    */
   size_t i = 0;
-  int depth = 0;                                                                              // 0 = root
+  int depth = 0;                                    // 0 = root
   uint64_t current_max_morton = 0x7FFFFFFFFFFFFFFF; // Last morton code that is still in the current cell
   short stack[depth_max];
   std::memset(stack, 0, sizeof(stack));
   // FIFO queue: all particle indices between start and start+count are designated for the current node
   int current_node_start = 0, current_node_count = 1;
-  std::vector<DrawableCuboid> drawcuboids{};
 
   while (i < particles.size())
   {
@@ -326,7 +325,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
       current_max_morton += static_cast<uint64_t>(1) << static_cast<uint64_t>(63 - 3 * depth);
       DEBUG_BITS(current_max_morton, depth);
       DEBUG("\n");
-      // assert(std::bitset<3>(current_max_morton >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+      assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
     }
     else
     {
@@ -335,10 +334,10 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
       {
         Node node;
         node.setInternal(tree[depth].size() - 8); // index of the first child (8 children per node)
-        // assert(tree[depth].size()%8 == 0);
+        assert(tree[depth].size() % 8 == 0);
         depth--;
         tree[depth].push_back(node);
-        // assert(std::bitset<3>(current_max_morton >> (3*(21-depth)))==std::bitset<3>(stack[depth]));
+        assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
         DEBUG_BITS(current_max_morton, depth);
         DEBUG("Finalizing Node " << std::endl);
       }
@@ -357,42 +356,36 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
 
 void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, myfloat theta2)
 {
-  
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time0 = std::chrono::high_resolution_clock::now();
-  #endif
+#endif
   auto boundingbox = bounding_box(particles.p, count);
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time1 = std::chrono::high_resolution_clock::now();
-  #endif
+#endif
   computeAndOrder(particles, boundingbox);
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time2 = std::chrono::high_resolution_clock::now();
-  #endif
+#endif
   auto tree = build_tree(particles, boundingbox);
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time3 = std::chrono::high_resolution_clock::now();
-  #endif
+#endif
   auto com = compute_centers_of_mass(particles, tree);
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time4 = std::chrono::high_resolution_clock::now();
-  #endif
+#endif
   compute_accelerations(acc, particles, tree, com, dt, theta2, boundingbox);
-  
-  #ifdef MEASURE_TIME
+
+#ifdef MEASURE_TIME
   auto time5 = std::chrono::high_resolution_clock::now();
-  std::cout<< "Times: "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count()<<" ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count()<<" ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count()<<" ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count()<<" ms, "<<
-  std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count()<<" ms\n";
-  #endif
+  std::cout << "Times: " << std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count() << " ms\n";
+#endif
 }
 
 std::vector<DrawableCuboid> draw_approximations(
@@ -431,14 +424,12 @@ std::vector<DrawableCuboid> draw_approximations(
   return draw;
 }
 
-debug_information bh_superstep_debug(myvec3 position, Particles& particles, size_t count, myfloat theta2)
+debug_information bh_superstep_debug(myvec3 position, Particles &particles, size_t count, myfloat theta2)
 {
-  debug_information info;
+  debug_information info{};
   auto boundingbox = bounding_box(particles.p, count);
   computeAndOrder(particles, boundingbox);
   auto tree = build_tree(particles, boundingbox);
-
-  info.depth = 0;
   for (auto &depth : tree)
   {
     if (depth.size() > 0)
@@ -473,29 +464,31 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
   // velocities
   // https://en.wikipedia.org/wiki/Verlet_integration#Velocity_Verlet
   // Completely memory bound, no use in parallelizing
-    // v_i+1/2 Velocity half-step
+  // v_i+1/2 Velocity half-step
 #pragma omp simd
-    for (int i = 0; i < particles.size(); i++) {
-      particles.v.x[i] += acc.x[i]*half_dt;
-      particles.v.y[i] += acc.y[i]*half_dt; 
-      particles.v.z[i] += acc.z[i]*half_dt;
-    }
+  for (int i = 0; i < particles.size(); i++)
+  {
+    particles.v.x[i] += acc.x[i] * half_dt;
+    particles.v.y[i] += acc.y[i] * half_dt;
+    particles.v.z[i] += acc.z[i] * half_dt;
+  }
 
-    // x_i+1 Update positions
+  // x_i+1 Update positions
 #pragma omp simd
-    for (size_t i = 0; i < particles.size(); i++)
-    {
-      particles.p.x[i] += particles.v.x[i] * dt;
-      particles.p.y[i] += particles.v.y[i] * dt;
-      particles.p.z[i] += particles.v.z[i] * dt;
-    }
+  for (size_t i = 0; i < particles.size(); i++)
+  {
+    particles.p.x[i] += particles.v.x[i] * dt;
+    particles.p.y[i] += particles.v.y[i] * dt;
+    particles.p.z[i] += particles.v.z[i] * dt;
+  }
 
   bh_superstep(acc, particles, particles.size(), dt, theta2);
-    //  v_i+1 Velocity full-step
+  //  v_i+1 Velocity full-step
 #pragma omp simd
-    for (size_t i = 0; i < particles.v.x.size(); ++i) {
-      particles.v.x[i] += acc.x[i]*half_dt;
-      particles.v.y[i] += acc.y[i]*half_dt;
-      particles.v.z[i] += acc.z[i]*half_dt;
-    }
+  for (size_t i = 0; i < particles.v.x.size(); ++i)
+  {
+    particles.v.x[i] += acc.x[i] * half_dt;
+    particles.v.y[i] += acc.y[i] * half_dt;
+    particles.v.z[i] += acc.z[i] * half_dt;
+  }
 }

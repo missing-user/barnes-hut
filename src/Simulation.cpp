@@ -42,5 +42,9 @@ void simulate(Particles &particles, myfloat duration, myfloat dt, bool brute_for
       stepSimulation(particles, residualTimestep);
     else
       stepSimulation(particles, residualTimestep, theta2);
+ 
+    if (writeCallback){
+      writeCallback(particles, std::ceil(duration / dt));
+    }
   }
 }

@@ -63,7 +63,7 @@ std::vector<Particle> exponential_disk_distribution(size_t num_particles)
 
   std::exponential_distribution radial_dist{1.0};
   std::normal_distribution vertical_dist{0.0, 1.0};
-  std::uniform_real_distribution angle_dist{0.0, 2 * 3.14159265358};
+  std::uniform_real_distribution angle_dist{0.0, 2 * std::numbers::pi};
 
   // Since we use this distribution for testing and benchmarks, it has to be deterministic. 
   // thread_local random numbers DO NOT GUARANTEE DETERMINISM ACROSS DIFFERENT RUNS! 
@@ -127,6 +127,15 @@ std::vector<Particle> &add_angular_momentum(std::vector<Particle> &particles,
   return particles;
 }
 
+std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m)
+{
+  for (auto &p : particles)
+  {
+    p.m = m;
+  }
+  return particles;
+}
+
 Particles &set_mass(Particles &particles, myfloat m)
 {
   for (auto &mass : particles.m)
@@ -176,20 +185,10 @@ std::vector<Particle> universe2()
 {
   auto initial_dist = ball_dist(100);
   scale(initial_dist, 100, 100, 100);
+  set_mass(initial_dist, 10);
 
   add_angular_momentum(initial_dist, myvec3(0, .1, 0));
   initial_dist.push_back(Particle{{0, 0, 0}, {0, 0, 0}, 1e4});
-  return initial_dist;
-}
-
-std::vector<Particle> universe1()
-{
-  // A disk shaped universe with just 32 particles, useful for simple testing
-  auto initial_dist = exponential_disk_distribution(32);
-  const myfloat diameter = 100;
-
-  scale(initial_dist, diameter, diameter, 10); // flat disk
-
   return initial_dist;
 }
 
@@ -201,6 +200,7 @@ std::vector<Particle> universe4(int n)
   const myfloat diameter = 100;
 
   scale(initial_dist, diameter, diameter, diameter / 10); // flat disk
+  set_mass(initial_dist, 50e4/n);
 
   add_angular_momentum(initial_dist, myvec3(0, .0, 50));
   return initial_dist;
@@ -213,6 +213,7 @@ std::vector<Particle> bigbang(int n)
   const myfloat diameter = 10;
   scale(initial_dist, diameter, diameter, diameter);
   add_radial_velocity(initial_dist, 100);
+  set_mass(initial_dist, 30);
 
   return initial_dist;
 }
@@ -279,8 +280,13 @@ Particles make_universe(Distribution dist, size_t num_particles)
   std::vector<Particle> particles;
   switch (dist)
   {
-  case Distribution::UNIVERSE1:
-    particles = universe1();
+  case Distribution::UNIVERSE1:{
+    particles = exponential_disk_distribution(num_particles);
+    const myfloat diameter = 100;
+    scale(particles, diameter, diameter, 10);
+    set_mass(particles, 200);
+    translate(particles, -400, 0, 1e3);
+    }
   break;
   case Distribution::UNIVERSE2:
     particles = universe2();
@@ -304,12 +310,14 @@ Particles make_universe(Distribution dist, size_t num_particles)
   {
     particles = sphere_dist(num_particles);
     scale(particles, 100, 100, 100);
+    set_mass(particles, 10);
   }
   break;
   case Distribution::CRYSTALLINE:
   {
     particles = ball_dist(num_particles);
     scale(particles, 100, 100, 100);
+    set_mass(particles, 10);
   }
   break;
   case Distribution::DEBUG_CUBE:
@@ -346,7 +354,6 @@ Particles make_universe(Distribution dist, size_t num_particles)
     bodies.v.z[i] = particles[i].v.z;
     bodies.m[i] = particles[i].m;
   }
-  set_mass(bodies, 50e4/num_particles);
 
   return bodies;
 }
