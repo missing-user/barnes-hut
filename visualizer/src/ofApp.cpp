@@ -1,25 +1,23 @@
 #include "ofApp.h"
 #include <algorithm>
 #include <chrono>
-
-std::vector<Particle> particles;
-Particles bodies{64};
+#include "Distributions.h"
+#include "Barneshut.h"
+#include "Cuboid.h"
+#include "Order.h"
+#include "Particle.h"
+#include "Simulation.h"
+#include "Forces.h"
+Particles particles{};
 
 void ofApp::initializeParticles() {
-  for (size_t i = 0; i <bodies.size(); i++)
+  for (size_t i = 0; i <particles.size(); i++)
   {
-    bodies.p[i] = particles[i].p;
-    bodies.v[i] = particles[i].v;
-    bodies.m[i] = particles[i].m;
-  }
-
-  for (size_t i = 0; i <bodies.size(); i++)
-  {
-    mesh.addVertex(myvec3(bodies.p.x[i], bodies.p.y[i], bodies.p.z[i]));
+    mesh.addVertex(myvec3(particles.p.x[i], particles.p.y[i], particles.p.z[i]));
     auto cur = ofColor::white;
     mesh.addColor(cur);
   }
-  std::cout << "Initialized " << bodies.size() << " particles\n";
+  std::cout << "Initialized " << particles.size() << " particles\n";
 }
 
 //--------------------------------------------------------------
@@ -41,7 +39,7 @@ void ofApp::setup() {
   gui.add(brute_force_toggle.set("brute force", true));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 64, 64, 5e4));
+  gui.add(num_particles_slider.set("num_particles", 256, 64, 5e4));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
   gui.add(text_output.set("frame time", "text"));
 
@@ -53,7 +51,7 @@ void ofApp::setup() {
   particles = make_universe(Distribution::PLUMMER, num_particles_slider);
   initializeParticles();
 }
-std::vector<DrawableCuboid> drawcuboids;
+std::vector<DrawableCuboid> drawcuboids{};
 
 //--------------------------------------------------------------
 void ofApp::update() {
@@ -65,9 +63,9 @@ void ofApp::update() {
 
 
     if (brute_force_toggle)
-      stepSimulation(bodies, timestep_slider);
+      stepSimulation(particles, timestep_slider);
     else
-      drawcuboids = stepSimulation(bodies, timestep_slider, theta_slider);
+      stepSimulation(particles, timestep_slider, theta_slider);
 
   auto end = std::chrono::steady_clock::now();
   auto elapsed =
@@ -77,9 +75,21 @@ void ofApp::update() {
 
   // loop through all mesh vertecies and update their positions
   for (std::size_t i = 0; i < mesh.getNumVertices(); i++) {
-    mesh.setVertex(i, myvec3(bodies.p.x[i], bodies.p.y[i], bodies.p.z[i]));
-    //double len = std::max(50.0, glm::length(bodies.v[i]) * maxv_inv);
+    mesh.setVertex(i, myvec3(particles.p.x[i], particles.p.y[i], particles.p.z[i]));
+    //double len = std::max(50.0, glm::length(particles.v[i]) * maxv_inv);
     mesh.setColor(i, ofColor(255 - 255.*i/mesh.getNumVertices(), 255.*i/mesh.getNumVertices(), 255.*i/mesh.getNumVertices(), 255));
+  }
+
+
+  if(show_stats_toggle)
+  {
+    auto particles2{particles}; // Copy the particles to avoid modifying the original
+    auto info = bh_superstep_debug({0,0,0}, particles2, particles2.size(), theta_slider*theta_slider);
+    depth_output = std::to_string(info.depth);
+    pcount_output = std::to_string(info.max_particles_in_leaf);
+    drawcuboids = info.debug_boxes;
+
+    ofSetColor(255);
   }
 }
 
@@ -87,26 +97,20 @@ void ofApp::update() {
 void ofApp::draw() {
   gui.draw();
   cam.begin();
-
-  //Tree mytree{bodies};
-  //auto boxes = mytree.GetBoundingBoxes();
   ofNoFill();
 
-  if(show_stats_toggle)
-  {
-    for (const auto &b : drawcuboids) {
-      if (b.level >= min_depth_slider)
-      {
-        const auto visualLevel = std::max(0, b.level - min_depth_slider);
-        const auto maxLevel = std::max(1, 16 - min_depth_slider);
-        ofSetColor((255/maxLevel) * visualLevel,
-                    255 - (255/maxLevel) * visualLevel, 
-                    0, 128);
-        ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
-      }
+  for (const auto &b : drawcuboids) {
+    if (b.level >= min_depth_slider)
+    {
+      const auto visualLevel = std::max(0, b.level - min_depth_slider);
+      const auto maxLevel = std::max(1, 16 - min_depth_slider);
+      ofSetColor((255/maxLevel) * visualLevel,
+                  255 - (255/maxLevel) * visualLevel, 
+                  0, 128);
+      ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
     }
-    ofSetColor(255);
   }
+
   mesh.draw();
   cam.end();
   ofDrawBitmapString(
@@ -119,10 +123,14 @@ void ofApp::draw() {
       200, 30);
 }
 
-std::vector<Particle> &remove_energy(std::vector<Particle> &particles,
+Particles &remove_energy(Particles &particles,
                                      myfloat s = 0.9) {
-  for (auto &p : particles) {
-    p.v = p.v * s;
+  for (auto &x : particles.v.x) {
+    x *= s;
+  }for (auto &y : particles.v.y) {
+    y *= s;
+  }for (auto &z : particles.v.z) {
+    z *= s;
   }
   return particles;
 }
@@ -156,7 +164,7 @@ void ofApp::keyPressed(int key) {
   }
 
   if (key == 'o') {
-    computeAndOrder(bodies, bounding_box(bodies.p, bodies.size()));
+    computeAndOrder(particles, bounding_box(particles.p, particles.size()));
   }
 
   if (key == 'l') {

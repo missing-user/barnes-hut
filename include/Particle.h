@@ -34,6 +34,7 @@ struct Vectors{
     return x.size();
   }
   Vectors(size_t size) : x(vector_type(size)), y(vector_type(size)), z(vector_type(size)) {}
+  Vectors() = default;
 };
 
 class Particles{

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Distributions.h"
-#include "Order.h"
-#include "Particle.h"
-#include "Simulation.h"
 #include "ofMain.h"
 #include "ofxGui.h"
 #include <string>
@@ -24,8 +20,8 @@ private:
   ofParameter<int> max_depth_slider;
   ofParameter<int> max_per_node_slider;
   ofParameter<int> num_particles_slider;
-  ofParameter<myfloat> theta_slider;
-  ofParameter<myfloat> mass_slider;
+  ofParameter<double> theta_slider;
+  ofParameter<double> mass_slider;
   ofParameter<bool> brute_force_toggle;
 
   // text output
