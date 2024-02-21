@@ -1,7 +1,7 @@
 #ifndef SIMULATION
 #define SIMULATION
-#include <vector>
 #include <functional>
+#include "Particle.h"
 #include "Bruteforce.h"
 #include "Barneshut.h"
 

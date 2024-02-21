@@ -4,12 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
-#define GLM_FORCE_INTRINSICS 
-//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES // Slowdowns on my machine
-//#define GLM_FORCE_INLINE // Didn't make a measurable difference
 #include <glm/glm.hpp>
 #include <glm/gtx/io.hpp> // Allows us to easily std::cout << pvec3;
-#include "xsimd/xsimd.hpp"
+#include <xsimd/xsimd.hpp>
 namespace xs = xsimd;
 
 typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to

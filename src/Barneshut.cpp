@@ -2,11 +2,8 @@
 #include "Order.h"
 #include <queue>
 #include <bitset>
-#include <libmorton/morton.h>
-#include <xsimd/xsimd.hpp>
 #include <chrono>
 
-namespace xs = xsimd;
 using b_type = xs::batch<myfloat>;
 using b_bool_type = xs::batch_bool<myfloat>;
 
@@ -320,9 +317,6 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
       leaf.count++;
     }
     tree[depth].push_back(leaf);
-    // DEBUG_D("Finalizing Leaf with num_planets="<<leaf.count<<std::endl, depth);
-    uint_fast32_t x, y, z;
-    libmorton::morton3D_64_decode(current_max_morton, x, y, z);
 
     // Go to next node (at this depth if possible)
     if (stack[depth] < 7)

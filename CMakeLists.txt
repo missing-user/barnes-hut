@@ -1,38 +1,38 @@
-cmake_minimum_required(VERSION 3.5)
-project(barnes-hut)
+cmake_minimum_required(VERSION 3.13)
+project(barnes-hut VERSION 1.0
+                  DESCRIPTION "OpenMP Barnes-Hut Simulation with Out-of-core construction and Morton ordering of particles"
+                  LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Find packages and libraries
 find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+message(STATUS "Boost included at ${Boost_DIR}")
+find_package(glm CONFIG REQUIRED)
+message(STATUS "GLM included at ${glm_DIR}")
+find_package(xsimd CONFIG REQUIRED)
+message(STATUS "xsimd included at ${xsimd_DIR}")
+find_package(libmorton CONFIG REQUIRED)
+message(STATUS "libmorton included at ${libmorton_DIR}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+add_compile_definitions(_GLIBCXX_PARALLEL)
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native -Wall -fopt-info-vec-optimized")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopt-report-phase=vec -qopt-report=3 -fast -Wall")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -qopt-report-phase=vec -qopt-report=3 -fast -Wall")
     add_link_options("-v")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp:experimental /Ox /fp:fast /arch:AVX2")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /openmp:experimental /Ox /fp:fast /arch:AVX2")
 else()
   message(STATUS "Unknown CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 endif()
-if (OPENMP_FOUND)
-  add_compile_definitions(_GLIBCXX_PARALLEL)
-endif()
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
-set(${SIM_HEADERS_DIR} ${PROJECT_SOURCE_DIR}/src/Simulation)
-set(${QUAD_HEADERS_DIR} ${PROJECT_SOURCE_DIR}/src/OctTree)
-
-include_directories(${SIM_HEADERS_DIR})
-include_directories(${QUAD_HEADERS_DIR})
-
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
+# Barnes-hut Library code
 add_subdirectory(src)
-#add_subdirectory(tests)
+# Example application using the library
+add_subdirectory(simulation)
+add_subdirectory(tests)

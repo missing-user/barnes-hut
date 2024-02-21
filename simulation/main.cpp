@@ -5,8 +5,6 @@
 #include <vector>
 
 #include "Distributions.h"
-#include "Order.h"
-#include "Particle.h"
 #include "Simulation.h"
 #include "OutputWriter.h"
 

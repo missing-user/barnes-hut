@@ -1,7 +1,7 @@
 #ifndef DISTRIBUTIONS
 #define DISTRIBUTIONS
 
-#include "Simulation.h"
+#include "Particle.h"
 #include <vector>
 
 enum class Distribution {
