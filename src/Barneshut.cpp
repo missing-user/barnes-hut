@@ -1,7 +1,5 @@
 #include "Barneshut.h"
 #include "Order.h"
-#include <queue>
-#include <bitset>
 #include <chrono>
 
 using b_type = xs::batch<myfloat>;
@@ -26,6 +24,9 @@ using b_bool_type = xs::batch_bool<myfloat>;
 
 const int depth_max = 18;
 const int leaf_max = 8; // maximum particles per node
+
+#ifdef DEBUG_BUILD
+#include <bitset>
 void PRINT_BITS_BY3(uint_fast64_t x, int separator)
 {
   for (size_t i = 1; i <= depth_max - 1; i++)
@@ -38,7 +39,11 @@ void PRINT_BITS_BY3(uint_fast64_t x, int separator)
       DEBUG(" ");
   }
 }
+#else
+#define PRINT_BITS_BY3(x, s)
+#endif
 
+#ifdef DEBUG_BUILD
 void DEBUG_BITS(uint_fast64_t end, int depth)
 {
   DEBUG_D("", depth);
@@ -47,6 +52,9 @@ void DEBUG_BITS(uint_fast64_t end, int depth)
   // assert(extsuf == std::bitset<63-3*depth_max>(std::numeric_limits<uint_fast64_t>::max())); //unused bottom part must be 1
   // assert((end>>63) == 0); // Top bit must always be 0
 }
+#else
+#define DEBUG_BITS(end, depth)
+#endif
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
@@ -310,7 +318,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
     // current_node_count > 0 must be checked BEFORE IN_BOUNDS, to avoid segfault
     while (current_node_count > 0 && IN_BOUNDS(current_node_start))
     {
-      DEBUG_D("popped " << current_node_start << " (" << (std::bitset<63>(mortoncodes[current_node_start])) << ")" << std::endl, depth);
+      DEBUG_D("popped " << current_node_start << std::endl, depth);
       current_node_start++;
       current_node_count--;
       leaf.count++;
@@ -325,7 +333,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
       current_max_morton += static_cast<uint64_t>(1) << static_cast<uint64_t>(63 - 3 * depth);
       DEBUG_BITS(current_max_morton, depth);
       DEBUG("\n");
-      assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
+      //assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
     }
     else
     {
@@ -337,7 +345,7 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
         assert(tree[depth].size() % 8 == 0);
         depth--;
         tree[depth].push_back(node);
-        assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
+        //assert(std::bitset<3>(current_max_morton >> (3 * (21 - depth))) == std::bitset<3>(stack[depth]));
         DEBUG_BITS(current_max_morton, depth);
         DEBUG("Finalizing Node " << std::endl);
       }
