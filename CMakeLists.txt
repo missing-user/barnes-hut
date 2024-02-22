@@ -5,13 +5,13 @@ project(barnes-hut VERSION 1.0
 
 # Find packages and libraries
 find_package(OpenMP)
-find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+find_package(Boost REQUIRED COMPONENTS program_options)
 message(STATUS "Boost included at ${Boost_DIR}")
-find_package(glm CONFIG REQUIRED)
+find_package(glm REQUIRED)
 message(STATUS "GLM included at ${glm_DIR}")
-find_package(xsimd CONFIG REQUIRED)
+find_package(xsimd REQUIRED)
 message(STATUS "xsimd included at ${xsimd_DIR}")
-find_package(libmorton CONFIG REQUIRED)
+find_package(libmorton REQUIRED)
 message(STATUS "libmorton included at ${libmorton_DIR}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)

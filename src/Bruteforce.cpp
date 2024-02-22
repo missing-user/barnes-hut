@@ -22,7 +22,7 @@ void stepSimulation(Particles &particles, myfloat dt) {
 
     // x_i+1 Update positions
 #pragma omp simd
-    for (size_t i = 0; i < particles.size(); i++)
+    for (int i = 0; i < particles.size(); i++)
     {
       particles.p.x[i] += particles.v.x[i] * dt;
       particles.p.y[i] += particles.v.y[i] * dt;
@@ -30,8 +30,8 @@ void stepSimulation(Particles &particles, myfloat dt) {
     }
 
     //  v_i+1 Velocity full-step
-#pragma omp parallel for simd if (particles.size() > 1000)
-    for (size_t i = 0; i < particles.v.x.size(); ++i) {
+#pragma omp simd
+    for (int i = 0; i < particles.v.x.size(); ++i) {
       myfloat dvx = 0, dvy = 0, dvz = 0;
       bruteForceAcc<myfloat>(&dvx, &dvy, &dvz, 
                     particles.p.x.data(), particles.p.y.data(), particles.p.z.data(), 
