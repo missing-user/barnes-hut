@@ -32,7 +32,7 @@ void simulate(Particles &particles, myfloat duration, myfloat dt, bool brute_for
     if (writeCallback){
       writeCallback(particles, timestep);
     }
-    
+
     ++show_progress;
   }
 
