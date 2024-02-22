@@ -22,8 +22,8 @@ using b_bool_type = xs::batch_bool<myfloat>;
 
 #define DEBUG(x) DEBUG_D(x, 0)
 
-const int depth_max = 18;
-const int leaf_max = 8; // maximum particles per node
+const int depth_max = 20;
+const int leaf_max = 4; // maximum particles per node
 
 #ifdef DEBUG_BUILD
 #include <bitset>
@@ -497,8 +497,11 @@ void stepSimulation(Particles &particles, myfloat dt, myfloat theta2)
     particles.p.y[i] += particles.v.y[i] * dt;
     particles.p.z[i] += particles.v.z[i] * dt;
   }
-
+auto time1 = std::chrono::high_resolution_clock::now();
   bh_superstep(acc, particles, particles.size(), dt, theta2);
+auto time2 = std::chrono::high_resolution_clock::now();
+auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1);
+std::cout<<"bh_superstep time: "<<elapsed.count()<<"\n";
   //  v_i+1 Velocity full-step
 #pragma omp simd
   for (size_t i = 0; i < particles.v.x.size(); ++i)
