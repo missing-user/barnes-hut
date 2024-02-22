@@ -189,7 +189,8 @@ Nonetheless, both algorithms perform far below the theoretical limit, eventhough
 
 The SoA implementation is very much WIP, and not on par with SoA yet.
 
-- [] Tree construction using OpenMP tasks
+- [] Tree construction using OpenMP tasks and std::upper_bound for the binary search.
+- [] [CUDA?](https://developer.nvidia.com/blog/thinking-parallel-part-iii-tree-construction-gpu/)
 - [x] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
 - [x] Merge Center of Mass computation with the tree building: difference within measurement uncertainty, and the implementation becomes even less readable. Not worth it.
 - [x] Improved particle sorting/reordering by reducing memory allocations and copying
