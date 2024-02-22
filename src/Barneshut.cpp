@@ -360,7 +360,7 @@ void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, 
 #ifdef MEASURE_TIME
   auto time0 = std::chrono::high_resolution_clock::now();
 #endif
-  auto boundingbox = bounding_box(particles.p, count);
+  auto boundingbox = bounding_box(particles.p);
 
 #ifdef MEASURE_TIME
   auto time1 = std::chrono::high_resolution_clock::now();
@@ -399,8 +399,14 @@ std::vector<DrawableCuboid> draw_approximations(
 {
   std::vector<DrawableCuboid> draw;
   auto &node = tree[depth][start];
-  if (!node.isLeaf())
-  {
+  if (node.isLeaf()){
+    for (int i = node.start; i < node.count+node.start; i++)
+    {
+      // Push back debug leaf
+      draw.push_back(DrawableCuboid{{myvec3(particles.p.x[i], particles.p.y[i], particles.p.z[i])}, depth});
+    }
+    
+  }else{
     myfloat dx = com.x[depth][start] - x;
     myfloat dy = com.y[depth][start] - y;
     myfloat dz = com.z[depth][start] - z;
@@ -427,7 +433,7 @@ std::vector<DrawableCuboid> draw_approximations(
 debug_information bh_superstep_debug(myvec3 position, Particles &particles, size_t count, myfloat theta2)
 {
   debug_information info{};
-  auto boundingbox = bounding_box(particles.p, count);
+  auto boundingbox = bounding_box(particles.p);
   computeAndOrder(particles, boundingbox);
   auto tree = build_tree(particles, boundingbox);
   for (auto &depth : tree)

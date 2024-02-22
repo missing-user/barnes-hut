@@ -73,10 +73,21 @@ TEST(QuadTree, DepthCalculation) {
   // Create a distribution of particles and check if the depth of the tree is as
   // expected
   set_seed(4756);
-  auto particles = make_universe(Distribution::UNIVERSE4, 100);
-  auto info = bh_superstep_debug({0,0,0}, particles, particles.size(), 1.5*1.5);
-  EXPECT_EQ(info.depth, 5);
-  EXPECT_EQ(info.max_particles_in_leaf, 7);
+  auto particles = make_universe(Distribution::UNIVERSE4, 800);
+  auto info = bh_superstep_debug({100,0,0}, particles, particles.size(), 1.5*1.5);
+  EXPECT_EQ(info.depth, 7);
+  EXPECT_EQ(info.max_particles_in_leaf, 8);
+  auto force_calcs_15 = info.debug_boxes.size();
+  
+  info = bh_superstep_debug({100,0,0}, particles, particles.size(), 0.7*0.7);
+  EXPECT_EQ(info.depth, 7);
+  EXPECT_EQ(info.max_particles_in_leaf, 8);
+  auto force_calcs_07 = info.debug_boxes.size();
+  
+  // Count force evaluations, increasing theta should reduce computational cost
+  EXPECT_GT(force_calcs_15, 100);
+  EXPECT_GT(force_calcs_07, force_calcs_15);
+  EXPECT_LT(force_calcs_07, 800);
 }
 
 TEST(FileWriting, IsValidCsv) {
@@ -148,7 +159,7 @@ TEST(BarnesHut, CompareTheta0) {
 
   // Since Barnes Hut reorders the particles, we also need to reorder the 
   // brute force results to compare them. 
-  auto boundingbox = bounding_box(particles.p, particles.size());
+  auto boundingbox = bounding_box(particles.p);
   computeAndOrder(particles, boundingbox);
 
   for (int i = 0; i < particles.size(); i++) {
@@ -176,7 +187,7 @@ TEST(BarnesHut, CompareApproximation) {
   simulate(particles, simDuration, timestep);
   simulate(particlesTree, simDuration, timestep, false, 1.5, writeToCsvFile);
 
-  auto boundingbox = bounding_box(particles.p, particles.size());
+  auto boundingbox = bounding_box(particles.p);
   computeAndOrder(particles, boundingbox);
 
   for (int i = 0; i < particles.size(); i++) {

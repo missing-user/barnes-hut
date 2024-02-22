@@ -25,7 +25,7 @@ public:
 };
 
 // A function to calculate the bounding box of a group of particles
-Cuboid bounding_box(const Vectors &positions, const size_t count);
+Cuboid bounding_box(const Vectors &positions);
 Cuboid minMaxCuboid(const myvec3& min, const myvec3& max); // returns a cuboid with the given min and max coords
 
 class DrawableCuboid{
@@ -34,7 +34,9 @@ public:
   myvec3 center;
   myvec3 dimension;
   int level; // depth level of the cuboid
-  DrawableCuboid(const Cuboid &cuboid, int level);
+  bool isLeaf; // if the cuboid is a leaf node
+  DrawableCuboid(const Cuboid &cuboid, int level); // for non-leaf nodes
+  DrawableCuboid(const myvec3 &pos, int level); // for leaf nodes
 };
 
 #endif

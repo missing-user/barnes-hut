@@ -32,13 +32,14 @@ Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, sp
   return subcuboids;
 }
 
-Cuboid bounding_box(const Vectors &positions, const size_t count)
+Cuboid bounding_box(const Vectors &positions)
 {
   std::pair<myfloat, myfloat> xx{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
   std::pair<myfloat, myfloat> yy{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
   std::pair<myfloat, myfloat> zz{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
   // This already operates in the memory bound regime, no gain from parallelization
-  for (size_t i = 0; i < count; i++)
+  #pragma omp simd
+  for (size_t i = 0; i < positions.size(); i++)
   {
     xx.first = std::min(xx.first, positions.x[i]);
     xx.second = std::max(xx.second, positions.x[i]);
@@ -61,4 +62,6 @@ std::string Cuboid::print() const
 
 
 DrawableCuboid::DrawableCuboid(const Cuboid &cuboid, int level) : 
-  center(cuboid.center), dimension(cuboid.dimension), level(level) {}
+  center(cuboid.center), dimension(cuboid.dimension), level(level), isLeaf(false) {}
+
+DrawableCuboid::DrawableCuboid(const myvec3 &pos, int level):center(pos), level(level), isLeaf(true){}
