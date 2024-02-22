@@ -32,12 +32,7 @@ void simulate(Particles &particles, myfloat duration, myfloat dt, bool brute_for
     if (writeCallback){
       writeCallback(particles, timestep);
     }
-
-    auto info = bh_superstep_debug({100,0,0}, particles, particles.size(), 1.5);
-    auto depth_output = std::to_string(info.depth);
-    auto pcount_output = std::to_string(info.max_particles_in_leaf);
-    std::cout << "Depth: " << depth_output << " Max particles in leaf: " << pcount_output << " "<<info.debug_boxes[0].center<<std::endl;
-
+    
     ++show_progress;
   }
 

@@ -41,11 +41,11 @@ Cuboid bounding_box(const Vectors &positions)
   #pragma omp simd
   for (size_t i = 0; i < positions.size(); i++)
   {
-    xx.first = std::min(xx.first, positions.x[i]);
+    xx.first =  std::min(xx.first,  positions.x[i]);
     xx.second = std::max(xx.second, positions.x[i]);
-    yy.first = std::min(yy.first, positions.y[i]);
+    yy.first =  std::min(yy.first,  positions.y[i]);
     yy.second = std::max(yy.second, positions.y[i]);
-    zz.first = std::min(zz.first, positions.z[i]);
+    zz.first =  std::min(zz.first,  positions.z[i]);
     zz.second = std::max(zz.second, positions.z[i]);
   }
   

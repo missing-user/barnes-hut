@@ -13,6 +13,6 @@ struct debug_information
   std::vector<DrawableCuboid> debug_boxes;
   debug_information(): depth(0), max_particles_in_leaf(0) {};
 };
-debug_information bh_superstep_debug(myvec3 position, Particles& particles, size_t count, myfloat theta2);
+debug_information bh_superstep_debug(myvec3 position, Particles& particles, myfloat theta2);
 
 #endif

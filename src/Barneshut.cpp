@@ -430,10 +430,12 @@ std::vector<DrawableCuboid> draw_approximations(
   return draw;
 }
 
-debug_information bh_superstep_debug(myvec3 position, Particles &particles, size_t count, myfloat theta2)
+debug_information bh_superstep_debug(myvec3 position, Particles &particles, myfloat theta2)
 {
   debug_information info{};
+  std::cout<<"Enter bh_superstep_debug"<<std::endl;
   auto boundingbox = bounding_box(particles.p);
+  std::cout<<"bh_superstep_debug computed Boundingbox"<<std::endl;
   computeAndOrder(particles, boundingbox);
   auto tree = build_tree(particles, boundingbox);
   for (auto &depth : tree)

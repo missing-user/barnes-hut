@@ -74,12 +74,12 @@ TEST(QuadTree, DepthCalculation) {
   // expected
   set_seed(4756);
   auto particles = make_universe(Distribution::UNIVERSE4, 800);
-  auto info = bh_superstep_debug({100,0,0}, particles, particles.size(), 1.5*1.5);
+  auto info = bh_superstep_debug({100,0,0}, particles, 1.5*1.5);
   EXPECT_EQ(info.depth, 7);
   EXPECT_EQ(info.max_particles_in_leaf, 8);
   auto force_calcs_15 = info.debug_boxes.size();
   
-  info = bh_superstep_debug({100,0,0}, particles, particles.size(), 0.7*0.7);
+  info = bh_superstep_debug({100,0,0}, particles, 0.7*0.7);
   EXPECT_EQ(info.depth, 7);
   EXPECT_EQ(info.max_particles_in_leaf, 8);
   auto force_calcs_07 = info.debug_boxes.size();
