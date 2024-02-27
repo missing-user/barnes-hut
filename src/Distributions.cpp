@@ -12,7 +12,6 @@ void set_seed(unsigned int seed) { mt.seed(seed); }
 std::vector<Particle> normal_distribution(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
-#pragma omp parallel for
   for (int i = 0; i < num_particles; i++)
   {
     particles[i].p.x = normal_dist(mt);
@@ -25,7 +24,6 @@ std::vector<Particle> normal_distribution(size_t num_particles)
 std::vector<Particle> ball_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
-  #pragma omp parallel for
   for (int i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::ballRand(1.0);
@@ -36,7 +34,6 @@ std::vector<Particle> ball_dist(size_t num_particles)
 std::vector<Particle> sphere_dist(size_t num_particles)
 {
   std::vector<Particle> particles(num_particles);
-  #pragma omp parallel for
   for (int i = 0; i < num_particles; i++)
   {
     particles[i].p = glm::sphericalRand(1.0);
@@ -253,7 +250,6 @@ std::vector<Particle> plummer(int n){
 
   std::uniform_real_distribution<myfloat> uniform(0, 1);
 
-  #pragma omp parallel for
   for(int i = 0; i < n; i++){
     myfloat r = r_s / std::pow(uniform(mt), 2.0/3.0);
     myfloat theta = 2 * glm::pi<myfloat>() * uniform(mt);
