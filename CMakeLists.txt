@@ -41,4 +41,4 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 add_subdirectory(src)
 # Example application using the library
 add_subdirectory(simulation)
-#add_subdirectory(tests)
+add_subdirectory(tests)
