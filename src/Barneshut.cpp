@@ -5,6 +5,7 @@
 using b_type = xs::batch<myfloat>;
 using b_bool_type = xs::batch_bool<myfloat>;
 
+#define MEASURE_TIME
 // #define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG_D(x, d)                                         \
@@ -58,8 +59,8 @@ void DEBUG_BITS(uint_fast64_t end, int depth)
 
 // Due to morton order we know that all current particles.pos are > node_pos, only check the upper bounds
 // Also contains the array in bounds check (prevent segfault), i+1 to avoid overflow on unsigned int
-#define IN_BOUNDS(i) ((i < particles.size()) && (mortoncodes[i] <= current_max_morton))
-#define LAST_ITERATION (i == particles.size() - 1 && current_node_count <= 1)
+#define IN_BOUNDS(i) ((i < mortoncodes.size()) && (mortoncodes[i] <= current_max_morton))
+#define LAST_ITERATION (i == mortoncodes.size() - 1 && current_node_count <= 1)
 
 struct Node
 {
@@ -110,7 +111,6 @@ CentersOfMass compute_centers_of_mass(const Particles &particles, const Tree &tr
       if (currentnode.isLeaf())
       {
         DEBUG_D("COM computation for Leaf " << i << " at depth " << d << " has " << currentnode.count << " particles\n", d);
-#pragma omp simd
         for (int j = currentnode.start; j < currentnode.start + currentnode.count; j++)
         {
           auto mass_child = particles.m[j];
@@ -123,7 +123,6 @@ CentersOfMass compute_centers_of_mass(const Particles &particles, const Tree &tr
       else
       {
         DEBUG_D("COM computation for Internal Node " << i << " with start " << currentnode.start << "\n", d);
-#pragma omp simd safelen(8)
         for (int j = currentnode.start; j < currentnode.start + 8; j++)
         {
           auto mass_child = com.m[d + 1][j];
@@ -257,9 +256,8 @@ void compute_accelerations(Vectors &acc, const Particles &particles, const Tree 
   }
 }
 
-Tree build_tree(Particles &particles, const Cuboid &boundingbox)
+Tree build_tree(const std::vector<uint_fast64_t>& mortoncodes, const Cuboid &boundingbox)
 {
-  auto mortoncodes = computeMortonCodes(particles, boundingbox);
   // assert(std::is_sorted(mortoncodes.begin(), mortoncodes.end()));
   Tree tree;
   const int internal_depth_max = depth_max - 1;
@@ -277,11 +275,11 @@ Tree build_tree(Particles &particles, const Cuboid &boundingbox)
   // FIFO queue: all particle indices between start and start+count are designated for the current node
   int current_node_start = 0, current_node_count = 1;
 
-  while (i < particles.size())
+  while (i < mortoncodes.size())
   {
     // Add the first leaf_max+1 particles to the queue
     auto prev_node_count = current_node_count;
-    current_node_count = std::min(static_cast<int>(particles.size()) - current_node_start, leaf_max + 1);
+    current_node_count = std::min(static_cast<int>(mortoncodes.size()) - current_node_start, leaf_max + 1);
     i += current_node_count - prev_node_count;
 
     // Find the first depth level that does not contain all particles in the fifo
@@ -369,16 +367,33 @@ void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, 
   auto time0 = std::chrono::high_resolution_clock::now();
 #endif
   auto boundingbox = bounding_box(particles.p);
-
+  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, boundingbox);
 #ifdef MEASURE_TIME
   auto time1 = std::chrono::high_resolution_clock::now();
+  std::chrono::_V2::system_clock::time_point time2;
 #endif
-  computeAndOrder(particles, boundingbox);
+  std::vector<int> indices = sort_indices(mortonCodes);
+  
+  Tree tree;
+  // We only need the morton codes to construct the tree, so we can start building the tree while we sort the particles
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    {
+      // Create the sorted array of morton codes
+      indirect_sort(mortonCodes, indices);
 
-#ifdef MEASURE_TIME
-  auto time2 = std::chrono::high_resolution_clock::now();
-#endif
-  auto tree = build_tree(particles, boundingbox);
+      #ifdef MEASURE_TIME
+        time2 = std::chrono::high_resolution_clock::now();
+      #endif
+        tree = build_tree(mortonCodes, boundingbox);
+    }
+
+    #pragma omp section
+    {
+      indirect_sort(particles, indices);
+    }
+  }
 
 #ifdef MEASURE_TIME
   auto time3 = std::chrono::high_resolution_clock::now();
@@ -392,7 +407,8 @@ void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, 
 
 #ifdef MEASURE_TIME
   auto time5 = std::chrono::high_resolution_clock::now();
-  std::cout << "Times: " << std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << " ms, " << std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count() << " ms\n";
+  std::cout << "MC,Ord,tree,COM, acc\n";
+  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count() << "\n";
 #endif
 }
 
@@ -445,7 +461,8 @@ debug_information bh_superstep_debug(myvec3 position, Particles &particles, myfl
   auto boundingbox = bounding_box(particles.p);
   std::cout<<"bh_superstep_debug computed Boundingbox"<<std::endl;
   computeAndOrder(particles, boundingbox);
-  auto tree = build_tree(particles, boundingbox);
+  std::vector<uint_fast64_t> mortoncodes = computeMortonCodes(particles, boundingbox);
+  auto tree = build_tree(mortoncodes, boundingbox);
   for (auto &depth : tree)
   {
     if (depth.size() > 0)
