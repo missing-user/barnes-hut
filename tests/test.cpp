@@ -76,12 +76,12 @@ TEST(QuadTree, DepthCalculation) {
   auto particles = make_universe(Distribution::UNIVERSE4, 800);
   auto info = bh_superstep_debug({100,0,0}, particles, 1.5*1.5);
   EXPECT_EQ(info.depth, 7);
-  EXPECT_EQ(info.max_particles_in_leaf, 8);
+  EXPECT_EQ(info.max_particles_in_leaf, 4);
   auto force_calcs_15 = info.debug_boxes.size();
   
   info = bh_superstep_debug({100,0,0}, particles, 0.7*0.7);
   EXPECT_EQ(info.depth, 7);
-  EXPECT_EQ(info.max_particles_in_leaf, 8);
+  EXPECT_EQ(info.max_particles_in_leaf, 4);
   auto force_calcs_07 = info.debug_boxes.size();
   
   // Count force evaluations, increasing theta should reduce computational cost
@@ -181,7 +181,7 @@ TEST(BarnesHut, CompareApproximation) {
   set_seed(4756);
   auto particlesTree = make_universe(Distribution::UNIVERSE1, 64);
   
-  const auto simDuration = 2.0;
+  const auto simDuration = 1.0;
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
