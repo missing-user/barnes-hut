@@ -104,7 +104,7 @@ PROJECT_LDFLAGS += -fopenmp
 #
 #   Note: Leave a leading space when adding list items with the += operator
 ################################################################################
-PROJECT_CFLAGS += -fopenmp
+PROJECT_CFLAGS += -fopenmp -g
 
 ################################################################################
 # PROJECT OPTIMIZATION CFLAGS

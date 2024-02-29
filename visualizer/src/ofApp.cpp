@@ -29,7 +29,7 @@ void ofApp::setup() {
   ofEnableBlendMode(OF_BLENDMODE_ADD);
   ofSetBackgroundColor(ofColor::black);
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
-  glPointSize(4);            // make the points bigger
+  glPointSize(2);            // make the points bigger
 
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 64));
@@ -39,8 +39,8 @@ void ofApp::setup() {
   gui.add(brute_force_toggle.set("brute force", true));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 256, 64, 5e4));
-  gui.add(mass_slider.set("particle mass", 50, 10.0, 10000.0));
+  gui.add(num_particles_slider.set("num_particles", 256, 10, 5e4));
+  gui.add(mass_slider.set("particle mass", 50, 10.0, 1000.0));
   gui.add(text_output.set("frame time", "text"));
 
   gui.add(show_stats_toggle.set("Show Tree Stats", false));
@@ -62,10 +62,10 @@ void ofApp::update() {
   auto begin = std::chrono::steady_clock::now();
 
 
-    if (brute_force_toggle)
-      stepSimulation(particles, timestep_slider);
-    else
-      stepSimulation(particles, timestep_slider, theta_slider);
+  if (brute_force_toggle)
+    stepSimulation(particles, timestep_slider);
+  else
+    stepSimulation(particles, timestep_slider, theta_slider);
 
   auto end = std::chrono::steady_clock::now();
   auto elapsed =
@@ -83,8 +83,10 @@ void ofApp::update() {
 
   if(show_stats_toggle)
   {
-    auto particles2{particles}; // Copy the particles to avoid modifying the original
-    auto info = bh_superstep_debug({0,0,0}, particles2, particles2.size(), theta_slider*theta_slider);
+    std::cout<<particles.size()<<std::endl;
+    std::cout<<particles.v.y[5]<<std::endl;
+    myvec3 evalpos = {100,0,0};
+    auto info = bh_superstep_debug(evalpos, particles, theta_slider*theta_slider);
     depth_output = std::to_string(info.depth);
     pcount_output = std::to_string(info.max_particles_in_leaf);
     drawcuboids = info.debug_boxes;
@@ -100,14 +102,20 @@ void ofApp::draw() {
   ofNoFill();
 
   for (const auto &b : drawcuboids) {
-    if (b.level >= min_depth_slider)
-    {
-      const auto visualLevel = std::max(0, b.level - min_depth_slider);
-      const auto maxLevel = std::max(1, 16 - min_depth_slider);
-      ofSetColor((255/maxLevel) * visualLevel,
-                  255 - (255/maxLevel) * visualLevel, 
-                  0, 128);
-      ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
+    if(b.isLeaf){
+      // Draw leaf nodes as large circles
+      ofSetColor(255, 0, 0, 128);
+      ofDrawSphere(b.center, 0.5);
+    }else{
+      if (b.level >= min_depth_slider)
+      {
+        const auto visualLevel = std::max(0, b.level - min_depth_slider);
+        const auto maxLevel = std::max(1, 16 - min_depth_slider);
+        ofSetColor((255/maxLevel) * visualLevel,
+                    255 - (255/maxLevel) * visualLevel, 
+                    0, 128);
+        ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
+      }
     }
   }
 
@@ -164,7 +172,7 @@ void ofApp::keyPressed(int key) {
   }
 
   if (key == 'o') {
-    computeAndOrder(particles, bounding_box(particles.p, particles.size()));
+    computeAndOrder(particles, bounding_box(particles.p));
   }
 
   if (key == 'l') {

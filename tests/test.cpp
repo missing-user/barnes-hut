@@ -181,11 +181,11 @@ TEST(BarnesHut, CompareApproximation) {
   set_seed(4756);
   auto particlesTree = make_universe(Distribution::UNIVERSE1, 64);
   
-  const auto simDuration = 1.0;
+  const auto simDuration = 2.0;
   const auto timestep = 0.1;
 
   simulate(particles, simDuration, timestep);
-  simulate(particlesTree, simDuration, timestep, false, 1.5, writeToCsvFile);
+  simulate(particlesTree, simDuration, timestep, false, 1.1, writeToCsvFile);
 
   auto boundingbox = bounding_box(particles.p);
   computeAndOrder(particles, boundingbox);
