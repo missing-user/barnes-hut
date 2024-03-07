@@ -2,8 +2,8 @@
 #include "Order.h"
 #include <chrono>
 
-using b_type = xs::batch<myfloat>;
-using b_bool_type = xs::batch_bool<myfloat>;
+using b_type = xs::batch<myfloat, xs::best_arch>;
+using b_bool_type = xs::batch_bool<myfloat, xs::best_arch>;
 
 //#define MEASURE_TIME
 //#define DEBUG_BUILD
