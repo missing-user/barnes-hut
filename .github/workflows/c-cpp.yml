@@ -15,7 +15,8 @@ jobs:
 
       - name: Set up GCC
         run: |
-          sudo apt-get install -yqq g++ cmake libgtest-dev libglm-dev libboost-timer-dev libboost-program-options-dev
+          sudo apt-get install -yqq g++ cmake libgtest-dev libglm-dev libxsimd-dev libboost-timer-dev libboost-program-options-dev
+          git clone https://github.com/Forceflow/libmorton.git && cd libmorton && mkdir build && cd build && cmake .. && make && sudo make install
         continue-on-error: true
 
       - name: Build

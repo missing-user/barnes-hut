@@ -1,7 +1,7 @@
 #ifndef DISTRIBUTIONS
 #define DISTRIBUTIONS
 
-#include "Simulation.h"
+#include "Particle.h"
 #include <vector>
 
 enum class Distribution {
@@ -14,15 +14,16 @@ enum class Distribution {
   STABLE_ORBIT,
   SPHERE,
   CRYSTALLINE,
-  PLUMMER
+  PLUMMER,
+  DEBUG_CUBE
 };
 
 void set_seed(unsigned int seed);
 
-std::vector<Particle> &set_mass(std::vector<Particle> &particles, myfloat m);
+Particles &set_mass(Particles &particles, myfloat m);
 
 /*******************************************************************/
 
-std::vector<Particle> make_universe(Distribution dist, int num_particles);
+Particles make_universe(Distribution dist, size_t num_particles);
 
 #endif

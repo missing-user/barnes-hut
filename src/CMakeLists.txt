@@ -1,21 +1,36 @@
-cmake_minimum_required(VERSION 3.3)
-
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.cpp")
+cmake_minimum_required(VERSION 3.13)
+file(GLOB HEADER_LIST CONFIGURE_DEPENDS "../include/*.h")
+file(GLOB LIB_SRC_FILES CONFIGURE_DEPENDS  "*.cpp")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
-add_compile_options(-std=c++2a)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
-add_subdirectory(OctTree) #QuadTreeIndices
-add_subdirectory(Simulation)
+add_library(barneshut STATIC ${LIB_SRC_FILES} ${HEADER_LIST})
 
-find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
-# find_package(Boost home\jimmy\Packages\boost_1_81_0)
+target_include_directories(barneshut PUBLIC ../include)
 
-find_package(glm CONFIG REQUIRED)
-message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
-target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC glm::glm)
-target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
-target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC Simulation OctTree)
+source_group(
+  TREE "${PROJECT_SOURCE_DIR}/include"
+  PREFIX "Header Files"
+  FILES ${HEADER_LIST})
+
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(barneshut PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+target_include_directories(barneshut PUBLIC ../include)
+
+# Boost (for commandline program options)
+target_link_libraries(barneshut PRIVATE ${Boost_LIBRARIES})
+
+# GLM
+target_include_directories(barneshut PRIVATE ${GLM_INCLUDE_DIRS})
+target_link_libraries(barneshut PRIVATE ${GLM_INCLUDE_DIRS})
+
+# XSIMD
+target_include_directories(barneshut PRIVATE ${xsimd_INCLUDE_DIRS})
+
+# LIBMORTON
+target_include_directories(barneshut PRIVATE libmorton::libmorton)
+

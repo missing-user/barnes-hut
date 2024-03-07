@@ -8,15 +8,15 @@ Cuboid::Cuboid(const myvec3& center, const myvec3& dimension)
 
 Cuboid minMaxCuboid(const myvec3& min, const myvec3& max) // returns a cuboid with the given min and max coords
 {
-  return Cuboid(0.5 * (min + max), max - min);
+  return Cuboid(static_cast<myfloat>(0.5) * (min + max), max - min);
 }
 
 std::array<Cuboid, 8>
 Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, splitting the parent
                                      // cuboid in half along each dimension (i.e. Octant)
 {
-  myvec3 minP = center - dimension/2.0;
-  myvec3 maxP = center + dimension/2.0;
+  myvec3 minP = center - dimension/static_cast<myfloat>(2.0);
+  myvec3 maxP = center + dimension/static_cast<myfloat>(2.0);
   // Calculating the coordinates of the new cuboid divisions
   std::array<Cuboid, 8> subcuboids{
       minMaxCuboid(myvec3(minP.x, minP.y, minP.z), myvec3(P.x, P.y, P.z)),
@@ -32,6 +32,26 @@ Cuboid::subdivideAtP(const myvec3& P) const // returns an array of 8 cuboids, sp
   return subcuboids;
 }
 
+Cuboid bounding_box(const Vectors &positions)
+{
+  std::pair<myfloat, myfloat> xx{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
+  std::pair<myfloat, myfloat> yy{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
+  std::pair<myfloat, myfloat> zz{std::numeric_limits<myfloat>::max(), std::numeric_limits<myfloat>::min()};
+  // This already operates in the memory bound regime, no gain from parallelization
+  #pragma omp simd
+  for (size_t i = 0; i < positions.size(); i++)
+  {
+    xx.first =  std::min(xx.first,  positions.x[i]);
+    xx.second = std::max(xx.second, positions.x[i]);
+    yy.first =  std::min(yy.first,  positions.y[i]);
+    yy.second = std::max(yy.second, positions.y[i]);
+    zz.first =  std::min(zz.first,  positions.z[i]);
+    zz.second = std::max(zz.second, positions.z[i]);
+  }
+  
+  return minMaxCuboid(myvec3(xx.first, yy.first, zz.first), myvec3(xx.second, yy.second, zz.second));
+}
+
 std::string Cuboid::print() const
 {
   std::ostringstream str;
@@ -42,4 +62,6 @@ std::string Cuboid::print() const
 
 
 DrawableCuboid::DrawableCuboid(const Cuboid &cuboid, int level) : 
-  center(cuboid.center), dimension(cuboid.dimension), level(level) {}
+  center(cuboid.center), dimension(cuboid.dimension), level(level), isLeaf(false) {}
+
+DrawableCuboid::DrawableCuboid(const myvec3 &pos, int level):center(pos), level(level), isLeaf(true){}

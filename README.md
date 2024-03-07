@@ -25,14 +25,21 @@ Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algori
 
 This project was made with only Linux in mind. There is no guarantee this would work on any other OS. Please also insure that **at least** g++ version 10 is installed and set as default.
 
-You need `cmake`, `glm` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
+You need `cmake`, `glm`, `libmorton` and `C++ boost` installed for this project to work. `gtest` is used for our unit tests and `openframeworks` for the visualizations. The following commands will install them. The last two lines are for building `gtest` on your machine.
 
 ```sh
 apt-get install g++-11 cmake 
 apt-get install -y libglm-dev libboost-all-dev libgtest-dev 
 
+# Possibly need to run the following commands to build gtest
 cd /usr/src/gtest
 cmake CMakeLists.txt && make
+cd -
+
+# Clone and install libmorton
+git clone https://github.com/Forceflow/libmorton.git
+cd libmorton && mkdir build && cd build && cmake .. && make && make install
+
 ```
 
 For GUI and visualization, follow the instructions on [https://openframeworks.cc/setup/linux-install/](https://openframeworks.cc/setup/linux-install/) and to run the 3D live particle visualization:
@@ -176,22 +183,53 @@ In this sprint, we will analyze and optimize the performance and computation tim
 Tree construction is fast, taking up ~2% of the runtime in the single threaded example using 10k particles and theta=1.5, but it is also the only part of our code that's not parallelized. That's why in the multithreaded example the construction overhead becomes more and more noticeable. Assuming that it is the only serial part of our code, [Amdahl's law](https://www.wikiwand.com/en/Amdahl%27s_law) gives us a theoretically possible speedup of 50x. In reality the speedup is much lower, presumably due to the overhead of moving data between threads and serial portions of the code that went under our radar. ![multicore runtime speedup](images/coresSpeedup.png)
 After some further investigations, we found that the static scheduling of the OpenMP parallel for loop was the problem. The load was not balanced between the threads, so the slowest thread would always be the bottleneck, while the other would be sitting idle. By switching to dynamic scheduling, the speedup per core became similiar to the brute force version.
 ![multicore runtime speedup dynamic scheduling](images/coresSpeedupDynamic.png)
-Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well. This indicates, that there are still serial portions of the code that we could optimize. Copying the particles  
+Nonetheless, both algorithms perform far below the theoretical limit, eventhough the algorithms should parallelize well.
 
-## Algorithmic Improvements
+## Known Issues
 
-We added another type of tree that can be enabled with `#define USE_CENTER_OF_MASS_FOR_SPLITTING` and creates shallower, but irregular trees than the default OctTree splitting. Instead of dividing each cell into 8 equal parts, the center of mass of the particles in the cell is calculated and the cell is split into 8 cells at that point.
+The SoA implementation is very much WIP, and not on par with SoA yet.
 
-## Gallery
+- [] Tree construction using OpenMP tasks and std::upper_bound for the binary search.
+- [] [CUDA?](https://developer.nvidia.com/blog/thinking-parallel-part-iii-tree-construction-gpu/)
+- [x] Vectorization of the tree traversal (Traverse a batch of particles at once, e.g. the batches of `count` particles in a leaf?)
+- [x] Merge Center of Mass computation with the tree building: difference within measurement uncertainty, and the implementation becomes even less readable. Not worth it.
+- [x] Improved particle sorting/reordering by reducing memory allocations and copying
+- [] VTune profiling for further optimization, it's still saying that there are many scalar instructions. (Improved using XSIMD for batched traversal)
 
-![Pretty image](images/flatIrregularTree.png)
+  | Operation   | Time      |
+  |-------------|-----------|
+  | Bounding box| 2 ms      |
+  | Sorting indices| 10 ms  |
+  | Reordering particles| 13 ms|
+  | Tree construction| 16 ms   |
+  | Centers of mass| 13 ms     |
+  | Force Traversal| 267 ms    |
 
-![Big Bang](images/bigbang_clustering.png)
+- [x] Tree traversal `recursive_force` is incorrect and slow (the same number of evaluations as the brute force version???) -> the theta comparison had a bug
+- [x] Make sure the last particle is also being added to the tree
+- [x] Confirm that the tree construction is correct (Looks good according to the visualizer)
+- [x] Try custom quicksort implementation for the particle array (Same performance as std::sort)
+- [x] Parallel center of mass computations (decreased performance for systems >10k particles)
+- [x] Vectorization of the innermost particle loop (leaf/near field)
+- [x] Vectorization of the far field loop using the centers of mass
 
-![Visualization of the tree structure](images/tree_100_particles.png)
+## Citations
+This project uses out-of-core construction as described in [Coherent Out-of-Core Point-Based Global Illumination](https://www.tabellion.org/et/paper11/OutOfCorePBGI.pdf), and by the Blog post articles of [Jeroen Baert](https://www.forceflow.be/2012/07/24/out-of-core-construction-of-sparse-voxel-octrees/). The used libraries are [libmorton library](https://github.com/Forceflow/libmorton) for vectorized generation of morton codes and [XSIMD](https://github.com/xtensor-stack/xsimd/) to implement vectorized traversal of batches of particles.
 
-And a few videos:
+```
+@article {10.1111:j.1467-8659.2011.01995.x,
+journal = {Computer Graphics Forum},
+title = {{Coherent Out-of-Core Point-Based Global Illumination}},
+author = {Kontkanen, Janne and Tabellion, Eric and Overbeck, Ryan S.},
+year = {2011},
+publisher = {The Eurographics Association and Blackwell Publishing Ltd.},
+ISSN = {1467-8659},
+DOI = {10.1111/j.1467-8659.2011.01995.x}
+}
 
-
-[![Watch the video](https://img.youtube.com/vi/SRe4MOF6JOs/maxresdefault.jpg)](https://youtu.be/SRe4MOF6JOs)
-[![Watch the video](https://img.youtube.com/vi/K-4VUi-bIeo/maxresdefault.jpg)](https://youtu.be/K-4VUi-bIeo)
+@Misc{libmorton18,
+author = "Jeroen Baert",
+title = "Libmorton: C++ Morton Encoding/Decoding Library",
+howpublished = "\url{https://github.com/Forceflow/libmorton}",
+year = "2018"}
+```

@@ -4,7 +4,7 @@
 #include <string>
 #include "OutputWriter.h"
 
-void writeToCsvFile(const std::vector<Particle> &particles,
+void writeToCsvFile(const Particles &particles,
                     const std::size_t timestep) { 
   //std::thread([&filename, particles](){ 
   std::string filename = "output"+std::to_string(timestep)+".csv";
@@ -15,12 +15,14 @@ void writeToCsvFile(const std::vector<Particle> &particles,
   }
   csvfile.open(filename);
   csvfile << "x,y,z,m\n";
-  csvfile << particles;
+  for (size_t i = 0; i < particles.size(); i++) {
+    csvfile << particles.p.x[i] << "," << particles.p.y[i] << "," << particles.p.z[i] << "," << particles.m[i] << "\n";
+  }
   csvfile.close();
   //}).detach();
 }
 
-void writeToBinaryFile(const std::vector<Particle> &particles,
+void writeToBinaryFile(const Particles &particles,
                     const std::size_t timestep) {
   std::string filename = "barnes_hut_"+std::to_string(timestep)+".particles";
   // Open a Binary file and write the positions and velocities of all particles
@@ -30,13 +32,13 @@ void writeToBinaryFile(const std::vector<Particle> &particles,
   }
   vtkfile.open(filename, std::ios::binary);
   std::vector<float> output;
-  int i = 0;
-  for(const auto& p : particles) {
-    output.push_back(p.p.x);
-    output.push_back(p.p.y);
-    output.push_back(p.p.z);
-    output.push_back(p.v.length());
+  for (size_t i = 0; i < particles.size(); i++) {
+    output.push_back(particles.p.x[i]);
+    output.push_back(particles.p.y[i]);
+    output.push_back(particles.p.z[i]);
+    output.push_back(std::sqrt(length2(particles.v.x[i], particles.v.y[i], particles.v.z[i])));
   }
+
   vtkfile.write(reinterpret_cast<const char *>(output.data()), sizeof(float)*output.size());
   vtkfile.close();
 
