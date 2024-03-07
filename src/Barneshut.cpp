@@ -233,13 +233,13 @@ void compute_accelerations(Vectors &acc, const Particles &particles, const Tree 
     for (int i = 0; i < vectorized_size; i += b_type::size)
     {
       b_type dvx = 0, dvy = 0, dvz = 0;
-      auto y = b_type::load_aligned(&particles.p.y[i]);
-      auto x = b_type::load_aligned(&particles.p.x[i]);
-      auto z = b_type::load_aligned(&particles.p.z[i]);
+      auto y = b_type::load_unaligned(&particles.p.y[i]);
+      auto x = b_type::load_unaligned(&particles.p.x[i]);
+      auto z = b_type::load_unaligned(&particles.p.z[i]);
       recursive_force(&dvx, &dvy, &dvz, x, y, z, particles, tree, com, diagonal2, 0, 0, theta2);
-      dvx.store_aligned(&acc.x[i]);
-      dvy.store_aligned(&acc.y[i]);
-      dvz.store_aligned(&acc.z[i]);
+      dvx.store_unaligned(&acc.x[i]);
+      dvy.store_unaligned(&acc.y[i]);
+      dvz.store_unaligned(&acc.z[i]);
     }
 
 // Scalar remainder loop

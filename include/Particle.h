@@ -12,7 +12,7 @@ namespace xs = xsimd;
 typedef glm::dvec3 myvec3; // We can easily switch the entire implementation to
                            // float precision by adjusting these two variables
 typedef double myfloat;
-using vector_type = std::vector<myfloat, xs::default_allocator<myfloat>>;
+using vector_type = std::vector<myfloat>; //, xs::default_allocator<myfloat>
 
 struct Particle { // A particle with position, velocity and unique id
   myvec3 p;
