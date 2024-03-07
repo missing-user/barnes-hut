@@ -23,7 +23,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -march=native -mtune=native")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Ofast -mavx -mtune=native")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -qopt-report-phase=vec -qopt-report=3 -ffp-model=fast")
     add_link_options("-v")
