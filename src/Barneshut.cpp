@@ -6,7 +6,7 @@ using b_type = xs::batch<myfloat>;
 using b_bool_type = xs::batch_bool<myfloat>;
 
 //#define MEASURE_TIME
-// #define DEBUG_BUILD
+//#define DEBUG_BUILD
 #ifdef DEBUG_BUILD
 #define DEBUG_D(x, d)                                         \
   do                                                          \
@@ -367,7 +367,7 @@ void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, 
   auto time0 = std::chrono::high_resolution_clock::now();
 #endif
   auto boundingbox = bounding_box(particles.p);
-  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, boundingbox);
+  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes<uint_fast64_t>(particles, boundingbox);
 #ifdef MEASURE_TIME
   auto time1 = std::chrono::high_resolution_clock::now();
   std::chrono::_V2::system_clock::time_point time2;
@@ -408,7 +408,7 @@ void bh_superstep(Vectors &acc, Particles &particles, size_t count, myfloat dt, 
 #ifdef MEASURE_TIME
   auto time5 = std::chrono::high_resolution_clock::now();
   std::cout << "MC,Ord,tree,COM, acc\n";
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time3 - time2).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time4 - time3).count() << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(time5 - time4).count() << "\n";
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << ", " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << ", " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << ", " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << ", " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 #endif
 }
 
@@ -461,7 +461,7 @@ debug_information bh_superstep_debug(myvec3 position, Particles &particles, myfl
   auto boundingbox = bounding_box(particles.p);
   std::cout<<"bh_superstep_debug computed Boundingbox"<<std::endl;
   computeAndOrder(particles, boundingbox);
-  std::vector<uint_fast64_t> mortoncodes = computeMortonCodes(particles, boundingbox);
+  std::vector<uint_fast64_t> mortoncodes = computeMortonCodes<uint_fast64_t>(particles, boundingbox);
   auto tree = build_tree(mortoncodes, boundingbox);
   for (auto &depth : tree)
   {

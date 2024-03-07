@@ -8,7 +8,7 @@ void stepSimulation(Particles &particles, myfloat dt) {
  */
     myfloat half_dt = 0.5 * dt;
     // v_i+1/2 Velocity half-step
-#pragma omp parallel for if (particles.size() > 1000)
+#pragma omp parallel for
     for (int i = 0; i < particles.size(); i++) {
       myfloat dvx = 0, dvy = 0, dvz = 0;
       bruteForceAcc<myfloat>(&dvx, &dvy, &dvz, 

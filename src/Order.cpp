@@ -1,35 +1,10 @@
 #include "Order.h"
-#include <libmorton/morton.h>
 #include <algorithm>
 #include <numeric>
 
 #ifdef MEASURE_TIME
 #include <chrono>
 #endif
-
-uint_fast64_t positionToCode(const myfloat& x, const myfloat& y, const myfloat& z, 
-                            const myvec3 &min, const myvec3 &invdimension)
-{
-  uint_fast32_t xi = (x - min.x) * invdimension.x;
-  uint_fast32_t yi = (y - min.y) * invdimension.y;
-  uint_fast32_t zi = (z - min.z) * invdimension.z;
-  return libmorton::morton3D_64_encode(xi,yi,zi);
-}
-
-std::vector<uint_fast64_t> computeMortonCodes(const Particles &particles, const Cuboid &bb)
-{
-  std::vector<uint_fast64_t> mortonCodes(particles.size());
-  // morton order allows for 21 bits per dimension = 63 bits, scale all entries to this size
-  // Although libmorton uses unsigned integers, it seemingly expects a range of [-2^20,2^20] for each dimension
-  const myvec3 invRange = static_cast<myfloat>(std::pow(2, 21)-1) / bb.dimension;
-  #pragma omp parallel for
-  for (int i = 0; i < particles.size(); i++) {
-    mortonCodes[i] = positionToCode(particles.p.x[i],particles.p.y[i],particles.p.z[i], bb.min(), invRange);
-  }
-  return mortonCodes;
-}
-
-
 
 void indirect_sort(Particles &particles, const std::vector<int>& indices){
   /* Reordering the particles component by component is faster than having a merged loop
@@ -61,16 +36,6 @@ void indirect_sort(std::vector<uint_fast64_t>& mortonCodes, const std::vector<in
   std::swap(mortonCodes, reorderedComponent);
 }
 
-std::vector<int> sort_indices(const std::vector<uint_fast64_t>& mortonCodes)
-{
-  std::vector<int> indices(mortonCodes.size());
-  std::iota(indices.begin(), indices.end(), 0);
-  std::sort(indices.begin(), indices.end(), [&mortonCodes](const int a, const int b) {
-    return mortonCodes[a] < mortonCodes[b];
-  });
-  return indices;
-}
-
 void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mortonCodes){
   // Sort using morton order. This is parallelized if _GLIBCXX_PARALLEL is defined
   
@@ -96,6 +61,6 @@ void reorderByCodes(Particles &particles, const std::vector<uint_fast64_t>& mort
 
 void computeAndOrder(Particles &particles, const Cuboid &bb)
 {
-  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes(particles, bb);
+  std::vector<uint_fast64_t> mortonCodes = computeMortonCodes<uint_fast64_t>(particles, bb);
   reorderByCodes(particles, mortonCodes);
 }
