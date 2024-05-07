@@ -58,7 +58,7 @@ To compile and execute the project, run the following commands:
 mkdir build && cd build && cmake ..
 
 make barnes-hut
-./src/barnes-hut
+./simulation/barnes-hut
 ```
 
 1. Creates a folder called `build`, navigates into it, and creates the makefile
