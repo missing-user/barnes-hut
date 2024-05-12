@@ -23,6 +23,7 @@ private:
   ofParameter<double> theta_slider;
   ofParameter<double> mass_slider;
   ofParameter<bool> brute_force_toggle;
+  ofParameter<bool> pause_button;
 
   // text output
   ofParameter<std::string> text_output;
