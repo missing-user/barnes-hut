@@ -8,7 +8,7 @@
 
 This project is an implementation of the Barnes-Hut algorithm for approximating the gravitational forces between objects in a system. It is commonly used in astrophysical simulations to model the motion of celestial bodies, such as planets and stars. The simulation can be initialized with the positions, masses, and velocities of the objects, and will iteratively update the positions and velocities based on the gravitational forces acting on them.
 
-![Spiral Galaxy simulation](spiral_galaxy.png)
+![Spiral Galaxy simulation](images/spiral_galaxy.png)
 
 ## Preview video
 [![Watch the video](https://img.youtube.com/vi/woft9_h10j4/maxresdefault.jpg)](https://youtu.be/woft9_h10j4)
