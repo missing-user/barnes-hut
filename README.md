@@ -13,6 +13,7 @@ This project is an implementation of the Barnes-Hut algorithm for approximating 
 ## Preview video
 [![Watch the video](https://img.youtube.com/vi/woft9_h10j4/maxresdefault.jpg)](https://youtu.be/woft9_h10j4)
 [https://youtu.be/woft9_h10j4](https://youtu.be/woft9_h10j4)
+
 [https://youtu.be/zAYsITXAerE](https://youtu.be/zAYsITXAerE)
 
 The basic idea behind the Barnes-Hut algorithm is to divide the system into a grid of cells and to approximate the forces between objects in a cell using the center of mass and total mass of the cell. This allows the simulation to scale to systems with a large number of objects, as the calculation of forces between each object would become computationally infeasible. To improve the accuracy of the simulation, the size of the cells can be decreased, which will result in a more precise calculation of the forces between objects. However, this will also increase the computational cost of the simulation.
