@@ -34,9 +34,13 @@ public:
   myvec3 center;
   myvec3 dimension;
   int level; // depth level of the cuboid
+  myvec3 center_of_mass;
+  myfloat collective_mass;
   bool isLeaf; // if the cuboid is a leaf node
-  DrawableCuboid(const Cuboid &cuboid, int level); // for non-leaf nodes
-  DrawableCuboid(const myvec3 &pos, int level); // for leaf nodes
+  DrawableCuboid(const Cuboid &cuboid, int level, 
+    myvec3 center_of_mass,
+    myfloat collective_mass); // for non-leaf nodes
+  DrawableCuboid(const myvec3 &pos, int level, myfloat collective_mass); // for leaf nodes
 };
 
 #endif

@@ -9,6 +9,8 @@
 #include "Simulation.h"
 #include "Forces.h"
 Particles particles{};
+int nearestIndex = 0;
+bool fixed_particle=false;
 
 void ofApp::initializeParticles()
 {
@@ -18,6 +20,7 @@ void ofApp::initializeParticles()
     auto cur = ofColor::white;
     mesh.addColor(cur);
   }
+  nearestIndex = 0;
   std::cout << "Initialized " << particles.size() << " particles\n";
 }
 
@@ -32,6 +35,7 @@ void ofApp::setup()
   ofSetBackgroundColor(ofColor::black);
   glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
   glPointSize(2);            // make the points bigger
+  ofSetIcoSphereResolution(2);
 
   gui.setup();
   gui.add(max_per_node_slider.set("max_per_node", 1, 1, 64));
@@ -42,12 +46,12 @@ void ofApp::setup()
   gui.add(brute_force_toggle.set("brute force", false));
   gui.add(theta_slider.set("theta", 1.5, 0.0, 2.5));
 
-  gui.add(num_particles_slider.set("num_particles", 256, 10, 5e5));
+  gui.add(num_particles_slider.set("num_particles", 256, 10, 1e5));
   gui.add(mass_slider.set("particle mass", 50, 10.0, 1000.0));
   gui.add(text_output.set("frame time", "text"));
 
-  gui.add(show_stats_toggle.set("Show Tree Stats", false));
-  gui.add(min_depth_slider.set("min visible level", 4, 0, 32));
+  gui.add(show_stats_toggle.set("Show Tree Stats", true));
+  gui.add(min_depth_slider.set("min visible level", 0, 0, 32));
   gui.add(depth_output.set("tree depth", "?"));
   gui.add(pcount_output.set("max particles leafs", "?"));
 
@@ -97,23 +101,92 @@ void ofApp::draw()
   {
     mesh.setVertex(i, myvec3(particles.p.x[i], particles.p.y[i], particles.p.z[i]));
     double particle_v = glm::length(myvec3(particles.v.x[i], particles.v.y[i], particles.v.z[i]));
-    mesh.setColor(i, ofColor(255 - 255. * particle_v / vmax, 255. * particle_v / vmax, 255. * particle_v / vmax, 255));
+
+    if (show_stats_toggle)
+    {
+      mesh.setColor(i, ofColor(255, 255, 255, 128));
+    }
+    else
+    {
+      mesh.setColor(i, ofColor(255 - 255. * particle_v / vmax, 255. * particle_v / vmax, 255. * particle_v / vmax, 255));
+    }
   }
 
+  glm::vec2 nearestVertex;
+  glm::vec3 mouse(mouseX, mouseY, 0);
   if (show_stats_toggle)
   {
-    std::cout << particles.size() << std::endl;
-    std::cout << particles.v.y[5] << std::endl;
-    myvec3 evalpos = {100, 0, 0};
-    auto info = bh_superstep_debug(evalpos, particles, theta_slider * theta_slider);
-    depth_output = std::to_string(info.depth);
-    pcount_output = std::to_string(info.max_particles_in_leaf);
 
-    ofSetColor(255);
+    // Find nearest point in screenspace
+    if(!fixed_particle){
+      // Highlight the nearest vertex
+      int n = mesh.getNumVertices();
+      float nearestDistance = 0;
+      for (int i = 0; i < n; i++)
+      {
+        glm::vec3 cur = cam.worldToScreen(mesh.getVertex(i));
+        float distance = glm::distance(cur, mouse);
+        if (i == 0 || distance < nearestDistance)
+        {
+          nearestDistance = distance;
+          nearestVertex = cur;
+          nearestIndex = i;
+        }
+      }
+    }else{
+      nearestVertex = cam.worldToScreen(mesh.getVertex(nearestIndex));
+    }
+
+    myvec3 evalpos = {particles.p.x[nearestIndex],
+                      particles.p.y[nearestIndex],
+                      particles.p.z[nearestIndex]};
+    ofSetColor(0, 0, 255, 255);
+    ofDrawIcoSphere(evalpos, 5);
+
+    double th2 = theta_slider * theta_slider;
+    int max_depth_out, max_particles_out;
+    auto drawcuboids = losing_my_mind(particles, evalpos.x, evalpos.y, evalpos.z, th2,
+                                      &max_depth_out, &max_particles_out);
+    depth_output = std::to_string(max_depth_out);
+    pcount_output = std::to_string(max_particles_out);
+
+    for (const auto &b : drawcuboids)
+    {
+      if (b.isLeaf)
+      {
+        // Draw leaf nodes as large circles
+        ofSetColor(255, 0, 0, 255);
+        ofDrawIcoSphere(b.center, 0.25);
+      }
+      else
+      {
+        if (b.level >= min_depth_slider)
+        {
+          const auto visualLevel = std::max(0, b.level - min_depth_slider);
+          const auto maxLevel = std::max(1, 16 - min_depth_slider);
+          ofSetColor((255 / maxLevel) * visualLevel,
+                     255 - (255 / maxLevel) * visualLevel,
+                     0, 64);
+          ofDrawBox(b.center, b.dimension.x, b.dimension.y, b.dimension.z);
+
+          ofSetColor(255, 255, 0, 255);
+          ofDrawIcoSphere(b.center_of_mass, std::log(b.collective_mass / mass_slider) * 0.25);
+        }
+      }
+    }
   }
 
+  ofSetColor(255);
   mesh.draw();
   cam.end();
+  if (show_stats_toggle)
+  {
+    ofSetLineWidth(2);
+    ofDrawLine(nearestVertex, mouse);
+    ofSetColor(255);
+    ofDrawCircle(nearestVertex, 4);
+  }
+
   ofDrawBitmapString(
       "   For the \"Big-Bang simulation\" particle distribution example, press R \n\
   For a \"Universe Simulation\" particle distribution example, press T \n \
@@ -204,7 +277,7 @@ void ofApp::mouseMoved(int x, int y) {}
 void ofApp::mouseDragged(int x, int y, int button) {}
 
 //--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button) {}
+void ofApp::mousePressed(int x, int y, int button) {fixed_particle=!fixed_particle;}
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {}

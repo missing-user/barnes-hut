@@ -61,7 +61,8 @@ std::string Cuboid::print() const
 }
 
 
-DrawableCuboid::DrawableCuboid(const Cuboid &cuboid, int level) : 
-  center(cuboid.center), dimension(cuboid.dimension), level(level), isLeaf(false) {}
+DrawableCuboid::DrawableCuboid(const Cuboid &cuboid, int level, myvec3 center_of_mass, myfloat collective_mass) : 
+  center(cuboid.center), dimension(cuboid.dimension), level(level), isLeaf(false),
+  center_of_mass(center_of_mass), collective_mass(collective_mass) {}
 
-DrawableCuboid::DrawableCuboid(const myvec3 &pos, int level):center(pos), level(level), isLeaf(true){}
+DrawableCuboid::DrawableCuboid(const myvec3 &pos, int level, myfloat collective_mass):center(pos), level(level), isLeaf(true), center_of_mass(pos), collective_mass(collective_mass){}

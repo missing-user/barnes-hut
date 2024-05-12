@@ -29,12 +29,7 @@ void accelFunc(T *__restrict  accx, T *__restrict  accy, T *__restrict  accz,
 
   #ifndef LENNARD_JONES
   auto r2 = length2(dx, dy, dz) + softening_param;
-  T r;
-  if constexpr(xs::is_batch<T>::value) {
-    r = xs::sqrt(r2);
-  }else{
-    r = std::sqrt(r2);
-  }
+  T r = xs::sqrt(r2);
   auto mOverDist3 = mass / (r2 * r);
   
   #else

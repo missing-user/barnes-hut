@@ -18,6 +18,16 @@ T positionToCode(const myfloat& x, const myfloat& y, const myfloat& z,
   else
     return libmorton::morton3D_32_encode(xi,yi,zi);
 }
+template <typename T>
+myvec3 codeToPosition(T code, const myvec3 &min, const myvec3& dimension)
+{
+  uint_fast32_t xi, yi, zi;
+  if constexpr(std::is_same<T, uint_fast64_t>::value)
+    libmorton::morton3D_64_decode(code, xi,yi,zi);
+  else
+    libmorton::morton3D_32_decode(code, xi,yi,zi);
+  return myvec3(xi,yi,zi)*dimension+min;
+}
 
 template <typename T>
 std::vector<T> computeMortonCodes(const Particles &particles, const Cuboid &bb)
